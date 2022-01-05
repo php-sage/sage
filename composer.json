@@ -34,29 +34,10 @@
       "Sage.php"
     ]
   },
+  "config": {
+    "sort-packages": true
+  },
   "scripts": {
-    "post-update-cmd": "npm ci",
-    "post-install-cmd": "@post-update-cmd",
-    "clean": [
-      "rm -rf resources/compiled/",
-      "rm -rf build/"
-    ],
-    "format": [
-      "@format:php",
-      "@format:js",
-      "@format:sass"
-    ],
-    "format:php": "php-cs-fixer fix",
-    "format:js": "npm run format:js",
-    "format:sass": "npm run format:sass",
-    "build": [
-      "@build:sass",
-      "@build:js",
-      "@build:php"
-    ],
-    "build:sass": "npm run build:sass",
-    "build:js": "npm run build:js",
-    "build:php": "php .github/build/build.php",
-    "analyze": "psalm --show-info=false"
+    "build": "php .github/build/build.php"
   }
 }
