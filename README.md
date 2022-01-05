@@ -1,141 +1,152 @@
-# Kint - debugging helper for PHP developers
+# Sage - Insightful PHP debugging assistant ☯
 
-[![Total Downloads](https://poser.pugx.org/raveren/kint/downloads.png)](https://packagist.org/packages/raveren/kint)
+At first glance **Sage** is just a pretty replacement
+for **[var_dump()](http://php.net/manual/en/function.var-dump.php)**
+, **[print_r()](http://php.net/manual/en/function.print-r.php)**
+and **[debug_backtrace()](http://php.net/manual/en/function.debug-backtrace.php)**.
 
+However, it's much, *much* more.
 
-![Screenshot](http://raveren.github.com/kint/img/preview.png)
+<sup>(sorry for how messy is this readme, documentation is a WIP!)</sup>
 
-## What am I looking at?
+Just some of the most useful features which come out of the box:
 
-At first glance Kint is just a pretty replacement for **[var_dump()](http://php.net/manual/en/function.var-dump.php)**, **[print_r()](http://php.net/manual/en/function.print-r.php)** and **[debug_backtrace()](http://php.net/manual/en/function.debug-backtrace.php)**. 
-
-However, it's much, *much* more than that. Even the excellent `xdebug` var_dump improvements don't come close - you will eventually wonder how you developed without it. 
-
-Just to list some of the most useful features:
-
- * The **variable name and file + line** where Kint was called from is displayed;
- * You can **disable all Kint output easily and on the fly** - so you can even debug live systems without anyone knowing (even though you know you shouldn't be doing that!:). 
- * **CLI is detected** and formatted for automatically (but everything can be overridden on the fly) - if your setup supports it, the output is colored too:<br>
-    ![Kint CLI output](http://i.imgur.com/6B9MCLw.png)
- * **Debug backtraces** are finally fully readable, actually informative and a pleasure to the eye.
- * Kint has been **in active development since 2010** and is shipped with [Drupal 8](https://www.drupal.org/) by default as part of its devel suite. You can trust it not being abandoned or getting left behind in features.
- * Variable content is **displayed in the most informative way** - and you *never, ever* miss anything! Kint guarantees you see every piece of physically available information about everything you are dumping*;
-   * <sup>in some cases, the content is truncated where it would otherwise be too large to view anyway - but the user is always made aware of that;</sup>
- * Some variable content types have an alternative display - for example you will be able see `JSON` in its raw form - but also as an associative array:<br>
-    ![Kint displays data intelligently](http://i.imgur.com/9P57Ror.png)<br>
-    There are more than ten custom variable type displays inbuilt and more are added periodically.
-
+* **Variable name** is displayed (unique feature!);
+* **CLI mode**
+* Keyboard shortcuts! Just type <kbd>d</kbd> and the rest is just self-explanatory.
+* **Debug backtraces** are finally fully readable and actually informative.
+* Variable content is **displayed in the most informative way** - and you *never, ever* miss any physically available
+  information about anything you are dumping.
+* Custom display for a lot of recognized types:
+  ![](.github/img/alternative-view.png)
 
 ## Installation and Usage
 
-One of the main goals of Kint is to be **zero setup**.
+One of the main goals of Sage is to be **zero setup**.
 
-[Download the archive](https://github.com/raveren/kint/archive/master.zip) and simply
+[Download the phar](https://github.com/php-sage/sage/raw/main/sage.phar) and simply
+
 ```php
 <?php
-require '/kint/Kint.class.php';
+require '/sage.phar';
 ```
 
 **Or, if you use Composer:**
 
-```json
-"require": {
-   "raveren/kint": "^1.0"
-}
+```bash
+composer require php-sage/sage --dev
 ```
 
-Or just run `composer require raveren/kint`
-
-**That's it, you can now use Kint to debug your code:**
+**That's it, you can now use Sage to debug your code:**
 
 ```php
 ########## DUMP VARIABLE ###########################
-Kint::dump($GLOBALS, $_SERVER); // pass any number of parameters
 
-// or simply use d() as a shorthand:
-d($_SERVER);
+sage($GLOBALS, $_SERVER); // any number of parameters
+
+# or you can go shorter:
+d($GLOBALS, $_SERVER);
+
+# or you can go the verbose way, it's all the same:
+Sage::dump($GLOBALS, $_SERVER); 
+
+
+
+
+# s() will display a more basic, javascript-free display (but with colors)
+s($GLOBALS, $_SERVER);
+
+# prepending a tilde will make the output even more basic (rich->basic and basic->plain text)
+~d($GLOBALS, $_SERVER); // how this works: https://stackoverflow.com/a/69890023/179104
+
 
 
 ########## DEBUG BACKTRACE #########################
-Kint::trace();
+Sage::trace();
 // or via shorthand:
 d(1);
+// you can even pass the result of debug_trace and it will be recognized
+Sage::dump( debug_backtrace() );
 
 
-############# BASIC OUTPUT #########################
-# this will show a basic javascript-free display
-s($GLOBALS);
 
+########## DUMP AND DIE #########################
+dd($GLOBALS, $_SERVER); // dd() might be taken by your framework
+ddd($GLOBALS, $_SERVER); // so here are some equivalent altenratives
+saged($GLOBALS, $_SERVER);
 
-######### WHITESPACE FORMATTED OUTPUT ##############
-# this will be garbled if viewed in browser as it is whitespace-formatted only
-~d($GLOBALS); // just prepend with the tilde
+sd($GLOBALS, $_SERVER); // for plain display
+
 
 
 ########## MISCELLANEOUS ###########################
-# this will disable kint completely
-Kint::enabled(false);
+# this will disable Sage completely
+Sage::enabled(false);
 
 ddd('Get off my lawn!'); // no effect
 
-Kint::enabled(true);
-ddd( 'this line will stop the execution flow because Kint was just re-enabled above!' );
-
-
 ```
-
-Note, that Kint *does* have configuration (like themes and IDE integration!), but it's in need of being rewritten, so I'm not documenting it yet.
 
 ## Tips & Tricks
 
-  * Kint is enabled by default, call `Kint::enabled(false);` to turn its funcionality completely off. The *best practice* is to enable Kint in DEVELOPMENT environment only (or for example `Kint::enabled($_SERVER['REMOTE_ADDR'] === '<your IP>');`) - so even if you accidentally leave a dump in production, no one will know.
-  * `sd()` and `ddd()` are shorthands for `s();die;` and `d();die;` respectively.
-  * Kint has *keyboard shortcuts*! When Kint is visible, press <kbd>D</kbd> on the keyboard and you will be able to traverse the tree with arrows and <kbd>tab</kbd> keys - and expand/collapse nodes with <kbd>space</kbd> or <kbd>enter</kbd>.
-  * Double clicking the `[+]` sign in the output will expand/collapse ALL nodes; triple clicking big blocks of text will select it all.
-  * To catch output from Kint just assign it to a variable<sup>beta</sup>
-
- ```php
-$o = Kint::dump($GLOBALS);
-// yes, the assignment is automatically detected, and $o
-// now holds whatever was going to be printed otherwise.
-
-// it also supports modifiers (read on) for the variable:
-~$o = Kint::dump($GLOBALS); // this output will be in whitespace
-```
-  * There are a couple of real-time modifiers you can use:
+* Sage is enabled by default, call `Sage::enabled(false);` to turn it completely off. You might consider is to enable
+  Sage in DEVELOPMENT environment only (or for example `Sage::enabled($_SERVER['REMOTE_ADDR'] === '<your IP>');`) - so
+  even if you accidentally leave a dump in production, it will remain silent and not throw `Function not found`.
+* Double clicking the `[+]` sign in the output will expand/collapse ALL nodes; **triple clicking** big blocks of text will
+  select it all.
+* Clicking the tiny arrows on the right of the output open it in a separate window where you can keep it for comparison.
+* If a variable is an object, its classname can be clicked to open the class in your IDE.
+* There are a couple of real-time modifiers you can use:
     * `~d($var)` this call will output in plain text format.
-    * `+d($var)` will disregard depth level limits and output everything (careful, this can hang your browser on huge objects)
+    * `+d($var)` will disregard depth level limits and output everything (careful, this can hang your browser on huge
+      objects)
     * `!d($var)` will show expanded rich output.
-    * `-d($var)` will attempt to `ob_clean` the previous output so if you're dumping something inside a HTML page, you will still see Kint output.
-  You can combine modifiers too: `~+d($var)`
-  * To force a specific dump output type just pass it to the `Kint::enabled()` method. Available options are: `Kint::MODE_RICH` (default), `Kint::MODE_PLAIN`, `Kint::MODE_WHITESPACE` and `Kint::MODE_CLI`:
+    * `-d($var)` will attempt to `ob_clean` the previous output so if you're dumping something inside a HTML page, you
+      will still see Sage output. You can combine some modifiers too: `~+d($var)`
+* To force a specific dump output type just pass it to the `Sage::enabled()` method. Available options
+  are: `Sage::MODE_RICH` (default), `Sage::MODE_PLAIN`, `Sage::MODE_WHITESPACE` and `Sage::MODE_CLI`:
 
- ```php
-Kint::enabled(Kint::MODE_WHITESPACE);
-$kintOutput = Kint::dump($GLOBALS);
-// now $kintOutput can be written to a text log file and
+```php
+Sage::enabled(Sage::MODE_WHITESPACE);
+$sageOutput = Sage::dump($GLOBALS); 
+// now $sageOutput can be written to a text log file and 
 // be perfectly readable from there
 ```
-  * To change display theme, use `Kint::$theme = '<theme name>';` where available options are: `'original'` (default), `'solarized'`, `'solarized-dark'` and `'aante-light'`. Here's an (outdated) preview:<br>
-  ![Kint themes](http://raveren.github.io/kint/img/theme-preview.png)
-  * Kint also includes a naïve profiler you may find handy. It's for determining relatively which code blocks take longer than others:
 
- ```php
-Kint::dump( microtime() ); // just pass microtime()
+* To change the **theme**, use `Sage::$theme = '<theme name>';` where available options are: `'original'` (default)
+  , `'solarized'`, `'solarized-dark'` and `'aante-light'`.
+
+  ![](.github/img/theme-preview.png)
+* Sage also includes a naïve profiler you may find handy. It's for determining relatively which code blocks take longer
+  than others:
+
+```php
+Sage::dump( microtime() ); // just pass microtime()
 sleep( 1 );
-Kint::dump( microtime(), 'after sleep(1)' );
+Sage::dump( microtime(), 'after sleep(1)' );
 sleep( 2 );
 ddd( microtime(), 'final call, after sleep(2)' );
 ```
-  ![Kint profiling feature](http://i.imgur.com/tmHUMW4.png)
-  * See the tiny arrows on the right of the output? Click them (not in the image though :) to open its parent node in a separate browser window.
 
+![](.github/img/profiling.png)
 ----
 
 ### Author
 
-**Rokas Šleinius** (raveren)
+**Rokas Šleinius** ([Raveren](https://github.com/raveren))
 
 ### License
 
 Licensed under the MIT License
+
+### Why does this look so much like Kint?
+
+Because it **IS** [Kint](https://github.com/kint-php/kint), and I am its author, however the project
+was [blatantly stolen](https://github.com/kint-php/kint/commit/1ea81f3add81b586756515673f8364f60feb86a3) from me by a
+malicious contributor!
+
+Instead of fighting windmills, I chose to fork and rename the last good version and continue under a new name!
+
+---
+
+Hope you love using Sage as much as I love creating it!

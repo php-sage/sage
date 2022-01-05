@@ -1,19 +1,27 @@
 <?php
 
-class Kint_Parsers_Json extends kintParser
+/**
+ * @internal
+ * @noinspection AutoloadingIssuesInspection
+ */
+class Sage_Parsers_Json extends SageParser
 {
-	protected function _parse( & $variable )
-	{
-		if ( !KINT_PHP53
-			|| !is_string( $variable )
-			|| !isset( $variable{0} ) || ( $variable{0} !== '{' && $variable{0} !== '[' )
-			|| ( $json = json_decode( $variable, true ) ) === null
-		) return false;
+    protected function _parse(&$variable)
+    {
+        if (! SAGE_PHP53
+            || ! is_string($variable)
+            || ! isset($variable[0]) || ($variable[0] !== '{' && $variable[0] !== '[')
+            || ($json = json_decode($variable, true)) === null
+        ) {
+            return false;
+        }
 
-		$val = (array) $json;
-		if ( empty( $val ) ) return false;
+        $val = (array)$json;
+        if (empty($val)) {
+            return false;
+        }
 
-		$this->value = kintParser::factory( $val )->extendedValue;
-		$this->type  = 'JSON';
-	}
+        $this->value = SageParser::factory($val)->extendedValue;
+        $this->type = 'JSON';
+    }
 }
