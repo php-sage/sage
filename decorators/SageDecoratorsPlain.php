@@ -89,7 +89,7 @@ class SageDecoratorsPlain
     {
         $output = '';
         if ($level === 0) {
-            $name = $varData->name ? $varData->name : 'literal';
+            $name = $varData->name ? $varData->name : '';
             $varData->name = null;
 
             $output .= self::_title($name);

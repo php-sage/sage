@@ -7,8 +7,6 @@ and **[debug_backtrace()](http://php.net/manual/en/function.debug-backtrace.php)
 
 However, it's much, *much* more.
 
-<sup>(sorry for how messy is this readme, documentation is a WIP!)</sup>
-
 Just some of the most useful features which come out of the box:
 
 * **Variable name** is displayed (unique feature!);
