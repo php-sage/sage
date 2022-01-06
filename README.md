@@ -102,19 +102,23 @@ ddd('Get off my lawn!'); // no effect
     * `-d($var)` will attempt to `ob_clean` the previous output so if you're dumping something inside a HTML page, you
       will still see Sage output. You can combine some modifiers too: `~+d($var)`
 * To force a specific dump output type just pass it to the `Sage::enabled()` method. Available options
-  are: `Sage::MODE_RICH` (default), `Sage::MODE_PLAIN`, `Sage::MODE_WHITESPACE` and `Sage::MODE_CLI`:
+  are: `Sage::MODE_RICH` (default), `Sage::MODE_PLAIN`, `Sage::MODE_PLAINTEXT` and `Sage::MODE_CLI`:
 
 ```php
-Sage::enabled(Sage::MODE_WHITESPACE);
+Sage::enabled(Sage::MODE_PLAINTEXT);
 $sageOutput = Sage::dump($GLOBALS); 
 // now $sageOutput can be written to a text log file and 
 // be perfectly readable from there
 ```
 
-* To change the **theme**, use `Sage::$theme = '<theme name>';` where available options are: `'original'` (default)
-  , `'solarized'`, `'solarized-dark'` and `'aante-light'`.
-
-  ![](.github/img/theme-preview.png)
+* To change the **theme**, use `Sage::$theme`, available options are:
+  * `Sage::$theme = Sage::THEME_ORIGINAL;`
+  * `Sage::$theme = Sage::THEME_LIGHT;`
+  * `Sage::$theme = Sage::THEME_SOLARIZED;`
+  * `Sage::$theme = Sage::THEME_SOLARIZED_DARK;`
+  
+  Here's a preview:
+    ![](.github/img/theme-preview.png)
 * Sage also includes a naïve profiler you may find handy. It's for determining relatively which code blocks take longer
   than others:
 

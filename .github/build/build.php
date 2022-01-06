@@ -16,12 +16,12 @@ $phar = new Phar($pharPath);
 $phar->setStub("<?php require 'phar://'.__FILE__.'/Sage.php'; __HALT_COMPILER();");
 $phar->addFile(SAGE_DIR.'Sage.php', 'Sage.php');
 
-$includeInPhar = [
+$includeInPhar = array(
     SAGE_DIR.'/decorators',
     SAGE_DIR.'/inc',
     SAGE_DIR.'/parsers',
     SAGE_DIR.'/view/compiled'
-];
+);
 foreach (Finder::create()->files()->in($includeInPhar)->sortByName() as $file) {
     $local = substr($file, $rootPathLength);
     $phar->addFile($file, $local);

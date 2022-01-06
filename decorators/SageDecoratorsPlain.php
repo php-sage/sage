@@ -234,7 +234,7 @@ class SageDecoratorsPlain
 
                 return $optionsMap[$type].$text."\x1b[0m".$nlAfter;
                 break;
-            case Sage::MODE_WHITESPACE:
+            case Sage::MODE_PLAINTEXT:
             default:
                 return $text.$nlAfter;
                 break;
@@ -254,7 +254,7 @@ class SageDecoratorsPlain
                     $char = self::$_winShellSymbols[array_search($char, self::$_utfSymbols, true)];
                 }
                 break;
-            case Sage::MODE_WHITESPACE:
+            case Sage::MODE_PLAINTEXT:
             default:
                 break;
         }

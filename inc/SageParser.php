@@ -269,7 +269,7 @@ abstract class SageParser extends SageVariableData
             $value = str_replace("\x1b", "\\x1b", $value);
         }
 
-        if (Sage::enabled() === Sage::MODE_CLI || Sage::enabled() === Sage::MODE_WHITESPACE) {
+        if (Sage::enabled() === Sage::MODE_CLI || Sage::enabled() === Sage::MODE_PLAINTEXT) {
             return $value;
         }
 

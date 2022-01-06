@@ -304,7 +304,7 @@ class SageDecoratorsRich
 
     private static function _ideLink($file, $line)
     {
-        $shortenedPath = SageHelper::shortenPath($file);
+        $shortenedPath = htmlspecialchars(SageHelper::shortenPath($file), ENT_NOQUOTES);
         if (! Sage::$fileLinkFormat) {
             return $shortenedPath.':'.$line;
         }

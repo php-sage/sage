@@ -5,6 +5,8 @@
  */
 class SageHelper
 {
+    const VALUE_NOT_SET = "\x07";
+
     public static function errorHandler($errno, $errstr, $errfile = null, $errline = null, $errcontext = null)
     {
         if (error_reporting() & $errno) {

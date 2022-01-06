@@ -2,19 +2,19 @@
 
 /*
  * The MIT License (MIT)
- * 
- * Copyright (c) 2013 Rokas Sleinius (raveren@gmail.com)
- * 
+ *
+ * Copyright (c) 2013 Rokas Sleinius (raveren@gmail.com) and contributors (https://github.com/php-sage/sage/contributors)
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
  * the Software without restriction, including without limitation the rights to
  * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
  * the Software, and to permit persons to whom the Software is furnished to do so,
  * subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
@@ -36,7 +36,6 @@ if (defined('SAGE_DIR')) {
 define('SAGE_DIR', __DIR__.'/');
 define('SAGE_PHP53', version_compare(PHP_VERSION, '5.3.0') >= 0);
 
-require SAGE_DIR.'config.default.php';
 require SAGE_DIR.'inc/SageVariableData.php';
 require SAGE_DIR.'inc/SageParser.php';
 require SAGE_DIR.'inc/SageObject.php';
@@ -44,43 +43,101 @@ require SAGE_DIR.'inc/SageHelper.php';
 require SAGE_DIR.'decorators/SageDecoratorsRich.php';
 require SAGE_DIR.'decorators/SageDecoratorsPlain.php';
 
-if (is_readable(SAGE_DIR.'config.php')) {
-    require SAGE_DIR.'config.php';
-}
-
-# init settings
-if (! empty($GLOBALS['_sage_settings'])) {
-    Sage::enabled($GLOBALS['_sage_settings']['enabled']);
-
-    foreach ($GLOBALS['_sage_settings'] as $key => $val) {
-        property_exists('Sage', $key) and Sage::$$key = $val;
-    }
-
-    unset($GLOBALS['_sage_settings'], $key, $val);
-}
-
 class Sage
 {
-    private static $_enabledMode; # stores mode and active statuses
+    private static $_enabledMode = true;
 
-    // these are all public and 1:1 config array keys so you can switch them easily
-    public static $returnOutput;
-    public static $fileLinkFormat;
-    public static $displayCalledFrom;
-    public static $charEncodings;
-    public static $maxStrLength;
-    public static $appRootDirs;
-    public static $maxLevels;
-    public static $theme;
-    public static $expandedByDefault;
-    public static $cliDetection;
-    public static $cliColors;
+    /**
+     * @var bool return Sage output instead of ouyputting it
+     */
+    public static $returnOutput = false;
+    /**
+     * @var string format of the link to the source file in trace entries. Use %f for file path, %l for line number.
+     *
+     * [!] Defaults to ini_get('xdebug.file_link_format'); if not set.
+     *
+     * EXAMPLE (works with for phpStorm and RemoteCall Plugin):
+     *
+     * $_sageSettings['fileLinkFormat'] = 'http://localhost:8091/?message=%f:%l';
+     */
+    public static $fileLinkFormat = SageHelper::VALUE_NOT_SET;
+    /**
+     * @var bool whether to display where Sage was called from
+     */
+    public static $displayCalledFrom = true;
+    /**
+     * @var int max array/object levels to go deep, if zero no limits are applied
+     */
+    public static $maxLevels = 7;
+    /**
+     * @var int strings up until this length display inline
+     */
+    public static $maxStrLength = 80;
+    /**
+     * @var array base directories of your application that will be displayed instead of the full path. Keys are paths,
+     * values are replacement strings
+     *
+     * Use this if you need to hide the access path from output.
+     *
+     * Defaults to array( $_SERVER['DOCUMENT_ROOT'] => '&lt;ROOT&gt;' )
+     *
+     * [!] EXAMPLE (for Kohana framework (R.I.P.)):
+     *
+     * $_sageSettings['appRootDirs'] = array(
+     *      SYSPATH => 'SYSPATH',
+     *      MODPATH => 'MODPATH',
+     *      DOCROOT => 'DOCROOT',
+     * );
+     *
+     * [!] EXAMPLE #2:
+     *
+     * $_sageSettings['appRootDirs'] = array(
+     *      realpath( __DIR__ . '/../../..' ) => 'ROOT',m
+     * );
+     */
+    public static $appRootDirs = SageHelper::VALUE_NOT_SET;
+    /**
+     * @var bool draw rich output already expanded without having to click
+     */
+    public static $expandedByDefault = false;
+    /**
+     * @var bool enable detection when Sage is command line. Formats output with whitespace only; does not HTML-escape it
+     */
+    public static $cliDetection = true;
+    /**
+     * @var bool in addition to above setting, enable detection when Sage is run in *UNIX* command line.
+     * Attempts to add coloring, but if seen as plain text, the color information is visible as gibberish
+     */
+    public static $cliColors = true;
+    /**
+     * @var string name of theme for rich view
+     */
+    public static $theme = self::THEME_ORIGINAL;
+    /**
+     * @var array possible alternative char encodings in order of probability,
+     */
+    public static $charEncodings = array(
+        'UTF-8',
+        'Windows-1252', # Western; includes iso-8859-1, replace this with windows-1251 if you have Russian code
+        'euc-jp',       # Japanese
+    );
 
     const MODE_RICH = 'r';
-    const MODE_WHITESPACE = 'w';
+    const MODE_PLAINTEXT = 'w';
     const MODE_CLI = 'c';
     const MODE_PLAIN = 'p';
 
+    /** @deprecated in favor of Sage::MODE_PLAINTEXT will be removed in the next version! */
+    const MODE_WHITESPACE = 'w';
+
+    const THEME_ORIGINAL = 'original';
+    const THEME_LIGHT = 'aante-light';
+    const THEME_SOLARIZED_DARK = 'solarized-dark';
+    const THEME_SOLARIZED = 'solarized';
+
+    /**
+     * @var array append your custom dumper functions to this array for backtraces and modifiers to work properly
+     */
     public static $aliases = array(
         'methods'   => array(
             array('Sage', 'dump'),
@@ -176,12 +233,17 @@ class Sage
      *
      * @param mixed $data
      *
-     * @return void|string
+     * @return string
      */
     public static function dump($data = null)
     {
         if (! self::enabled()) {
             return '';
+        }
+
+        if (self::$fileLinkFormat === SageHelper::VALUE_NOT_SET) {
+            self::$fileLinkFormat = ini_get('xdebug.file_link_format');
+            self::$appRootDirs = array($_SERVER['DOCUMENT_ROOT'] => '<ROOT>');
         }
 
         list($names, $modifiers, $callee, $previousCaller, $miniTrace) = self::_getCalleeInfo(
@@ -235,7 +297,7 @@ class Sage
                 $firstRunOldValue = $decorator::$firstRun;
                 $decorator::$firstRun = $firstRunTmp;
             }
-            self::enabled(self::MODE_WHITESPACE);
+            self::enabled(self::MODE_PLAINTEXT);
         }
 
         $output = '';
@@ -847,11 +909,11 @@ if (! function_exists('s')) {
             return '';
         }
 
-        if ($enabled === Sage::MODE_WHITESPACE) { # if already in whitespace, don't elevate to plain
-            $restoreMode = Sage::MODE_WHITESPACE;
+        if ($enabled === Sage::MODE_PLAINTEXT) { # if already in whitespace, don't elevate to plain
+            $restoreMode = Sage::MODE_PLAINTEXT;
         } else {
             $restoreMode = Sage::enabled( # remove cli colors in cli mode; remove rich interface in HTML mode
-                PHP_SAPI === 'cli' ? Sage::MODE_WHITESPACE : Sage::MODE_PLAIN
+                PHP_SAPI === 'cli' ? Sage::MODE_PLAINTEXT : Sage::MODE_PLAIN
             );
         }
 
@@ -878,9 +940,9 @@ if (! function_exists('sd')) {
             return '';
         }
 
-        if ($enabled !== Sage::MODE_WHITESPACE) {
+        if ($enabled !== Sage::MODE_PLAINTEXT) {
             Sage::enabled(
-                PHP_SAPI === 'cli' ? Sage::MODE_WHITESPACE : Sage::MODE_PLAIN
+                PHP_SAPI === 'cli' ? Sage::MODE_PLAINTEXT : Sage::MODE_PLAIN
             );
         }
 
