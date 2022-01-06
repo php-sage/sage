@@ -23,7 +23,7 @@ class Sage_Parsers_Timestamp extends SageParser
     }
 
 
-    protected function _parse(&$variable)
+    protected function _parse(&$variable, $originalVarData)
     {
         if (! self::_fits($variable)) {
             return false;

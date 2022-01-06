@@ -6,9 +6,9 @@
  */
 class Sage_Parsers_Json extends SageParser
 {
-    protected function _parse(&$variable)
+    protected function _parse(&$variable, $originalVarData)
     {
-        if (! SAGE_PHP53
+        if (! SageHelper::php53()
             || ! is_string($variable)
             || ! isset($variable[0]) || ($variable[0] !== '{' && $variable[0] !== '[')
             || ($json = json_decode($variable, true)) === null

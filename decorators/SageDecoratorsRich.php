@@ -60,27 +60,29 @@ class SageDecoratorsRich
 
             $output .= "</ul><ul>";
 
-            foreach ($varData->_alternatives as $var) {
+            foreach ($varData->_alternatives as $alternative) {
                 $output .= "<li>";
 
-                $var = $var->value;
+                $var = $alternative->value;
 
                 if (is_array($var)) {
                     foreach ($var as $v) {
-                        $output .= is_string($v)
-                            ? '<pre>'.self::_esc($v).'</pre>'
-                            : self::decorate($v);
+                        if (is_string($v)) {
+                            $output .=
+                                '<pre>'
+                                .($alternative->alreadyEscaped ? $v : self::_esc($v))
+                                .'</pre>';
+                        } else {
+                            $output .= self::decorate($v);
+                        }
                     }
                 } elseif (is_string($var)) {
-                    $output .= '<pre>'.self::_esc($var).'</pre>';
+                    $output .=
+                        '<pre>'
+                        .($alternative->alreadyEscaped ? $var : self::_esc($var))
+                        .'</pre>';
                 } elseif (isset($var)) {
-                    throw new Exception(
-                        'Sage has encountered an error, '
-                        .'please paste this report to https://github.com/php-sage/issues<br>'
-                        .'Error encountered at '.basename(__FILE__).':'.__LINE__.'<br>'
-                        .' variables: '
-                        .htmlspecialchars(var_export($varData->_alternatives, true), ENT_QUOTES)
-                    );
+                    // error in custom parser
                 }
 
                 $output .= "</li>";
@@ -270,7 +272,7 @@ class SageDecoratorsRich
 
             if ($varData->name !== null && $varData->name !== '') {
                 $output .= "<dfn>"
-                    .self::_esc(SageParser::decodeStr($varData->name))
+                    .SageParser::decodeStr($varData->name)
                     ."</dfn> ";
             }
 

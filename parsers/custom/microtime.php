@@ -9,7 +9,7 @@ class Sage_Parsers_Microtime extends SageParser
     private static $_times = array();
     private static $_laps = array();
 
-    protected function _parse(&$variable)
+    protected function _parse(&$variable, $originalVarData)
     {
         if (! is_string($variable) || ! preg_match('[0\.[0-9]{8} [0-9]{10}]', $variable)) {
             return false;
@@ -18,7 +18,7 @@ class Sage_Parsers_Microtime extends SageParser
         list($usec, $sec) = explode(" ", $variable);
 
         $time = (float)$usec + (float)$sec;
-        if (SAGE_PHP53) {
+        if (SageHelper::php53()) {
             $size = memory_get_usage(true);
         }
 
@@ -39,7 +39,7 @@ class Sage_Parsers_Microtime extends SageParser
         }
 
         $unit = array('B', 'KB', 'MB', 'GB', 'TB');
-        if (SAGE_PHP53) {
+        if (SageHelper::php53()) {
             $this->value .= "\n<b>MEMORY USAGE:</b> ".$size." bytes ("
                 .round($size / pow(1024, ($i = floor(log($size, 1024)))), 3).' '.$unit[$i].")";
         }

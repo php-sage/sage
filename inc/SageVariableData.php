@@ -25,6 +25,8 @@ class SageVariableData
     /** @var string inline value */
     public $value;
 
+    public $alreadyEscaped = false;
+
     /** @var SageVariableData[] array of alternative representations for same variable, don't use in custom parsers */
     public $_alternatives;
 

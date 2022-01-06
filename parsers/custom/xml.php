@@ -6,7 +6,7 @@
  */
 class Sage_Parsers_Xml extends SageParser
 {
-    protected function _parse(&$variable)
+    protected function _parse(&$variable, $originalVarData)
     {
         try {
             if (is_string($variable) && substr($variable, 0, 5) === '<?xml') {

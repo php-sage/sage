@@ -34,7 +34,6 @@ if (defined('SAGE_DIR')) {
 }
 
 define('SAGE_DIR', __DIR__.'/');
-define('SAGE_PHP53', version_compare(PHP_VERSION, '5.3.0') >= 0);
 
 require SAGE_DIR.'inc/SageVariableData.php';
 require SAGE_DIR.'inc/SageParser.php';
@@ -45,89 +44,190 @@ require SAGE_DIR.'decorators/SageDecoratorsPlain.php';
 
 class Sage
 {
+    private static $_initialized = false;
     private static $_enabledMode = true;
 
-    /**
-     * @var bool return Sage output instead of ouyputting it
+
+    /*
+     *     ██████╗ ██████╗ ███╗   ██╗███████╗██╗ ██████╗ ██╗   ██╗██████╗  █████╗ ████████╗██╗ ██████╗ ███╗   ██╗
+     *    ██╔════╝██╔═══██╗████╗  ██║██╔════╝██║██╔════╝ ██║   ██║██╔══██╗██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║
+     *    ██║     ██║   ██║██╔██╗ ██║█████╗  ██║██║  ███╗██║   ██║██████╔╝███████║   ██║   ██║██║   ██║██╔██╗ ██║
+     *    ██║     ██║   ██║██║╚██╗██║██╔══╝  ██║██║   ██║██║   ██║██╔══██╗██╔══██║   ██║   ██║██║   ██║██║╚██╗██║
+     *    ╚██████╗╚██████╔╝██║ ╚████║██║     ██║╚██████╔╝╚██████╔╝██║  ██║██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║
+     *     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
      */
-    public static $returnOutput = false;
+
     /**
-     * @var string format of the link to the source file in trace entries. Use %f for file path, %l for line number.
+     * @var string format of the link to source file. Use %f for full file path, %l for line number.
      *
-     * [!] Defaults to ini_get('xdebug.file_link_format'); if not set.
+     * Example:
+     *             // works with for PHPStorm and RemoteCall Plugin
+     *             Sage::fileLinkFormat = 'http://localhost:8091/?message=%f:%l';
      *
-     * EXAMPLE (works with for phpStorm and RemoteCall Plugin):
+     * Default:
+     *             ini_get('xdebug.file_link_format') ?: 'phpstorm://open?file=%f&line=%l'
      *
-     * $_sageSettings['fileLinkFormat'] = 'http://localhost:8091/?message=%f:%l';
      */
-    public static $fileLinkFormat = SageHelper::VALUE_NOT_SET;
+    public static $fileLinkFormat;
+
+
+    /**
+     * @var string the full path (not URL) to your project folder on your remote dev server, be this Homestead, Docker,
+     *             or in the cloud.
+     *
+     * Default:
+     *             null
+     */
+    public static $fileLinkServerPath;
+
+
+    /**
+     * @var string the full path (not URL) to your project on your local machine, the way your IDE or editor accesses
+     *             the files.
+     *
+     * Default:
+     *             null
+     */
+    public static $fileLinkLocalPath;
+
+
     /**
      * @var bool whether to display where Sage was called from
+     *
+     * Default:
+     *           true
      */
-    public static $displayCalledFrom = true;
+    public static $displayCalledFrom;
+
+
     /**
-     * @var int max array/object levels to go deep, if zero no limits are applied
+     * @var int max array/object levels to go deep, set to zero/false to disable
+     *
+     * Default:
+     *          7
      */
-    public static $maxLevels = 7;
+    public static $maxLevels;
+
+
     /**
-     * @var int strings up until this length display inline
+     * @var string theme for rich view
+     *
+     * Example:
+     *             Sage::$theme = Sage::THEME_ORIGINAL;
+     *             Sage::$theme = Sage::THEME_LIGHT;
+     *             Sage::$theme = Sage::THEME_SOLARIZED;
+     *             Sage::$theme = Sage::THEME_SOLARIZED_DARK;
+     *
+     * Default:
+     *             Sage::THEME_ORIGINAL
      */
-    public static $maxStrLength = 80;
+    public static $theme;
+
+
     /**
-     * @var array base directories of your application that will be displayed instead of the full path. Keys are paths,
-     * values are replacement strings
+     * @var array directories of your application that will be displayed instead of the full path. Keys are paths,
+     *            values are replacement strings.
      *
-     * Use this if you need to hide the access path from output.
+     *            Use this if you need to hide the access path from output.
      *
-     * Defaults to array( $_SERVER['DOCUMENT_ROOT'] => '&lt;ROOT&gt;' )
+     * Example (for Kohana framework (R.I.P.)):
+     *            Sage::appRootDirs = array(
+     *                 SYSPATH => 'SYSPATH',
+     *                 MODPATH => 'MODPATH',
+     *                 DOCROOT => 'DOCROOT',
+     *            );
      *
-     * [!] EXAMPLE (for Kohana framework (R.I.P.)):
+     * Example #2:
+     *            Sage::appRootDirs = array( realpath( __DIR__ . '/../../..' ) => 'ROOT' );
      *
-     * $_sageSettings['appRootDirs'] = array(
-     *      SYSPATH => 'SYSPATH',
-     *      MODPATH => 'MODPATH',
-     *      DOCROOT => 'DOCROOT',
-     * );
-     *
-     * [!] EXAMPLE #2:
-     *
-     * $_sageSettings['appRootDirs'] = array(
-     *      realpath( __DIR__ . '/../../..' ) => 'ROOT',m
-     * );
+     * Default:
+     *            array( $_SERVER['DOCUMENT_ROOT'] => 'ROOT' )
      */
-    public static $appRootDirs = SageHelper::VALUE_NOT_SET;
+    public static $appRootDirs;
+
+
     /**
      * @var bool draw rich output already expanded without having to click
+     *
+     * Default:
+     *           false
      */
-    public static $expandedByDefault = false;
+    public static $expandedByDefault;
+
+
     /**
-     * @var bool enable detection when Sage is command line. Formats output with whitespace only; does not HTML-escape it
+     * @var bool enable detection when running in command line and adjust output format accordingly.
+     *
+     * Default:
+     *           true
      */
-    public static $cliDetection = true;
+    public static $cliDetection;
+
+
     /**
      * @var bool in addition to above setting, enable detection when Sage is run in *UNIX* command line.
      * Attempts to add coloring, but if seen as plain text, the color information is visible as gibberish
+     *
+     * Default:
+     *           true
      */
-    public static $cliColors = true;
-    /**
-     * @var string name of theme for rich view
-     */
-    public static $theme = self::THEME_ORIGINAL;
+    public static $cliColors;
+
+
     /**
      * @var array possible alternative char encodings in order of probability,
+     *
+     * Default:
+     *           array(
+     *                 'UTF-8',
+     *                 'Windows-1252', # Western; includes iso-8859-1, replace this with windows-1251 if you have Russian code
+     *                 'euc-jp',       # Japanese
+     *           );
      */
-    public static $charEncodings = array(
-        'UTF-8',
-        'Windows-1252', # Western; includes iso-8859-1, replace this with windows-1251 if you have Russian code
-        'euc-jp',       # Japanese
-    );
+    public static $charEncodings;
+
+    /**
+     * @var bool Sage returns output instead of echo
+     *
+     * Default:
+     *           false
+     */
+    public static $returnOutput;
+
+
+    /**
+     * @var array|string append custom dumper function names for backtraces, variable name detection and
+     *                   modifiers to work properly. Accepts array or comma-separated string
+     *
+     * Example :
+     *            function doom_dump($args)
+     *            {
+     *                echo "DOOOM!";
+     *                d(...func_get_args());
+     *            }
+     *            Sage::$aliases = 'doom_dump';
+     *
+     * Default:
+     *            null
+     */
+    public static $aliases;
+
+    /*
+     *     ██████╗ ██████╗ ███╗   ██╗███████╗████████╗ █████╗ ███╗   ██╗████████╗███████╗
+     *    ██╔════╝██╔═══██╗████╗  ██║██╔════╝╚══██╔══╝██╔══██╗████╗  ██║╚══██╔══╝██╔════╝
+     *    ██║     ██║   ██║██╔██╗ ██║███████╗   ██║   ███████║██╔██╗ ██║   ██║   ███████╗
+     *    ██║     ██║   ██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║╚██╗██║   ██║   ╚════██║
+     *    ╚██████╗╚██████╔╝██║ ╚████║███████║   ██║   ██║  ██║██║ ╚████║   ██║   ███████║
+     *     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝
+     *
+     */
 
     const MODE_RICH = 'r';
-    const MODE_PLAINTEXT = 'w';
+    const MODE_TEXT_ONLY = 'w';
     const MODE_CLI = 'c';
     const MODE_PLAIN = 'p';
 
-    /** @deprecated in favor of Sage::MODE_PLAINTEXT will be removed in the next version! */
+    /** @deprecated in favor of Sage::MODE_TEXT_ONLY will be removed in the next version! */
     const MODE_WHITESPACE = 'w';
 
     const THEME_ORIGINAL = 'original';
@@ -135,38 +235,30 @@ class Sage
     const THEME_SOLARIZED_DARK = 'solarized-dark';
     const THEME_SOLARIZED = 'solarized';
 
-    /**
-     * @var array append your custom dumper functions to this array for backtraces and modifiers to work properly
+
+    /*
+     *    ███████╗███╗   ██╗ █████╗ ██████╗ ██╗     ███████╗██████╗
+     *    ██╔════╝████╗  ██║██╔══██╗██╔══██╗██║     ██╔════╝██╔══██╗
+     *    █████╗  ██╔██╗ ██║███████║██████╔╝██║     █████╗  ██║  ██║
+     *    ██╔══╝  ██║╚██╗██║██╔══██║██╔══██╗██║     ██╔══╝  ██║  ██║
+     *    ███████╗██║ ╚████║██║  ██║██████╔╝███████╗███████╗██████╔╝
+     *    ╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚═════╝
      */
-    public static $aliases = array(
-        'methods'   => array(
-            array('Sage', 'dump'),
-            array('Sage', 'trace'),
-        ),
-        'functions' => array(
-            'd',
-            'sage',
-            'dd',
-            'saged',
-            'ddd',
-            's',
-            'sd',
-        ),
-    );
 
     /**
-     * Enables or disables Sage, can globally enforce the rendering mode. If called without parameters, returns the
-     * current mode.
+     * Enables or disables Sage, and forces display mode. Also returns currently active mode.
      *
      * @param mixed $forceMode
-     *                     null or void - return current mode
-     *                     false        - disable (no output)
-     *                     true         - enable and detect cli automatically
-     *                     Sage::MODE_* - enable and force selected mode disregarding detection and function
-     *                     shorthand (s()/d()), note that you can still override this
-     *                     with the "~" modifier
+     *                        null or void - return current mode
+     *                        false        - disable Sage
+     *                        true         - enable Sage and allow it to auto-detect the best formatting
+     *                        Sage::MODE_* - enable and force selected mode:
+     *                        -      Sage::MODE_RICH         Rich Text HTML
+     *                        -      Sage::MODE_PLAIN        Plain-view, HTML formatted output
+     *                        -      Sage::MODE_CLI          Console-formatted colored output
+     *                        -      Sage::MODE_TEXT_ONLY    Non-escaped plain text mode
      *
-     * @return mixed        previously set value if a new one is passed
+     * @return mixed            previously set value
      */
     public static function enabled($forceMode = null)
     {
@@ -181,6 +273,16 @@ class Sage
         # ...and a getter
         return self::$_enabledMode;
     }
+
+    /*
+     *    ████████╗██████╗  █████╗  ██████╗███████╗    ██╗██████╗ ██╗   ██╗███╗   ███╗██████╗
+     *    ╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██╔════╝   ██╔╝██╔══██╗██║   ██║████╗ ████║██╔══██╗
+     *       ██║   ██████╔╝███████║██║     █████╗    ██╔╝ ██║  ██║██║   ██║██╔████╔██║██████╔╝
+     *       ██║   ██╔══██╗██╔══██║██║     ██╔══╝   ██╔╝  ██║  ██║██║   ██║██║╚██╔╝██║██╔═══╝
+     *       ██║   ██║  ██║██║  ██║╚██████╗███████╗██╔╝   ██████╔╝╚██████╔╝██║ ╚═╝ ██║██║
+     *       ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝╚═╝    ╚═════╝  ╚═════╝ ╚═╝     ╚═╝╚═╝
+     *
+     */
 
     /**
      * Prints a debug backtrace, same as Sage::dump(1)
@@ -241,9 +343,8 @@ class Sage
             return '';
         }
 
-        if (self::$fileLinkFormat === SageHelper::VALUE_NOT_SET) {
-            self::$fileLinkFormat = ini_get('xdebug.file_link_format');
-            self::$appRootDirs = array($_SERVER['DOCUMENT_ROOT'] => '<ROOT>');
+        if (! self::$_initialized) {
+            self::_init();
         }
 
         list($names, $modifiers, $callee, $previousCaller, $miniTrace) = self::_getCalleeInfo(
@@ -297,7 +398,7 @@ class Sage
                 $firstRunOldValue = $decorator::$firstRun;
                 $decorator::$firstRun = $firstRunTmp;
             }
-            self::enabled(self::MODE_PLAINTEXT);
+            self::enabled(self::MODE_TEXT_ONLY);
         }
 
         $output = '';
@@ -307,7 +408,7 @@ class Sage
 
         $trace = false;
         if ($names === array(null) && func_num_args() === 1 && $data === 1) { # Sage::dump(1) shorthand
-            $trace = SAGE_PHP53 ? debug_backtrace(true) : debug_backtrace();
+            $trace = SageHelper::php53() ? debug_backtrace(true) : debug_backtrace();
         } elseif (func_num_args() === 1 && is_array($data)) {
             $trace = $data; # test if the single parameter is result of debug_backtrace()
         }
@@ -365,6 +466,18 @@ class Sage
         return '';
     }
 
+
+    /*
+     *    ██████╗ ██████╗ ██╗██╗   ██╗ █████╗ ████████╗███████╗
+     *    ██╔══██╗██╔══██╗██║██║   ██║██╔══██╗╚══██╔══╝██╔════╝
+     *    ██████╔╝██████╔╝██║██║   ██║███████║   ██║   █████╗
+     *    ██╔═══╝ ██╔══██╗██║╚██╗ ██╔╝██╔══██║   ██║   ██╔══╝
+     *    ██║     ██║  ██║██║ ╚████╔╝ ██║  ██║   ██║   ███████╗
+     *    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝  ╚═╝  ╚═╝   ╚═╝   ╚══════╝
+     *
+     */
+
+
     /**
      * trace helper, shows the place in code inline
      *
@@ -376,7 +489,7 @@ class Sage
      */
     private static function _showSource($file, $lineNumber, $padding = 7)
     {
-        if (! $file or ! is_readable($file)) {
+        if (! $file || ! is_readable($file)) {
             # continuing will cause errors
             return false;
         }
@@ -445,7 +558,9 @@ class Sage
             if (self::_stepIsInternal($step)) {
                 $previousCaller = $prevStep;
                 break;
-            } elseif (isset($step['file'], $step['line'])) {
+            }
+
+            if (isset($step['file'], $step['line'])) {
                 unset($step['object'], $step['args']);
                 array_unshift($miniTrace, $step);
             }
@@ -481,8 +596,6 @@ class Sage
             }
         }
 
-        // todo if more than one call in one line - not possible to determine variable names
-        // todo does not recognize string concat
         # get the position of the last call to the function
         preg_match_all("
             [
@@ -611,7 +724,7 @@ class Sage
     }
 
     /**
-     * removes comments and zaps whitespace & <?php tags from php code, makes for easier further parsing
+     * removes comments and zaps whitespace & < ?php tags from php code, makes for easier further parsing
      *
      * @param string $source
      *
@@ -662,17 +775,40 @@ class Sage
      */
     private static function _stepIsInternal($step)
     {
+        $aliases = array(
+            'methods'   => array(
+                array('sage', 'dump'),
+                array('sage', 'trace'),
+            ),
+            'functions' => array(
+                'd',
+                'sage',
+                'dd',
+                'saged',
+                'ddd',
+                's',
+                'sd',
+            ),
+        );
+
+        if (! empty(self::$aliases)) {
+            $aliases['functions'] = array_merge(
+                $aliases['functions'],
+                is_string(self::$aliases) ? explode(',', self::$aliases) : self::$aliases
+            );
+        }
+
         if (isset($step['class'])) {
-            foreach (self::$aliases['methods'] as $alias) {
+            foreach ($aliases['methods'] as $alias) {
                 if ($alias[0] === strtolower($step['class']) && $alias[1] === strtolower($step['function'])) {
                     return true;
                 }
             }
 
             return false;
-        } else {
-            return in_array(strtolower($step['function']), self::$aliases['functions'], true);
         }
+
+        return in_array(strtolower($step['function']), $aliases['functions'], true);
     }
 
     private static function _parseTrace(array $data)
@@ -734,7 +870,7 @@ class Sage
 
             $function = $step['function'];
 
-            if (in_array($function, ['include', 'include_once', 'require', 'require_once'])) {
+            if (in_array($function, array('include', 'include_once', 'require', 'require_once'))) {
                 if (empty($step['args'])) {
                     # no arguments
                     $args = array();
@@ -751,7 +887,7 @@ class Sage
                         if (isset($step['class'])) {
                             if (method_exists($step['class'], $function)) {
                                 $reflection = new ReflectionMethod($step['class'], $function);
-                            } elseif (isset($step['type']) && $step['type'] == '::') {
+                            } elseif (isset($step['type']) && $step['type'] === '::') {
                                 $reflection = new ReflectionMethod($step['class'], '__callStatic');
                             } else {
                                 $reflection = new ReflectionMethod($step['class'], '__call');
@@ -800,8 +936,62 @@ class Sage
         return $output;
     }
 
+    private static function _initSetting($name, $default)
+    {
+        if (! isset(self::$$name)) {
+            $value = get_cfg_var('sage.'.$name);
+            if (! $value) {
+                $value = $default;
+            }
 
+            self::$$name = $value;
+        }
+    }
+
+    private static function _init()
+    {
+        // first load defaults for configuration. In this order:
+        // 1. If value is set, it means user explicitly set it
+        // 2. TODO: composer.json
+        // 3. If present in get_cfg_var means user put it into his php.ini
+        // 4. Load default from Sage
+        self::_initSetting(
+            'fileLinkFormat',
+            get_cfg_var('sage.fileLinkFormat')
+                ? get_cfg_var('sage.fileLinkFormat') // we're fully compatible with PHP 5.1+
+                : 'phpstorm://open?file=%f&line=%l'
+        );
+        self::_initSetting('fileLinkServerPath', null);
+        self::_initSetting('fileLinkLocalPath', null);
+        self::_initSetting('displayCalledFrom', true);
+        self::_initSetting('maxLevels', 7);
+        self::_initSetting('theme', self::THEME_ORIGINAL);
+        self::_initSetting('appRootDirs', array($_SERVER['DOCUMENT_ROOT'] => 'ROOT'));
+        self::_initSetting('expandedByDefault', false);
+        self::_initSetting('cliDetection', true);
+        self::_initSetting('cliColors', true);
+        self::_initSetting('charEncodings', array(
+                'UTF-8',
+                'Windows-1252', # Western; includes iso-8859-1, replace this with windows-1251 if you have
+                'euc-jp',       # Japanese
+            )
+        );
+        self::_initSetting('returnOutput', false);
+        self::_initSetting('aliases', null);
+    }
 }
+
+
+/*
+ *    ███████╗██╗  ██╗ ██████╗ ██████╗ ████████╗██╗  ██╗ █████╗ ███╗   ██╗██████╗ ███████╗
+ *    ██╔════╝██║  ██║██╔═══██╗██╔══██╗╚══██╔══╝██║  ██║██╔══██╗████╗  ██║██╔══██╗██╔════╝
+ *    ███████╗███████║██║   ██║██████╔╝   ██║   ███████║███████║██╔██╗ ██║██║  ██║███████╗
+ *    ╚════██║██╔══██║██║   ██║██╔══██╗   ██║   ██╔══██║██╔══██║██║╚██╗██║██║  ██║╚════██║
+ *    ███████║██║  ██║╚██████╔╝██║  ██║   ██║   ██║  ██║██║  ██║██║ ╚████║██████╔╝███████║
+ *    ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝
+ *
+ */
+
 
 if (! function_exists('d')) {
     /**
@@ -909,11 +1099,11 @@ if (! function_exists('s')) {
             return '';
         }
 
-        if ($enabled === Sage::MODE_PLAINTEXT) { # if already in whitespace, don't elevate to plain
-            $restoreMode = Sage::MODE_PLAINTEXT;
+        if ($enabled === Sage::MODE_TEXT_ONLY) { # if already in whitespace, don't elevate to plain
+            $restoreMode = Sage::MODE_TEXT_ONLY;
         } else {
             $restoreMode = Sage::enabled( # remove cli colors in cli mode; remove rich interface in HTML mode
-                PHP_SAPI === 'cli' ? Sage::MODE_PLAINTEXT : Sage::MODE_PLAIN
+                PHP_SAPI === 'cli' ? Sage::MODE_TEXT_ONLY : Sage::MODE_PLAIN
             );
         }
 
@@ -940,9 +1130,9 @@ if (! function_exists('sd')) {
             return '';
         }
 
-        if ($enabled !== Sage::MODE_PLAINTEXT) {
+        if ($enabled !== Sage::MODE_TEXT_ONLY) {
             Sage::enabled(
-                PHP_SAPI === 'cli' ? Sage::MODE_PLAINTEXT : Sage::MODE_PLAIN
+                PHP_SAPI === 'cli' ? Sage::MODE_TEXT_ONLY : Sage::MODE_PLAIN
             );
         }
 

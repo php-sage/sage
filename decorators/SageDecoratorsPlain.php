@@ -234,7 +234,7 @@ class SageDecoratorsPlain
 
                 return $optionsMap[$type].$text."\x1b[0m".$nlAfter;
                 break;
-            case Sage::MODE_PLAINTEXT:
+            case Sage::MODE_TEXT_ONLY:
             default:
                 return $text.$nlAfter;
                 break;
@@ -254,7 +254,7 @@ class SageDecoratorsPlain
                     $char = self::$_winShellSymbols[array_search($char, self::$_utfSymbols, true)];
                 }
                 break;
-            case Sage::MODE_PLAINTEXT:
+            case Sage::MODE_TEXT_ONLY:
             default:
                 break;
         }
@@ -343,7 +343,7 @@ class SageDecoratorsPlain
 
     private static function _buildCalleeString($callee)
     {
-        if (Sage::enabled() === Sage::MODE_CLI) { // todo win/nix
+        if (Sage::enabled() === Sage::MODE_CLI) {
             return "{$callee['file']}:{$callee['line']}";
         }
 
@@ -352,11 +352,9 @@ class SageDecoratorsPlain
 
         if (Sage::enabled() === Sage::MODE_PLAIN) {
             if (strpos($url, 'http://') === 0) {
-                $calleeInfo = "<a href=\"#\"onclick=\""
-                    ."X=new XMLHttpRequest;"
-                    ."X.open('GET','{$url}');"
-                    ."X.send();"
-                    ."return!1\">{$shortenedName}</a>";
+                $calleeInfo = <<<HTML
+<a href="{$url}"onclick="X=new XMLHttpRequest;X.open('GET',this.href);X.send();return!1">{$shortenedName}</a>
+HTML;
             } else {
                 $calleeInfo = "<a href=\"{$url}\">{$shortenedName}</a>";
             }

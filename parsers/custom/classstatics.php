@@ -6,9 +6,9 @@
  */
 class Sage_Parsers_ClassStatics extends SageParser
 {
-    protected function _parse(&$variable)
+    protected function _parse(&$variable, $originalVarData)
     {
-        if (! SAGE_PHP53 || ! is_object($variable)) {
+        if (! SageHelper::php53() || ! is_object($variable)) {
             return false;
         }
 

@@ -157,11 +157,14 @@ class Sage_Parsers_Color extends SageParser
     );
 
 
-    protected function _parse(&$variable)
+    protected function _parse(&$variable, $originalVarData)
     {
         if (! self::_fits($variable)) {
             return false;
         }
+
+        // todo after we migrate from less:
+// $originalVarData->name .= "<div style=\"background:{$variable}\" class=\"_sage-color-preview\">{$variable}</div>";
 
         $this->type = 'CSS color';
         $variants = self::_convert($variable);
@@ -171,6 +174,8 @@ class Sage_Parsers_Color extends SageParser
             ."<strong>rgb :</strong> {$variants['rgb']}\n"
             .(isset($variants['name']) ? "<strong>name:</strong> {$variants['name']}\n" : '')
             ."<strong>hsl :</strong> {$variants['hsl']}";
+
+        $this->alreadyEscaped = true;
     }
 
 

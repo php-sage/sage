@@ -5,7 +5,16 @@
  */
 class SageHelper
 {
-    const VALUE_NOT_SET = "\x07";
+    private static $_php53;
+
+    public static function php53()
+    {
+        if (! isset(self::$_php53)) {
+            self::$_php53 = version_compare(PHP_VERSION, '5.3.0');
+        }
+
+        return self::$_php53;
+    }
 
     public static function errorHandler($errno, $errstr, $errfile = null, $errline = null, $errcontext = null)
     {
@@ -33,7 +42,11 @@ class SageHelper
 
     public static function getIdeLink($file, $line)
     {
-        return str_replace(['%f', '%l'], [$file, $line], Sage::$fileLinkFormat);
+        return str_replace(
+            array('%f', '%l', Sage::$fileLinkServerPath),
+            array($file, $line, Sage::$fileLinkLocalPath),
+            Sage::$fileLinkFormat
+        );
     }
 
     /**

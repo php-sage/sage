@@ -48,11 +48,12 @@ abstract class SageParser extends SageVariableData
     /**
      * main and usually single method a custom parser must implement
      *
-     * @param mixed $variable
+     * @param mixed            $variable
+     * @param SageVariableData $originalVarData
      *
      * @return mixed [!!!] false is returned if the variable is not of current type
      */
-    abstract protected function _parse(&$variable);
+    abstract protected function _parse(&$variable, $originalVarData);
 
 
     /**
@@ -100,9 +101,9 @@ abstract class SageParser extends SageVariableData
                     $alternativeDisplay->value = $object->value;
                     $alternativeDisplay->name = $name;
 
-                    foreach ($alternativeTabs as $name => $values) {
+                    foreach ($alternativeTabs as $n => $values) {
                         $alternative = SageParser::factory($values);
-                        $alternative->type = $name;
+                        $alternative->type = $n;
                         if (Sage::enabled() === Sage::MODE_RICH) {
                             empty($alternative->value) and $alternative->value = $alternative->extendedValue;
                             $alternativeDisplay->_alternatives[] = $alternative;
@@ -145,7 +146,7 @@ abstract class SageParser extends SageVariableData
                 $parser = new $className;
                 $parser->name = $name; # the parser may overwrite the name value, so set it first
 
-                if ($parser->_parse($variable) !== false) {
+                if ($parser->_parse($variable, $varData) !== false) {
                     $varData->_alternatives[] = $parser;
                 }
             }
@@ -269,7 +270,7 @@ abstract class SageParser extends SageVariableData
             $value = str_replace("\x1b", "\\x1b", $value);
         }
 
-        if (Sage::enabled() === Sage::MODE_CLI || Sage::enabled() === Sage::MODE_PLAINTEXT) {
+        if (Sage::enabled() === Sage::MODE_CLI || Sage::enabled() === Sage::MODE_TEXT_ONLY) {
             return $value;
         }
 
@@ -622,16 +623,7 @@ abstract class SageParser extends SageVariableData
         if (! self::$_placeFullStringInValue) {
 
             $strippedString = preg_replace('[\s+]', ' ', $variable);
-            if (Sage::$maxStrLength && $variableData->size > Sage::$maxStrLength) {
-
-                // encode and truncate
-                $variableData->value = '"'
-                    .self::decodeStr(self::_substr($strippedString, 0, Sage::$maxStrLength, $encoding), $encoding)
-                    .'&hellip;"';
-                $variableData->extendedValue = self::decodeStr($variable, $encoding);
-
-                return;
-            } elseif ($variable !== $strippedString) { // omit no data from display
+            if ($variable !== $strippedString) { // omit no data from display
 
                 $variableData->value = '"'.self::decodeStr($variable, $encoding).'"';
                 $variableData->extendedValue = self::decodeStr($variable, $encoding);

@@ -8,9 +8,9 @@ class Sage_Parsers_ClassMethods extends SageParser
 {
     private static $cache = array();
 
-    protected function _parse(&$variable)
+    protected function _parse(&$variable, $originalVarData)
     {
-        if (! SAGE_PHP53 || ! is_object($variable)) {
+        if (! SageHelper::php53() || ! is_object($variable)) {
             return false;
         }
 

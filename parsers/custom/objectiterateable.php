@@ -6,9 +6,9 @@
  */
 class Sage_Parsers_objectIterateable extends SageParser
 {
-    protected function _parse(&$variable)
+    protected function _parse(&$variable, $originalVarData)
     {
-        if (! SAGE_PHP53
+        if (! SageHelper::php53()
             || ! is_object($variable)
             || ! $variable instanceof Traversable
             || stripos(get_class($variable), 'zend') !== false // zf2 PDO wrapper does not play nice

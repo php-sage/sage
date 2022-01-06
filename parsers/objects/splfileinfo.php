@@ -8,7 +8,7 @@ class Sage_Objects_SplFileInfo extends SageObject
 {
     public function parse(&$variable)
     {
-        if (! SAGE_PHP53 || ! is_object($variable) || ! $variable instanceof SplFileInfo) {
+        if (! SageHelper::php53() || ! is_object($variable) || ! $variable instanceof SplFileInfo) {
             return false;
         }
 

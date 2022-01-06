@@ -6,7 +6,7 @@
  */
 class Sage_Parsers_SplObjectStorage extends SageParser
 {
-    protected function _parse(&$variable)
+    protected function _parse(&$variable, $originalVarData)
     {
         if (! is_object($variable) || ! $variable instanceof SplObjectStorage) {
             return false;

@@ -6,9 +6,9 @@
  */
 class Sage_Parsers_FsPath extends SageParser
 {
-    protected function _parse(&$variable)
+    protected function _parse(&$variable, $originalVarData)
     {
-        if (! SAGE_PHP53
+        if (! SageHelper::php53()
             || ! is_string($variable)
             || strlen($variable) > 2048
             || preg_match('[[:?<>"*|]]', $variable)

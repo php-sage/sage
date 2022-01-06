@@ -1,7 +1,7 @@
-/sage.phar binary
-/composer.lock binary
-/resources/compiled/* binary
+# Set default behavior to automatically normalize line endings.
+* text=auto
 
+/sage.phar filter=lfs diff=lfs merge=lfs -text -diff
 
 /.github/ export-ignore
 /view/themes/ export-ignore
