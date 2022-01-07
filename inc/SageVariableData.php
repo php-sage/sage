@@ -86,6 +86,10 @@ class SageVariableData
 
     protected static function _substr($string, $start, $end, $encoding = null)
     {
+        if (!isset($string)) {
+            return '';
+        }
+
         if (function_exists('mb_substr')) {
             $encoding or $encoding = self::_detectEncoding($string);
 

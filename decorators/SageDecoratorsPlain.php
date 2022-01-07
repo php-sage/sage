@@ -343,7 +343,7 @@ class SageDecoratorsPlain
 
     private static function _buildCalleeString($callee)
     {
-        if (Sage::enabled() === Sage::MODE_CLI) {
+        if (Sage::enabled() === Sage::MODE_CLI) { // todo win/nix
             return "{$callee['file']}:{$callee['line']}";
         }
 

@@ -257,6 +257,10 @@ class SageDecoratorsRich
 
     private static function _esc($str)
     {
+        if (!isset($str)) {
+            return '';
+        }
+
         return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
     }
 

@@ -65,7 +65,7 @@ class Sage
      *             Sage::fileLinkFormat = 'http://localhost:8091/?message=%f:%l';
      *
      * Default:
-     *             ini_get('xdebug.file_link_format') ?: 'phpstorm://open?file=%f&line=%l'
+     *             ini_get('xdebug.file_link_format') ?: 'http://localhost:8091?message=%f:%l'
      *
      */
     public static $fileLinkFormat;
@@ -959,7 +959,7 @@ class Sage
             'fileLinkFormat',
             get_cfg_var('sage.fileLinkFormat')
                 ? get_cfg_var('sage.fileLinkFormat') // we're fully compatible with PHP 5.1+
-                : 'phpstorm://open?file=%f&line=%l'
+                : 'http://localhost:8091?message=%f:%l' // requres RemoteCall plugin for PHPStorm
         );
         self::_initSetting('fileLinkServerPath', null);
         self::_initSetting('fileLinkLocalPath', null);

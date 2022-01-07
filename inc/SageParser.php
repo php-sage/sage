@@ -170,7 +170,7 @@ abstract class SageParser extends SageVariableData
         self::$_level = $revert['level'];
         self::$_objects = $revert['objects'];
 
-        if (strlen($varData->name) > 80) {
+        if (isset($varData->name) && strlen($varData->name) > 80) {
             $varData->name =
                 self::_substr($varData->name, 0, 37)
                 .'...'
