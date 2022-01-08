@@ -3,7 +3,7 @@ require('../Sage.php');
 
 $selectedTheme = isset($_GET['theme']) ? $_GET['theme'] : 'original';
 $allowedThemes = array();
-$dh = opendir('../view/compiled');
+$dh = opendir('../resources/compiled');
 while (($filename = readdir($dh)) !== false) {
     if (strpos($filename, '.css') !== false) {
         $allowedThemes[] = str_replace('.css', '', $filename);

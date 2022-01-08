@@ -1,4 +1,6 @@
-/config.php
 /.idea
+/config.php
+/node_modules
 /vendor
 composer.lock
+package-lock.json

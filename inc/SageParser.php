@@ -341,6 +341,7 @@ abstract class SageParser extends SageVariableData
         $isSequential = self::_isSequential($variable);
 
         if ($variableData->size > 1 && ($arrayKeys = self::_isArrayTabular($variable)) !== false) {
+            $variableData->alreadyEscaped = true;
             $variable[self::$_marker] = true; # this must be AFTER _isArrayTabular
             $firstRow = true;
             $extendedValue = '<table class="_sage-report"><thead>';
@@ -362,7 +363,7 @@ abstract class SageParser extends SageVariableData
 
                 $extendedValue .= '<tr>';
                 if ($isSequential) {
-                    $output = '<td>'.'#'.($rowIndex + 1).'</td>';
+                    $output = '<td>'.($rowIndex + 1).'</td>';
                 } else {
                     $output = self::_decorateCell(SageParser::factory($rowIndex));
                 }

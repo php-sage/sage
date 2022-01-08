@@ -20,7 +20,7 @@ $includeInPhar = array(
     SAGE_DIR.'/decorators',
     SAGE_DIR.'/inc',
     SAGE_DIR.'/parsers',
-    SAGE_DIR.'/view/compiled'
+    SAGE_DIR.'/resources/compiled'
 );
 foreach (Finder::create()->files()->in($includeInPhar)->sortByName() as $file) {
     $local = substr($file, $rootPathLength);

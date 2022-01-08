@@ -31,7 +31,9 @@ class SageDecoratorsRich
             $output .= '<span class="_sage-popup-trigger" title="Open in new window">&rarr;</span><nav></nav>';
         }
 
-        $output .= self::_drawHeader($varData).self::_esc($varData->value).'</dt>';
+        $output .= self::_drawHeader($varData);
+        $output .= $varData->alreadyEscaped ? $varData->value : self::_esc($varData->value);
+        $output .= '</dt>';
 
 
         if ($extendedPresent) {
@@ -45,7 +47,11 @@ class SageDecoratorsRich
                     $output .= self::decorate($v);
                 }
             } elseif (is_string($varData->extendedValue)) {
-                $output .= '<pre>'.self::_esc($varData->extendedValue).'</pre>';
+                if ($varData->alreadyEscaped) {
+                    $output .= $varData->extendedValue;
+                } else {
+                    $output .= '<pre>'.self::_esc($varData->extendedValue).'</pre>';
+                }
             } else {
                 $output .= self::decorate($varData->extendedValue); //it's Sage's container
             }
@@ -257,7 +263,7 @@ class SageDecoratorsRich
 
     private static function _esc($str)
     {
-        if (!isset($str)) {
+        if (! isset($str)) {
             return '';
         }
 
@@ -330,7 +336,7 @@ class SageDecoratorsRich
      */
     public static function init()
     {
-        $baseDir = SAGE_DIR.'view/compiled/';
+        $baseDir = SAGE_DIR.'resources/compiled/';
 
         if (! is_readable($cssFile = $baseDir.Sage::$theme.'.css')) {
             $cssFile = $baseDir.'original.css';

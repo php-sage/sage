@@ -38,6 +38,13 @@
     "sort-packages": true
   },
   "scripts": {
-    "build": "php .github/build/build.php"
+    "post-update-cmd": "npm ci",
+    "post-install-cmd": "@post-update-cmd",
+    "build": [
+      "@build:js",
+      "@build:php"
+    ],
+    "build:php": "php .github/build/build.php",
+    "build:js": "npm run build:js"
   }
 }
