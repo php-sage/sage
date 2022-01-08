@@ -15,7 +15,7 @@ class Sage_Objects_Smarty extends SageObject
         }
 
 
-        $this->name = 'object Smarty (v'.substr(Smarty::SMARTY_VERSION, 7).')'; # trim 'Smarty-'
+        $this->name = 'object Smarty (v'.Smarty::SMARTY_VERSION.')'; # trim 'Smarty-'
 
         $assigned = $globalAssigns = array();
         foreach ($variable->tpl_vars as $name => $var) {
