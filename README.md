@@ -36,80 +36,7 @@ saged($GLOBALS, $_SERVER); // alias for sage();die;
 sage(1); // shortcut for dumping trace
 ```
 
-
----
-# Tips & Tricks
-
-```php
-// we already saw:
-sage($GLOBALS, $_SERVER); 
-// you can also go shorter for the same result:
-d($GLOBALS, $_SERVER);
-// or you can go the verbose way, it's all equivalent:
-Sage::dump($GLOBALS, $_SERVER); 
-
-
-// s() will display a more basic, javascript-free display (but with colors)
-s($GLOBALS, $_SERVER);
-
-// prepending a tilde will make the output even more basic (rich->basic and basic->plain text)
-~d($GLOBALS, $_SERVER); // more on modifiers below
-
-// show a trace
-Sage::trace();
-d(1); // shorthand works too!
-Sage::dump( debug_backtrace() ); // you can even pass a custom result from debug_trace and it will be recognized
-
-// dump and die debugging
-dd($GLOBALS, $_SERVER); // dd() might be taken by your framework
-ddd($GLOBALS, $_SERVER); // so here are some equivalent altenratives
-saged($GLOBALS, $_SERVER);
-sd($GLOBALS, $_SERVER); // available for plain display too!
-
-// this will disable Sage completely
-Sage::enabled(false);
-ddd('Get off my lawn!'); // no effect
-```
-
-* Sage supports keyboard shortcuts! Just press <kbd>d</kbd> when viewing output and the rest is self-explanatory (p.s. vim-style `hjkl` works as well);
-* Call `Sage::enabled(Sage::MODE_PLAIN);` to switch to a  simpler, js-free output. 
-* Call `Sage::enabled(Sage::MODE_TEXT_ONLY);` for pure-plain text output which you can save or pass around by first setting `Sage::$returnOutput = true;`
-* Sage can provide a plain-text version of its output and does so automatically when invoked via PHP running in command line mode.
-
-  ![](.github/img/cli-output.png)
-
-* Double clicking the `[+]` sign in the output will expand/collapse ALL nodes; **triple clicking** a big block of text
-  will select it all.
-* Clicking the tiny arrow on the **right** of the output will open it in a separate window where you can keep it for comparison.
-* Sage supports themes:
-  
-  ![](.github/img/theme-preview.png)
-
-  For customization instructions read the section below.
-* If a variable is an object, its classname can be clicked to open the class in your IDE.
-* There are a couple of real-time modifiers you can use:
-  * `~d($var)` this call will output in plain text format.
-  * `+d($var)` will disregard depth level limits and output everything (careful, this can hang your browser on huge
-    objects)
-  * `!d($var)` will show uncollapsed rich output.
-  * `-d($var)` will attempt to `ob_clean` the previous output - useful when Sage is obscured by already present HTML.
-
-  [Here's a little bit](https://stackoverflow.com/a/69890023/179104) on how it works.
-
-
-* Sage also includes a naïve profiler you may find handy. It's for determining relatively which code blocks take longer
-  than others:
-
-```php
-Sage::dump( microtime() ); // just pass microtime()
-sleep( 1 );
-Sage::dump( microtime(), 'after sleep(1)' );
-sleep( 2 );
-ddd( microtime(), 'final call, after sleep(2)' );
-```
-
-![](.github/img/profiling.png)
-
+![](.github/img/main-screenshot.png)
 
 ----
 
@@ -281,6 +208,79 @@ function MY_dump($args)
 }
 Sage::$aliases[] = 'my_dump'; // let Sage know about it. In lowercase please.
 ```
+
+---
+# 🧙 Tips & Tricks
+
+```php
+// we already saw:
+sage($GLOBALS, $_SERVER); 
+// you can also go shorter for the same result:
+d($GLOBALS, $_SERVER);
+// or you can go the verbose way, it's all equivalent:
+Sage::dump($GLOBALS, $_SERVER); 
+
+
+// s() will display a more basic, javascript-free display (but with colors)
+s($GLOBALS, $_SERVER);
+
+// prepending a tilde will make the output even more basic (rich->basic and basic->plain text)
+~d($GLOBALS, $_SERVER); // more on modifiers below
+
+// show a trace
+Sage::trace();
+d(1); // shorthand works too!
+Sage::dump( debug_backtrace() ); // you can even pass a custom result from debug_trace and it will be recognized
+
+// dump and die debugging
+dd($GLOBALS, $_SERVER); // dd() might be taken by your framework
+ddd($GLOBALS, $_SERVER); // so here are some equivalent altenratives
+saged($GLOBALS, $_SERVER);
+sd($GLOBALS, $_SERVER); // available for plain display too!
+
+// this will disable Sage completely
+Sage::enabled(false);
+ddd('Get off my lawn!'); // no effect
+```
+
+* Sage supports keyboard shortcuts! Just press <kbd>d</kbd> when viewing output and the rest is self-explanatory (p.s. vim-style `hjkl` works as well);
+* Call `Sage::enabled(Sage::MODE_PLAIN);` to switch to a  simpler, js-free output.
+* Call `Sage::enabled(Sage::MODE_TEXT_ONLY);` for pure-plain text output which you can save or pass around by first setting `Sage::$returnOutput = true;`
+* Sage can provide a plain-text version of its output and does so automatically when invoked via PHP running in command line mode.
+
+  ![](.github/img/cli-output.png)
+
+* Double clicking the `[+]` sign in the output will expand/collapse ALL nodes; **triple clicking** a big block of text
+  will select it all.
+* Clicking the tiny arrow on the **right** of the output will open it in a separate window where you can keep it for comparison.
+* Sage supports themes:
+
+  ![](.github/img/theme-preview.png)
+
+  For customization instructions read the section below.
+* If a variable is an object, its classname can be clicked to open the class in your IDE.
+* There are a couple of real-time modifiers you can use:
+  * `~d($var)` this call will output in plain text format.
+  * `+d($var)` will disregard depth level limits and output everything (careful, this can hang your browser on huge
+    objects)
+  * `!d($var)` will show uncollapsed rich output.
+  * `-d($var)` will attempt to `ob_clean` the previous output - useful when Sage is obscured by already present HTML.
+
+  [Here's a little bit](https://stackoverflow.com/a/69890023/179104) on how it works.
+
+
+* Sage also includes a naïve profiler you may find handy. It's for determining relatively which code blocks take longer
+  than others:
+
+```php
+Sage::dump( microtime() ); // just pass microtime()
+sleep( 1 );
+Sage::dump( microtime(), 'after sleep(1)' );
+sleep( 2 );
+ddd( microtime(), 'final call, after sleep(2)' );
+```
+
+![](.github/img/profiling.png)
 
 ---
 
