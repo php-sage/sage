@@ -2,13 +2,11 @@
 
 /**
  * @internal
- * @noinspection AutoloadingIssuesInspection
  */
-abstract class SageParser extends SageVariableData
+class SageParser
 {
     private static $_level = 0;
-    private static $_customDataTypes;
-    private static $_objectParsers;
+    private static $_parsers;
     private static $_objects;
     private static $_marker;
 
@@ -19,23 +17,19 @@ abstract class SageParser extends SageVariableData
 
     private static function _init()
     {
-        $fh = opendir(SAGE_DIR.'parsers/custom/');
+        $special = array(
+            'SageParsersBlacklist', // this always goes first to stop needless processing
+            'SageParsersInbuiltTypes', // this always goes last if no other parser ceased parsing
+        );
+
+        $fh = opendir(SAGE_DIR.'parsers');
         while ($fileName = readdir($fh)) {
             if (substr($fileName, -4) !== '.php') {
                 continue;
             }
 
-            require SAGE_DIR.'parsers/custom/'.$fileName;
-            self::$_customDataTypes[] = substr($fileName, 0, -4);
-        }
-        $fh = opendir(SAGE_DIR.'parsers/objects/');
-        while ($fileName = readdir($fh)) {
-            if (substr($fileName, -4) !== '.php') {
-                continue;
-            }
-
-            require SAGE_DIR.'parsers/objects/'.$fileName;
-            self::$_objectParsers[] = substr($fileName, 0, -4);
+            require SAGE_DIR.'parsers/'.$fileName;
+            self::$_parsers[] = substr($fileName, 0, -4);
         }
     }
 
@@ -49,11 +43,14 @@ abstract class SageParser extends SageVariableData
      * main and usually single method a custom parser must implement
      *
      * @param mixed            $variable
-     * @param SageVariableData $originalVarData
+     * @param SageVariableData $varData
      *
      * @return mixed [!!!] false is returned if the variable is not of current type
      */
-    abstract protected function _parse(&$variable, $originalVarData);
+    protected static function parse(&$variable, $varData)
+    {
+        throw new RuntimeException("Each parser must override this method!");
+    }
 
 
     /**
@@ -64,14 +61,13 @@ abstract class SageParser extends SageVariableData
      * @param      $variable
      * @param null $name
      *
-     * @return \SageParser
-     * @throws Exception
+     * @return SageVariableData
      */
-    public final static function factory(&$variable, $name = null)
+    final public static function process(&$variable, $name = null)
     {
-        isset(self::$_customDataTypes) or self::_init();
+        isset(self::$_parsers) or self::_init();
 
-        # save internal data to revert after dumping to properly handle recursions etc
+        // save internal data to revert after dumping to properly handle recursions etc
         $revert = array(
             'level'   => self::$_level,
             'objects' => self::$_objects,
@@ -79,110 +75,68 @@ abstract class SageParser extends SageVariableData
 
         self::$_level++;
 
-        $varData = new SageVariableData;
-        $varData->name = $name;
+        $varData = new SageVariableData();
+        if (isset($name)) {
+            $varData->name = $name;
 
-        # first parse the variable based on its type
-        $varType = gettype($variable);
-        $varType === 'unknown type' and $varType = 'unknown'; # PHP 5.4 inconsistency
-        $methodName = '_parse_'.$varType;
+            if (strlen($varData->name) > 60) {
+                $varData->name =
+                    SageHelper::substr($varData->name, 0, 27)
+                    .'...'
+                    .SageHelper::substr($varData->name, -28, null);
+            }
+        }
 
-        # objects can be presented in a different way altogether, INSTEAD, not ALONGSIDE the generic parser
-        if ($varType === 'object') {
-            foreach (self::$_objectParsers as $parserClass) {
-                $className = 'Sage_Objects_'.$parserClass;
+        if (! self::$_skipAlternatives) {
+            // if an immediate alternative returns something that can be represented in an alternative way, don't :)
+            self::$_skipAlternatives = true;
 
-                /** @var $object SageObject */
-                $object = new $className;
-                if (($alternativeTabs = $object->parse($variable)) !== false) {
-                    self::$_skipAlternatives = true;
-                    $alternativeDisplay = new SageVariableData;
-                    $alternativeDisplay->type = $object->name;
-                    $alternativeDisplay->value = $object->value;
-                    $alternativeDisplay->name = $name;
+            foreach (self::$_parsers as $parser) {
+                /** @var SageParser $parser */
 
-                    foreach ($alternativeTabs as $n => $values) {
-                        $alternative = SageParser::factory($values);
-                        $alternative->type = $n;
-                        if (Sage::enabled() === Sage::MODE_RICH) {
-                            empty($alternative->value) and $alternative->value = $alternative->extendedValue;
-                            $alternativeDisplay->_alternatives[] = $alternative;
-                        } else {
-                            $alternativeDisplay->extendedValue[] = $alternative;
-                        }
-                    }
+                $parseResult = $parser::parse($variable, $varData);
+                if ($parseResult === true) { // special return case
+                    // use as alternative, do not continue parsing this variable and also discard all other tabs
 
                     self::$_skipAlternatives = false;
                     self::$_level = $revert['level'];
                     self::$_objects = $revert['objects'];
 
-                    return $alternativeDisplay;
+                    return $varData;
                 }
             }
+
+            self::$_skipAlternatives = false;
         }
 
+        // todo still run internal types and blacklist - what to do with eg smarty
+
+        // parse the variable based on its type
+        $varType = gettype($variable);
+        $varType === 'unknown type' and $varType = 'unknown'; // PHP 5.4 inconsistency
+        $methodName = '_parse_'.$varType;
         if (! method_exists(__CLASS__, $methodName)) {
             $varData->type = $varType; // resource (closed) for example
 
             return $varData;
         }
-
-        # base type parser returning false means "stop processing further": e.g. recursion
+        // base type parser returning false means "stop processing further": e.g. recursion
         if (self::$methodName($variable, $varData) === false) {
             self::$_level--;
 
             return $varData;
         }
 
-        if (Sage::enabled() === Sage::MODE_RICH && ! self::$_skipAlternatives) {
-            # if an alternative returns something that can be represented in an alternative way, don't :)
-            self::$_skipAlternatives = true;
-
-            # now check whether the variable can be represented in a different way
-            foreach (self::$_customDataTypes as $parserClass) {
-                $className = 'Sage_Parsers_'.$parserClass;
-
-                /** @var $parser SageParser */
-                $parser = new $className;
-                $parser->name = $name; # the parser may overwrite the name value, so set it first
-
-                if ($parser->_parse($variable, $varData) !== false) {
-                    $varData->_alternatives[] = $parser;
-                }
-            }
-
-
-            # if alternatives exist, push extendedValue to their front and display it as one of alternatives
-            if (! empty($varData->_alternatives) && isset($varData->extendedValue)) {
-                $_ = new SageVariableData;
-
-                $_->value = $varData->extendedValue;
-                $_->type = 'contents';
-                $_->size = null;
-
-                array_unshift($varData->_alternatives, $_);
-                $varData->extendedValue = null;
-            }
-
-            self::$_skipAlternatives = false;
-        }
 
         self::$_level = $revert['level'];
         self::$_objects = $revert['objects'];
 
-        if (isset($varData->name) && strlen($varData->name) > 80) {
-            $varData->name =
-                self::_substr($varData->name, 0, 37)
-                .'...'
-                .self::_substr($varData->name, -38, null);
-        }
-
         return $varData;
     }
 
-    private static function _checkDepth()
+    private static function isDepthLimit()
     {
-        return Sage::$maxLevels != 0 && self::$_level >= Sage::$maxLevels;
+        return Sage::$maxLevels && self::$_level >= Sage::$maxLevels;
     }
 
     private static function _isArrayTabular(array $variable)
@@ -206,8 +160,8 @@ abstract class SageParser extends SageVariableData
             }
 
             if (isset($keys) && ! $closeEnough) {
-                # let's just see if the first two rows have same keys, that's faster and has the
-                # positive side effect of easily spotting missing keys in later rows
+                // let's just see if the first two rows have same keys, that's faster and has the
+                // positive side effect of easily spotting missing keys in later rows
                 if ($keys !== array_keys($row)) {
                     return false;
                 }
@@ -225,7 +179,7 @@ abstract class SageParser extends SageVariableData
 
     private static function _decorateCell(SageVariableData $varData)
     {
-        if ($varData->extendedValue !== null || ! empty($varData->_alternatives)) {
+        if ($varData->extendedValue !== null) {
             return '<td>'.SageDecoratorsRich::decorate($varData).'</td>';
         }
 
@@ -260,48 +214,13 @@ abstract class SageParser extends SageVariableData
     }
 
 
-    public static function decodeStr($value, $encoding = null)
-    {
-        if (empty($value)) {
-            return $value;
-        }
-
-        if (Sage::enabled() === Sage::MODE_CLI) {
-            $value = str_replace("\x1b", "\\x1b", $value);
-        }
-
-        if (Sage::enabled() === Sage::MODE_CLI || Sage::enabled() === Sage::MODE_TEXT_ONLY) {
-            return $value;
-        }
-
-        $encoding or $encoding = self::_detectEncoding($value);
-
-        if ($encoding === 'UTF-8') {
-            // todo we could make the symbols hover-title show the code for the invisible symbol
-            # when possible force invisible characters to have some sort of display (experimental)
-            $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]/u', '?', $value);
-        }
-
-        # this call converts all non-ASCII characters into html chars of format
-        if (function_exists('mb_encode_numericentity')) {
-            $value = mb_encode_numericentity(
-                $value,
-                array(0x80, 0xffff, 0, 0xffff,),
-                $encoding
-            );
-        }
-
-        return $value;
-    }
-
-
     private static $_dealingWithGlobals = false;
 
     private static function _parse_array(&$variable, SageVariableData $variableData)
     {
         isset(self::$_marker) or self::$_marker = "\x00".uniqid();
 
-        # naturally, $GLOBALS variable is an intertwined recursion nightmare, use black magic
+        // naturally, $GLOBALS variable is an intertwined recursion nightmare, use black magic
         $globalsDetector = false;
         if (array_key_exists('GLOBALS', $variable) && is_array($variable['GLOBALS'])) {
             $globalsDetector = "\x01".uniqid();
@@ -322,7 +241,7 @@ abstract class SageParser extends SageVariableData
         if ($variableData->size === 0) {
             return;
         }
-        if (isset($variable[self::$_marker])) { # recursion; todo mayhaps show from where
+        if (isset($variable[self::$_marker])) { // recursion; todo mayhaps show from where
             if (self::$_dealingWithGlobals) {
                 $variableData->value = '*RECURSION*';
             } else {
@@ -332,22 +251,23 @@ abstract class SageParser extends SageVariableData
 
             return false;
         }
-        if (self::_checkDepth()) {
+        if (self::isDepthLimit()) {
             $variableData->extendedValue = "*DEPTH TOO GREAT*";
 
             return false;
         }
 
-        $isSequential = self::_isSequential($variable);
+        $isSequential = SageHelper::isArraySequential($variable);
 
         if ($variableData->size > 1 && ($arrayKeys = self::_isArrayTabular($variable)) !== false) {
+            // tabular array parse
             $variableData->alreadyEscaped = true;
-            $variable[self::$_marker] = true; # this must be AFTER _isArrayTabular
+            $variable[self::$_marker] = true; // this must be AFTER _isArrayTabular
             $firstRow = true;
             $extendedValue = '<table class="_sage-report"><thead>';
 
             foreach ($variable as $rowIndex => & $row) {
-                # display strings in their full length
+                // display strings in their full length
                 self::$_placeFullStringInValue = true;
 
                 if ($rowIndex === self::$_marker) {
@@ -363,19 +283,19 @@ abstract class SageParser extends SageVariableData
 
                 $extendedValue .= '<tr>';
                 if ($isSequential) {
-                    $output = '<td>'.($rowIndex + 1).'</td>';
+                    $output = '<td>'.(((int)$rowIndex) + 1).'</td>';
                 } else {
-                    $output = self::_decorateCell(SageParser::factory($rowIndex));
+                    $output = self::_decorateCell(self::process($rowIndex));
                 }
                 if ($firstRow) {
                     $extendedValue .= '<th>&nbsp;</th>';
                 }
 
-                # we iterate the known full set of keys from all rows in case some appeared at later rows,
-                # as we only check the first two to assume
+                // we iterate the known full set of keys from all rows in case some appeared at later rows,
+                // as we only check the first two to assume
                 foreach ($arrayKeys as $key) {
                     if ($firstRow) {
-                        $extendedValue .= '<th>'.self::decodeStr($key).'</th>';
+                        $extendedValue .= '<th>'.SageHelper::decodeStr($key).'</th>';
                     }
 
                     if (! array_key_exists($key, $row)) {
@@ -383,7 +303,7 @@ abstract class SageParser extends SageVariableData
                         continue;
                     }
 
-                    $var = SageParser::factory($row[$key]);
+                    $var = self::process($row[$key]);
 
                     if ($var->value === self::$_marker) {
                         $variableData->value = '*RECURSION*';
@@ -417,16 +337,17 @@ abstract class SageParser extends SageVariableData
                     continue;
                 }
 
-                $output = SageParser::factory($val);
+                $output = self::process($val);
                 if ($output->value === self::$_marker) {
-                    $variableData->value = "*RECURSION*"; // recursion occurred on a higher level, thus $this is recursion
+                    // recursion occurred on a higher level, thus $variableData is recursion
+                    $variableData->value = "*RECURSION*";
 
                     return false;
                 }
                 if (! $isSequential) {
                     $output->operator = '=>';
                 }
-                $output->name = $isSequential ? null : "'".$key."'";
+                $output->name = $isSequential ? null : "'".SageHelper::decodeStr($key)."'";
                 $extendedValue[] = $output;
             }
             $variableData->extendedValue = $extendedValue;
@@ -460,17 +381,17 @@ abstract class SageParser extends SageVariableData
 
             return false;
         }
-        if (self::_checkDepth()) {
+        if (self::isDepthLimit()) {
             $variableData->extendedValue = "*DEPTH TOO GREAT*";
 
             return false;
         }
 
 
-        # ArrayObject (and maybe ArrayIterator, did not try yet) unsurprisingly consist of mainly dark magic.
-        # What bothers me most, var_dump sees no problem with it, and ArrayObject also uses a custom,
-        # undocumented serialize function, so you can see the properties in internal functions, but
-        # can never iterate some of them if the flags are not STD_PROP_LIST. Fun stuff.
+        // ArrayObject (and maybe ArrayIterator, did not try yet) unsurprisingly consist of mainly dark magic.
+        // What bothers me most, var_dump sees no problem with it, and ArrayObject also uses a custom,
+        // undocumented serialize function, so you can see the properties in internal functions, but
+        // can never iterate some of them if the flags are not STD_PROP_LIST. Fun stuff.
         if ($variableData->type === 'ArrayObject' || is_subclass_of($variable, 'ArrayObject')) {
             $arrayObjectFlags = $variable->getFlags();
             $variable->setFlags(ArrayObject::STD_PROP_LIST);
@@ -479,19 +400,18 @@ abstract class SageParser extends SageVariableData
         self::$_objects[$hash] = true; // todo store reflectorObject here for alternatives cache
         $reflector = new ReflectionObject($variable);
 
-        # add link to definition of userland objects
-        if (Sage::enabled() === Sage::MODE_RICH && Sage::$fileLinkFormat && $reflector->isUserDefined()) {
-            $url = SageHelper::getIdeLink($reflector->getFileName(), $reflector->getStartLine());
-
-            $class = (strpos($url, 'http://') === 0) ? 'class="_sage-ide-link" ' : '';
-            $variableData->type = "<a {$class}href=\"{$url}\">{$variableData->type}</a>";
+        // add link to definition of userland objects
+        if ((Sage::enabled() === Sage::MODE_RICH || Sage::enabled() === Sage::MODE_PLAIN) && $reflector->isUserDefined()) {
+            $variableData->type = SageHelper::ideLink(
+                $reflector->getFileName(), $reflector->getStartLine(), $variableData->type
+            );
         }
         $variableData->size = 0;
 
         $extendedValue = array();
         $encountered = array();
 
-        # copy the object as an array as it provides more info than Reflection (depends)
+        // copy the object as an array as it provides more info than Reflection (depends)
         foreach ($castedArray as $key => $value) {
             /* casting object to array:
              * integer properties are inaccessible;
@@ -512,7 +432,7 @@ abstract class SageParser extends SageVariableData
 
             $encountered[$key] = true;
 
-            $output = SageParser::factory($value, self::decodeStr($key));
+            $output = self::process($value, SageHelper::decodeStr($key));
             $output->access = $access;
             $output->operator = '->';
             $extendedValue[] = $output;
@@ -537,7 +457,7 @@ abstract class SageParser extends SageVariableData
 
             $value = $property->getValue($variable);
 
-            $output = SageParser::factory($value, self::decodeStr($name));
+            $output = self::process($value, SageHelper::decodeStr($name));
             $output->access = $access;
             $output->operator = '->';
             $extendedValue[] = $output;
@@ -607,33 +527,30 @@ abstract class SageParser extends SageVariableData
             $variableData->type .= 'binary string';
         }
 
-        $encoding = self::_detectEncoding($variable);
+        $encoding = SageHelper::detectEncoding($variable);
         if ($encoding !== 'ASCII') {
             $variableData->type .= ' '.$encoding;
         }
 
+        $variableData->size = SageHelper::strlen($variable, $encoding);
 
-        $variableData->size = self::_strlen($variable, $encoding);
-        if (Sage::enabled() !== Sage::MODE_RICH) {
-            $variableData->value = '"'.self::decodeStr($variable, $encoding).'"';
+        if (! SageHelper::isRichMode() || self::$_placeFullStringInValue) {
+            $variableData->value = '"'.SageHelper::decodeStr($variable, $encoding).'"';
+        } else {
+            $variableData->extendedValue = SageHelper::decodeStr($variable, $encoding);
 
-            return;
-        }
-
-
-        if (! self::$_placeFullStringInValue) {
-
-            $strippedString = preg_replace('[\s+]', ' ', $variable);
-            if ($variable !== $strippedString) { // omit no data from display
-
-                $variableData->value = '"'.self::decodeStr($variable, $encoding).'"';
-                $variableData->extendedValue = self::decodeStr($variable, $encoding);
-
-                return;
+            if ($variableData->size > (SageHelper::MAX_STR_LENGTH + 8)) {
+                $variableData->value =
+                    '"'
+                    .SageHelper::substr($variableData->extendedValue, 0, SageHelper::MAX_STR_LENGTH, $encoding)
+                    .'&hellip;"';
+            } elseif ($variable !== preg_replace('[\s+]', ' ', $variable)) { // omit no data from display
+                $variableData->value = '"'.$variableData->extendedValue.'"';
+            } else {
+                $variableData->value = $variableData->extendedValue;
+                $variableData->extendedValue = null;
             }
         }
-
-        $variableData->value = '"'.self::decodeStr($variable, $encoding).'"';
     }
 
     private static function _parse_unknown(&$variable, SageVariableData $variableData)

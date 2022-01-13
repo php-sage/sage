@@ -2,17 +2,17 @@
 
 /**
  * @internal
- * @noinspection AutoloadingIssuesInspection
  */
-class Sage_Parsers_FsPath extends SageParser
+class SageParsersFsPath extends SageParser
 {
-    protected function _parse(&$variable, $originalVarData)
+    protected static function parse(&$variable, $varData)
     {
-        if (! SageHelper::php53()
+        if (! SageHelper::isRichMode()
+            || ! SageHelper::php53()
             || ! is_string($variable)
             || strlen($variable) > 2048
             || preg_match('[[:?<>"*|]]', $variable)
-            || ! @is_readable($variable) # f@#! PHP and its random warnings
+            || ! @is_readable($variable) // f@#! PHP and its random warnings
         ) {
             return false;
         }
@@ -63,13 +63,14 @@ class Sage_Parsers_FsPath extends SageParser
             $flags[] = (($perms & 0x0002) ? 'w' : '-');
             $flags[] = (($perms & 0x0001) ? (($perms & 0x0200) ? 't' : 'x') : (($perms & 0x0200) ? 'T' : '-'));
 
-            $this->type = $type;
-            $this->size = sprintf('%.2fK', $fileInfo->getSize() / 1024);
-            $this->value = implode($flags);
+            $size = sprintf('%.2fK', $fileInfo->getSize() / 1024);
+            $flags = implode($flags);
+            $path = $fileInfo->getRealPath();
+
+            $varData->addTabToView("Existing {$type} ({$size})", "$flags    $path");
 
         } catch (Exception $e) {
             return false;
         }
-
     }
 }

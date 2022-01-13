@@ -2,16 +2,17 @@
 
 /**
  * @internal
- * @noinspection AutoloadingIssuesInspection
  */
-class Sage_Parsers_Microtime extends SageParser
+class SageParsersMicrotime extends SageParser
 {
     private static $_times = array();
     private static $_laps = array();
 
-    protected function _parse(&$variable, $originalVarData)
+    protected static function parse(&$variable, $varData)
     {
-        if (! is_string($variable) || ! preg_match('[0\.[0-9]{8} [0-9]{10}]', $variable)) {
+        if (! SageHelper::isRichMode()
+            || ! is_string($variable)
+            || ! preg_match('/^0\.[\d]{8} [\d]{10}$/', $variable)) {
             return false;
         }
 
@@ -22,30 +23,32 @@ class Sage_Parsers_Microtime extends SageParser
             $size = memory_get_usage(true);
         }
 
-        # '@' is used to prevent the dreaded timezone not set error
-        $this->value = @date('Y-m-d H:i:s', $sec).'.'.substr($usec, 2, 4);
+        // '@' is used to prevent the dreaded timezone not set error
+        $result = @date('Y-m-d H:i:s', $sec).'.'.substr($usec, 2, 4);
 
         $numberOfCalls = count(self::$_times);
-        if ($numberOfCalls > 0) { # meh, faster than count($times) > 1
+        if ($numberOfCalls > 0) { // meh, faster than count($times) > 1
             $lap = $time - end(self::$_times);
             self::$_laps[] = $lap;
 
-            $this->value .= "\n<b>SINCE LAST CALL:</b> <b class=\"_sage-microtime\">".round($lap, 4).'</b>s.';
+            // todo allow in plain text views too
+            $result .= "\n<b>SINCE LAST CALL:</b> <b class=\"_sage-microtime\">".round($lap, 4).'</b>s.';
             if ($numberOfCalls > 1) {
-                $this->value .= "\n<b>SINCE START:</b> ".round($time - self::$_times[0], 4).'s.';
-                $this->value .= "\n<b>AVERAGE DURATION:</b> "
+                $result .= "\n<b>SINCE START:</b> ".round($time - self::$_times[0], 4).'s.';
+                $result .= "\n<b>AVERAGE DURATION:</b> "
                     .round(array_sum(self::$_laps) / $numberOfCalls, 4).'s.';
             }
         }
 
         $unit = array('B', 'KB', 'MB', 'GB', 'TB');
         if (SageHelper::php53()) {
-            $this->value .= "\n<b>MEMORY USAGE:</b> ".$size." bytes ("
+            $result .= "\n<b>MEMORY USAGE:</b> ".$size." bytes ("
                 .round($size / pow(1024, ($i = floor(log($size, 1024)))), 3).' '.$unit[$i].")";
         }
 
         self::$_times[] = $time;
-        $this->type = 'Stats';
+
+        $varData->addTabToView('Benchmark', $result);
     }
 
     /*

@@ -8,14 +8,15 @@
 class SageDecoratorsRich
 {
     public static $firstRun = true;
-    # make calls to Sage::dump() from different places in source coloured differently.
+    // make calls to Sage::dump() from different places in source coloured differently.
     private static $_usedColors = array();
 
     public static function decorate(SageVariableData $varData)
     {
         $output = '<dl>';
 
-        $extendedPresent = $varData->extendedValue !== null || $varData->_alternatives !== null;
+        $allRepresentations = $varData->getAllRepresentations();
+        $extendedPresent = ! empty($allRepresentations);
 
         if ($extendedPresent) {
             $class = '_sage-parent';
@@ -31,63 +32,54 @@ class SageDecoratorsRich
             $output .= '<span class="_sage-popup-trigger" title="Open in new window">&rarr;</span><nav></nav>';
         }
 
-        $output .= self::_drawHeader($varData);
-        $output .= $varData->alreadyEscaped ? $varData->value : self::_esc($varData->value);
-        $output .= '</dt>';
+        $output .= self::_drawHeader($varData).$varData->value.'</dt>';
 
 
         if ($extendedPresent) {
             $output .= '<dd>';
         }
 
-        if (isset($varData->extendedValue)) {
+        if (count($allRepresentations) === 1 && !empty($varData->extendedValue)) {
+            $extendedValue = reset($allRepresentations);
 
-            if (is_array($varData->extendedValue)) {
-                foreach ($varData->extendedValue as $v) {
+            if (is_array($extendedValue)) {
+                foreach ($extendedValue as $v) {
                     $output .= self::decorate($v);
                 }
-            } elseif (is_string($varData->extendedValue)) {
-                if ($varData->alreadyEscaped) {
-                    $output .= $varData->extendedValue;
-                } else {
-                    $output .= '<pre>'.self::_esc($varData->extendedValue).'</pre>';
-                }
+            } elseif (is_string($extendedValue)) {
+                $output .= "<pre>{$extendedValue}</pre>";
             } else {
-                $output .= self::decorate($varData->extendedValue); //it's Sage's container
+                throw new RuntimeException();
+//                $output .= self::decorate($varData->extendedValue); // it's SageVariableData
             }
 
-        } elseif (isset($varData->_alternatives)) {
+        } elseif ($extendedPresent) {
             $output .= "<ul class=\"_sage-tabs\">";
 
-            foreach ($varData->_alternatives as $k => $var) {
-                $active = $k === 0 ? ' class="_sage-active-tab"' : '';
-                $output .= "<li{$active}>".self::_drawHeader($var, false).'</li>';
+            $isFirst = true;
+            foreach ($allRepresentations as $tabName => $_) {
+                $active = $isFirst ? ' class="_sage-active-tab"' : '';
+                $isFirst = false;
+                $output .= "<li{$active}>".SageHelper::decodeStr($tabName).'</li>';
             }
 
             $output .= "</ul><ul>";
 
-            foreach ($varData->_alternatives as $alternative) {
+            foreach ($allRepresentations as $alternative) {
                 $output .= "<li>";
 
-                $var = $alternative->value;
-
-                if (is_array($var)) {
-                    foreach ($var as $v) {
+                if (is_array($alternative)) {
+                    foreach ($alternative as $v) {
                         if (is_string($v)) {
-                            $output .=
-                                '<pre>'
-                                .($alternative->alreadyEscaped ? $v : self::_esc($v))
-                                .'</pre>';
+                            $output .= "<pre>{$v}</pre>";
                         } else {
                             $output .= self::decorate($v);
                         }
                     }
-                } elseif (is_string($var)) {
-                    $output .=
-                        '<pre>'
-                        .($alternative->alreadyEscaped ? $var : self::_esc($var))
-                        .'</pre>';
-                } elseif (isset($var)) {
+                } elseif (is_string($alternative)) {
+                    $output .= "<pre>{$alternative}</pre>";
+                } elseif (isset($alternative)) {
+                    throw new ErrorException();
                     // error in custom parser
                 }
 
@@ -121,7 +113,7 @@ class SageDecoratorsRich
                 .'<var>';
 
             if (isset($step['file'])) {
-                $output .= self::_ideLink($step['file'], $step['line']);
+                $output .= SageHelper::ideLink($step['file'], $step['line']);
             } else {
                 $output .= 'PHP internal call';
             }
@@ -149,7 +141,7 @@ class SageDecoratorsRich
 
             if (! empty($step['object'])) {
                 SageParser::reset();
-                $calleeDump = SageParser::factory($step['object']);
+                $calleeDump = SageParser::process($step['object']);
 
                 $output .= "<li{$firstTab}>Callee object [{$calleeDump->type}]</li>";
             }
@@ -166,7 +158,7 @@ class SageDecoratorsRich
                 $output .= "<li>";
                 foreach ($step['args'] as $k => $arg) {
                     SageParser::reset();
-                    $output .= self::decorate(SageParser::factory($arg, $k));
+                    $output .= self::decorate(SageParser::process($arg, $k));
                 }
                 $output .= "</li>";
             }
@@ -228,13 +220,13 @@ class SageDecoratorsRich
 
 
         if (isset($callee['file'])) {
-            $calleeInfo .= 'Called from '.self::_ideLink($callee['file'], $callee['line']);
+            $calleeInfo .= 'Called from '.SageHelper::ideLink($callee['file'], $callee['line']);
         }
 
         if (! empty($miniTrace)) {
             $traceDisplay = '<ol>';
             foreach ($miniTrace as $step) {
-                $traceDisplay .= '<li>'.self::_ideLink($step['file'], $step['line']); // closing tag not required
+                $traceDisplay .= '<li>'.SageHelper::ideLink($step['file'], $step['line']); // closing tag not required
                 if (isset($step['function'])
                     && ! in_array($step['function'], array('include', 'include_once', 'require', 'require_once'))
                 ) {
@@ -261,70 +253,33 @@ class SageDecoratorsRich
             ."</footer></div>";
     }
 
-    private static function _esc($str)
-    {
-        if (! isset($str)) {
-            return '';
-        }
-
-        return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
-    }
-
-    private static function _drawHeader(SageVariableData $varData, $verbose = true)
+    private static function _drawHeader(SageVariableData $varData)
     {
         $output = '';
-        if ($verbose) {
-            if ($varData->access !== null) {
-                $output .= "<var>"
-                    .self::_esc($varData->access)
-                    ."</var> ";
-            }
+        if ($varData->access !== null) {
+            $output .= "<var>{$varData->access}</var> ";
+        }
 
-            if ($varData->name !== null && $varData->name !== '') {
-                $output .= "<dfn>"
-                    .SageParser::decodeStr($varData->name)
-                    ."</dfn> ";
-            }
+        if ($varData->name !== null && $varData->name !== '') {
+            $output .= "<dfn>"
+                .SageHelper::decodeStr($varData->name)
+                ."</dfn> ";
+        }
 
-            if ($varData->operator !== null) {
-                $output .= $varData->operator." ";
-            }
+        if ($varData->operator !== null) {
+            $output .= $varData->operator." ";
         }
 
         if ($varData->type !== null) {
-            if ($verbose) {
-                $output .= "<var>";
-            }
-
             // tyoe output is unescaped as it is set internally and contains links to user class
-            $output .= $varData->type;
-
-            if ($verbose) {
-                $output .= "</var>";
-            } else {
-                $output .= " ";
-            }
+            $output .= "<var>{$varData->type}</var>";
         }
-
 
         if ($varData->size !== null) {
             $output .= "(".$varData->size.") ";
         }
 
         return $output;
-    }
-
-    private static function _ideLink($file, $line)
-    {
-        $shortenedPath = htmlspecialchars(SageHelper::shortenPath($file), ENT_NOQUOTES);
-        if (! Sage::$fileLinkFormat) {
-            return $shortenedPath.':'.$line;
-        }
-
-        $ideLink = SageHelper::getIdeLink($file, $line);
-        $class = (strpos($ideLink, 'http://') === 0) ? 'class="_sage-ide-link" ' : '';
-
-        return "<a {$class}href=\"{$ideLink}\">{$shortenedPath}:{$line}</a>";
     }
 
 

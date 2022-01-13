@@ -4,11 +4,11 @@
  * @internal
  * @noinspection AutoloadingIssuesInspection
  */
-class Sage_Parsers_SplObjectStorage extends SageParser
+class SageParsersSplObjectStorage extends SageParser
 {
-    protected function _parse(&$variable, $originalVarData)
+    protected static function parse(&$variable, $varData)
     {
-        if (! is_object($variable) || ! $variable instanceof SplObjectStorage) {
+        if (!SageHelper::isRichMode() || ! is_object($variable) || ! $variable instanceof SplObjectStorage) {
             return false;
         }
 
@@ -20,13 +20,12 @@ class Sage_Parsers_SplObjectStorage extends SageParser
         }
 
         $variable->rewind();
+        $arrayCopy = array();
         while ($variable->valid()) {
-            $current = $variable->current();
-            $this->value[] = SageParser::factory($current);
+            $arrayCopy[] = $variable->current();
             $variable->next();
         }
 
-        $this->type = 'Storage contents';
-        $this->size = $count;
+        $varData->addTabToView("Storage contents ({$count})", $arrayCopy);
     }
 }
