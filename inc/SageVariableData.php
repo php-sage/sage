@@ -17,85 +17,48 @@ class SageVariableData
     public $operator;
     /** @var int */
     public $size;
-    /**
-     * @var SageVariableData[] array of SageVariableData objects or strings; displayed collapsed, each element from
-     * the array is a separate possible representation of the dumped var
-     */
+    /** @var array|string full variable representation */
     public $extendedValue;
-    /** @var string inline value */
+    /** @var string short inline value */
     public $value;
 
-    public $alreadyEscaped = false;
-
-    /** @var SageVariableData[] array of alternative representations for same variable, don't use in custom parsers */
-    public $_alternatives;
-
-    /* *******************************************
-     * HELPERS
-     */
-
-    protected static function _detectEncoding($value)
-    {
-        if (function_exists('mb_detect_encoding')) {
-            $mbDetected = mb_detect_encoding($value);
-            if ($mbDetected === 'ASCII') {
-                return 'ASCII';
-            }
-        }
-
-
-        if (! function_exists('iconv')) {
-            return ! empty($mbDetected) ? $mbDetected : 'UTF-8';
-        }
-
-        $md5 = md5($value);
-        foreach (Sage::$charEncodings as $encoding) {
-            # fuck knows why, //IGNORE and //TRANSLIT still throw notice
-            if (md5(@iconv($encoding, $encoding, $value)) === $md5) {
-                return $encoding;
-            }
-        }
-
-        return 'ASCII';
-    }
+    /** @var array extra views of the same variable data used in rich view. Keys are tab names, values is content */
+    private $alternativeRepresentations = array();
 
     /**
-     * returns whether the array:
-     *  1) is numeric and
-     *  2) in sequence starting from zero
+     * @param string       $name
+     * @param string|array $value
      *
-     * @param array $array
-     *
-     * @return bool
+     * @return void
      */
-    protected static function _isSequential(array $array)
+    public function addTabToView($originalVariable, $name, $value)
     {
-        return array_keys($array) === range(0, count($array) - 1);
+        if (is_array($value)) {
+            if (! (reset($value) instanceof self)) {
+                // concert to SageVariableData[]
+                $value = SageParser::alternativesParse($originalVariable, $value);
+            }
+        } elseif (is_string($value)) {
+            // do nothin'
+        } else {
+            // ERROR: incorrect parser
+        }
+
+        $this->alternativeRepresentations[$name] = $value;
     }
 
-    protected static function _strlen($string, $encoding = null)
+    public function getAllRepresentations()
     {
-        if (function_exists('mb_strlen')) {
-            $encoding or $encoding = self::_detectEncoding($string);
+        # if alternative displays exist, push extendedValue to their front and display it as one of alternatives
+        $prepared = array();
 
-            return mb_strlen($string, $encoding);
-        } else {
-            return strlen($string);
+        if (! empty($this->extendedValue)) {
+            $prepared['Contents'] = $this->extendedValue;
         }
-    }
-
-    protected static function _substr($string, $start, $end, $encoding = null)
-    {
-        if (!isset($string)) {
-            return '';
+        if (! empty($this->alternativeRepresentations)) {
+            $prepared = array_merge($prepared, $this->alternativeRepresentations);
         }
 
-        if (function_exists('mb_substr')) {
-            $encoding or $encoding = self::_detectEncoding($string);
-
-            return mb_substr($string, $start, $end, $encoding);
-        } else {
-            return substr($string, $start, $end);
-        }
+        return $prepared;
     }
 }

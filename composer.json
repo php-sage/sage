@@ -41,6 +41,7 @@
     "post-update-cmd": "npm ci",
     "post-install-cmd": "@post-update-cmd",
     "build": [
+      "@post-update-cmd",
       "@build:js",
       "@build:php"
     ],

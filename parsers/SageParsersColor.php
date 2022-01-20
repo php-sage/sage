@@ -2,9 +2,8 @@
 
 /**
  * @internal
- * @noinspection AutoloadingIssuesInspection
  */
-class Sage_Parsers_Color extends SageParser
+class SageParsersColor extends SageParser
 {
     private static $_css3Named = array(
         'aliceblue'            => '#f0f8ff',
@@ -157,7 +156,7 @@ class Sage_Parsers_Color extends SageParser
     );
 
 
-    protected function _parse(&$variable, $originalVarData)
+    protected static function parse(&$variable, $varData)
     {
         if (! self::_fits($variable)) {
             return false;
@@ -166,22 +165,31 @@ class Sage_Parsers_Color extends SageParser
         // todo after we migrate from less:
 // $originalVarData->name .= "<div style=\"background:{$variable}\" class=\"_sage-color-preview\">{$variable}</div>";
 
-        $this->type = 'CSS color';
-        $variants = self::_convert($variable);
-        $this->value =
-            "<div style=\"background:{$variable}\" class=\"_sage-color-preview\">{$variable}</div>"
-            ."<strong>hex :</strong> {$variants['hex']}\n"
-            ."<strong>rgb :</strong> {$variants['rgb']}\n"
-            .(isset($variants['name']) ? "<strong>name:</strong> {$variants['name']}\n" : '')
-            ."<strong>hsl :</strong> {$variants['hsl']}";
 
-        $this->alreadyEscaped = true;
+        $variants = self::_convert($variable);
+        $value = <<<HTML
+<div style="background:{$variable}" class="_sage-color-preview">{$variable}</div>
+<strong>hex :</strong> {$variants['hex']}
+<strong>rgb :</strong> {$variants['rgb']}
+?<strong>hsl :</strong> {$variants['hsl']}
+HTML;
+
+        $varData->alreadyEscaped = true;
+        $varData->addTabToView($variable, 'CSS color', $value);
     }
 
 
     private static function _fits($variable)
     {
+        if (! SageHelper::isRichMode()) {
+            return false;
+        }
+
         if (! is_string($variable)) {
+            return false;
+        }
+
+        if (strlen($variable) > 32) {
             return false;
         }
 

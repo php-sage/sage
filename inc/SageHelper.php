@@ -6,6 +6,26 @@
 class SageHelper
 {
     private static $_php53;
+    const MAX_STR_LENGTH = 80;
+
+    public static $editors = array(
+        'sublime'                => 'subl://open?url=file://%f&line=%l',
+        'textmate'               => 'txmt://open?url=file://%f&line=%l',
+        'emacs'                  => 'emacs://open?url=file://%f&line=%l',
+        'macvim'                 => 'mvim://open/?url=file://%f&line=%l',
+        'phpstorm'               => 'phpstorm://open?file=%f&line=%l',
+        'phpstorm-remotecall'    => 'http://localhost:8091?message=%f:%l',
+        'idea'                   => 'idea://open?file=%f&line=%l',
+        'vscode'                 => 'vscode://file/%f:%l',
+        'vscode-insiders'        => 'vscode-insiders://file/%f:%l',
+        'vscode-remote'          => 'vscode://vscode-remote/%f:%l',
+        'vscode-insiders-remote' => 'vscode-insiders://vscode-remote/%f:%l',
+        'vscodium'               => 'vscodium://file/%f:%l',
+        'atom'                   => 'atom://core/open/file?filename=%f&line=%l',
+        'nova'                   => 'nova://core/open/file?filename=%f&line=%l',
+        'netbeans'               => 'netbeans://open/?f=%f:%l',
+        'xdebug'                 => 'xdebug://%f@%l',
+    );
 
     public static function php53()
     {
@@ -14,6 +34,18 @@ class SageHelper
         }
 
         return self::$_php53;
+    }
+
+    public static function isRichMode()
+    {
+        return Sage::enabled() === Sage::MODE_RICH;
+    }
+
+    public static function isHtmlMode()
+    {
+        $enabledMode = Sage::enabled();
+
+        return $enabledMode === Sage::MODE_RICH || $enabledMode === Sage::MODE_PLAIN;
     }
 
     public static function errorHandler($errno, $errstr, $errfile = null, $errline = null, $errcontext = null)
@@ -37,15 +69,6 @@ class SageHelper
             strip_tags($e->getMessage()),
             str_replace(SAGE_DIR, 'SAGE_DIR/', $e->getFile()),
             $e->getLine()
-        );
-    }
-
-    public static function getIdeLink($file, $line)
-    {
-        return str_replace(
-            array('%f', '%l', Sage::$fileLinkServerPath),
-            array($file, $line, Sage::$fileLinkLocalPath),
-            Sage::$fileLinkFormat
         );
     }
 
@@ -78,7 +101,7 @@ class SageHelper
             }
         }
 
-        # fallback to find common path with Sage dir
+        // fallback to find common path with Sage dir
         if (! $replaced) {
             $pathParts = explode('/', str_replace('\\', '/', SAGE_DIR));
             $fileParts = explode('/', $file);
@@ -93,5 +116,228 @@ class SageHelper
         }
 
         return $shortenedName;
+    }
+
+    private static $aliases;
+
+    /**
+     * called during initialization phase of Sage::dump
+     *
+     * @return void
+     */
+    public static function buildAliases()
+    {
+        $aliases = array(
+            'methods'   => array(
+                array('sage', 'dump'),
+                array('sage', 'trace'),
+            ),
+            'functions' => array(
+                'd',
+                'sage',
+                'dd',
+                'saged',
+                'ddd',
+                's',
+                'sd',
+            ),
+        );
+
+        if (! empty(Sage::$aliases)) {
+            $a = is_string(Sage::$aliases) ?
+                explode(',', strtolower(Sage::$aliases))
+                : Sage::$aliases;
+
+            foreach ($a as $alias) {
+                if (strpos($alias, '::') !== false) {
+                    $aliases['methods'][] = explode('::', $alias);
+                } else {
+                    $aliases['functions'][] = $alias;
+                }
+            }
+        }
+
+        self::$aliases = $aliases;
+    }
+
+    /**
+     * returns whether current trace step belongs to Sage or its wrappers
+     *
+     * @param $step
+     *
+     * @return bool
+     */
+    public static function stepIsInternal($step)
+    {
+        if (isset($step['class'])) {
+            foreach (self::$aliases['methods'] as $alias) {
+                if ($alias[0] === strtolower($step['class']) && $alias[1] === strtolower($step['function'])) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return in_array(strtolower($step['function']), self::$aliases['functions'], true);
+    }
+
+    public static function substr($string, $start, $end, $encoding = null)
+    {
+        if (! isset($string)) {
+            return '';
+        }
+
+        if (function_exists('mb_substr')) {
+            $encoding or $encoding = self::detectEncoding($string);
+
+            return mb_substr($string, $start, $end, $encoding);
+        }
+
+        return substr($string, $start, $end);
+    }
+
+    /**
+     * returns whether the array:
+     *  1) is numeric and
+     *  2) in sequence starting from zero
+     *
+     * @param array $array
+     *
+     * @return bool
+     */
+    public static function isArraySequential(array $array)
+    {
+        $keys = array_keys($array);
+
+        return array_keys($keys) === $keys;
+    }
+
+    public static function detectEncoding($value)
+    {
+        if (function_exists('mb_detect_encoding')) {
+            $mbDetected = mb_detect_encoding($value);
+            if ($mbDetected === 'ASCII') {
+                return 'UTF-8';
+            }
+        }
+
+
+        if (! function_exists('iconv')) {
+            return ! empty($mbDetected) ? $mbDetected : 'UTF-8';
+        }
+
+        $md5 = md5($value);
+        foreach (Sage::$charEncodings as $encoding) {
+            // f*#! knows why, //IGNORE and //TRANSLIT still throw notice
+            if (md5(@iconv($encoding, $encoding, $value)) === $md5) {
+                return $encoding;
+            }
+        }
+
+        return 'UTF-8';
+    }
+
+    public static function strlen($string, $encoding = null)
+    {
+        if (function_exists('mb_strlen')) {
+            $encoding or $encoding = self::detectEncoding($string);
+
+            return mb_strlen($string, $encoding);
+        }
+
+        return strlen($string);
+    }
+
+    public static function decodeStr($value)
+    {
+        if (strlen($value) === 0) {
+            return '';
+        }
+
+        if (self::isHtmlMode()) {
+            $value = self::esc($value);
+
+            $controlCharsMap = array(
+                "\v"   => '<u>\v</u>',
+                "\f"   => '<u>\f</u>',
+                "\033" => '<u>\e</u>',
+                "\t"   => "\t<u>\\t</u>",
+                "\r\n" => "<u>\\r\\n</u>\n",
+                "\n"   => "<u>\\n</u>\n",
+                "\r"   => "<u>\\r</u>"
+            );
+            $dontEscape = array();
+            $replaceTemplate = '<u>\x%02X</u>';
+        } else {
+            $controlCharsMap = array(
+                "\v"   => '\v',
+                "\f"   => '\f',
+                "\033" => '\e',
+            );
+            $dontEscape = array("\t", "\n", "\r");
+            $replaceTemplate = '\x%02X';
+        }
+
+
+        $out = '';
+        $i = 0;
+        do {
+            $character = $value[$i];
+            $ord = ord($character);
+            if ($ord < 32 && ! in_array($character, $dontEscape, true)) {
+                if (isset($controlCharsMap[$character])) {
+                    $out .= $controlCharsMap[$character];
+                } else {
+                    $out .= sprintf($replaceTemplate, $ord);
+                }
+            } else {
+                $out .= $character;
+            }
+        } while (isset($value[++$i]));
+
+
+        return $out;
+    }
+
+    public static function ideLink($file, $line, $linkText = null)
+    {
+        $enabledMode = Sage::enabled();
+        if (! self::isHtmlMode()) {
+            return $file.':'.$line;
+        } else {
+            $linkText = $linkText ? $linkText : self::shortenPath($file).':'.$line;
+            $linkText = self::esc($linkText);
+
+            if (! Sage::$editor) {
+                return $linkText;
+            }
+
+            $ideLink = str_replace(
+                array('%f', '%l', Sage::$fileLinkServerPath),
+                array($file, $line, Sage::$fileLinkLocalPath),
+                isset(self::$editors[Sage::$editor]) ? self::$editors[Sage::$editor] : Sage::$editor
+            );
+
+            if ($enabledMode === Sage::MODE_RICH) {
+                $class = (strpos($ideLink, 'http://') === 0) ? 'class="_sage-ide-link" ' : '';
+
+                return "<a {$class}href=\"{$ideLink}\">{$linkText}</a>";
+            }
+
+            // MODE_PLAIN
+            if (strpos($ideLink, 'http://') === 0) {
+                return <<<HTML
+<a href="{$ideLink}"onclick="X=new XMLHttpRequest;X.open('GET',this.href);X.send();return!1">{$linkText}</a>
+HTML;
+            } else {
+                return "<a href=\"{$ideLink}\">{$linkText}</a>";
+            }
+        }
+    }
+
+    public static function esc($value, $encoding = 'UTF-8')
+    {
+        return htmlspecialchars($value, ENT_NOQUOTES, $encoding);
     }
 }

@@ -4,11 +4,15 @@
  * @internal
  * @noinspection AutoloadingIssuesInspection
  */
-class Sage_Parsers_Xml extends SageParser
+class SageParsersXml extends SageParser
 {
-    protected function _parse(&$variable, $originalVarData)
+    protected static function parse(&$variable, $varData)
     {
         try {
+            if (! SageHelper::isRichMode()) {
+                return false;
+            }
+
             if (is_string($variable) && substr($variable, 0, 5) === '<?xml') {
                 $e = libxml_use_internal_errors(true);
                 $xml = simplexml_load_string($variable);
@@ -23,7 +27,6 @@ class Sage_Parsers_Xml extends SageParser
             return false;
         }
 
-        $this->value = SageParser::factory($xml)->extendedValue;
-        $this->type = 'XML';
+        $varData->addTabToView($variable, 'XML', @date('Y-m-d H:i:s', $xml));
     }
 }

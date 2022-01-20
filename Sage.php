@@ -37,7 +37,6 @@ define('SAGE_DIR', __DIR__.'/');
 
 require SAGE_DIR.'inc/SageVariableData.php';
 require SAGE_DIR.'inc/SageParser.php';
-require SAGE_DIR.'inc/SageObject.php';
 require SAGE_DIR.'inc/SageHelper.php';
 require SAGE_DIR.'decorators/SageDecoratorsRich.php';
 require SAGE_DIR.'decorators/SageDecoratorsPlain.php';
@@ -55,20 +54,46 @@ class Sage
      *    ██║     ██║   ██║██║╚██╗██║██╔══╝  ██║██║   ██║██║   ██║██╔══██╗██╔══██║   ██║   ██║██║   ██║██║╚██╗██║
      *    ╚██████╗╚██████╔╝██║ ╚████║██║     ██║╚██████╔╝╚██████╔╝██║  ██║██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║
      *     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+     *
+     * credit: patorjk.com/software/taag/#p=display&h=1&v=2&c=c&f=ANSI Shadow&t=
      */
 
     /**
-     * @var string format of the link to source file. Use %f for full file path, %l for line number.
+     * @var string makes visible source file paths clickable to open your editor.
+     *
+     * Pre-defined values:
+     *             'sublime'                => 'subl://open?url=file://%f&line=%l',
+     *             'textmate'               => 'txmt://open?url=file://%f&line=%l',
+     *             'emacs'                  => 'emacs://open?url=file://%f&line=%l',
+     *             'macvim'                 => 'mvim://open/?url=file://%f&line=%l',
+     *             'phpstorm'               => 'phpstorm://open?file=%f&line=%l',
+     *             'phpstorm-remotecall'    => 'http://localhost:8091?message=%f:%l',
+     *             'idea'                   => 'idea://open?file=%f&line=%l',
+     *             'vscode'                 => 'vscode://file/%f:%l',
+     *             'vscode-insiders'        => 'vscode-insiders://file/%f:%l',
+     *             'vscode-remote'          => 'vscode://vscode-remote/%f:%l',
+     *             'vscode-insiders-remote' => 'vscode-insiders://vscode-remote/%f:%l',
+     *             'vscodium'               => 'vscodium://file/%f:%l',
+     *             'atom'                   => 'atom://core/open/file?filename=%f&line=%l',
+     *             'nova'                   => 'nova://core/open/file?filename=%f&line=%l',
+     *             'netbeans'               => 'netbeans://open/?f=%f:%l',
+     *             'xdebug'                 => 'xdebug://%f@%l',
+     *
+     * Or pass a custom string where %f should be replaced with full file path, %l with line number to create a
+     * custom link. Set to null to disable linking.
      *
      * Example:
      *             // works with for PHPStorm and RemoteCall Plugin
-     *             Sage::fileLinkFormat = 'http://localhost:8091/?message=%f:%l';
+     *             Sage::$editor = 'phpstorm-remotecall';
+     * Example:
+     *             // same result as above, but explicitly defined
+     *             Sage::$editor = 'http://localhost:8091/?message=%f:%l';
      *
      * Default:
-     *             ini_get('xdebug.file_link_format') ?: 'http://localhost:8091?message=%f:%l'
+     *             ini_get('xdebug.file_link_format') ?: 'phpstorm-remotecall'
      *
      */
-    public static $fileLinkFormat;
+    public static $editor;
 
 
     /**
@@ -180,8 +205,8 @@ class Sage
      * Default:
      *           array(
      *                 'UTF-8',
-     *                 'Windows-1252', # Western; includes iso-8859-1, replace this with windows-1251 if you have Russian code
-     *                 'euc-jp',       # Japanese
+     *                 'Windows-1252', // Western; includes iso-8859-1, replace this with windows-1251 if you have Russian code
+     *                 'euc-jp',       // Japanese
      *           );
      */
     public static $charEncodings;
@@ -195,9 +220,10 @@ class Sage
     public static $returnOutput;
 
 
-    /**
-     * @var array|string append custom dumper function names for backtraces, variable name detection and
-     *                   modifiers to work properly. Accepts array or comma-separated string
+    /**`
+     * @var string|array Add new custom Sage wrapper names. Optional, but needed for backtraces, variable name
+     *                   detection and modifiers to work properly. Accepts array or comma separated string.
+     *                   Use notation `Class::method` for methods.
      *
      * Example :
      *            function doom_dump($args)
@@ -208,7 +234,7 @@ class Sage
      *            Sage::$aliases = 'doom_dump';
      *
      * Default:
-     *            null
+     *            array()
      */
     public static $aliases;
 
@@ -262,7 +288,7 @@ class Sage
      */
     public static function enabled($forceMode = null)
     {
-        # act both as a setter...
+        // act both as a setter...
         if (isset($forceMode)) {
             $before = self::$_enabledMode;
             self::$_enabledMode = $forceMode;
@@ -270,7 +296,7 @@ class Sage
             return $before;
         }
 
-        # ...and a getter
+        // ...and a getter
         return self::$_enabledMode;
     }
 
@@ -339,29 +365,32 @@ class Sage
      */
     public static function dump($data = null)
     {
-        if (! self::enabled()) {
+        $enabledMode = self::enabled();
+        if (! $enabledMode) {
             return '';
         }
 
-        if (! self::$_initialized) {
-            self::_init();
-        }
+        self::_init();
 
         list($names, $modifiers, $callee, $previousCaller, $miniTrace) = self::_getCalleeInfo(
             defined('DEBUG_BACKTRACE_IGNORE_ARGS')
                 ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)
                 : debug_backtrace()
         );
-        $modeOldValue = self::enabled();
 
-        # set mode for current run
-        $mode = self::enabled();
-        if ($mode === true) {
-            $mode = (PHP_SAPI === 'cli' && self::$cliDetection === true)
+        // auto-detect mode if not explicitly set
+        if (! in_array($enabledMode, array(
+            self::MODE_RICH,
+            self::MODE_TEXT_ONLY,
+            self::MODE_CLI,
+            self::MODE_PLAIN
+        ), true)) {
+            $newMode = (PHP_SAPI === 'cli' && self::$cliDetection === true)
                 ? self::MODE_CLI
                 : self::MODE_RICH;
+
+            self::enabled($newMode);
         }
-        self::enabled($mode);
 
         /** @var SageDecoratorsPlain|SageDecoratorsRich $decorator */
         $decorator = self::enabled() === self::MODE_RICH
@@ -370,7 +399,7 @@ class Sage
 
         $firstRunOldValue = $decorator::$firstRun;
 
-        # process modifiers: @, +, !, ~ and -
+        // process modifiers: @, +, !, ~ and -
         if (strpos($modifiers, '-') !== false) {
             $decorator::$firstRun = true;
             while (ob_get_level()) {
@@ -391,14 +420,22 @@ class Sage
             $decorator::$firstRun = true;
         }
         if (strpos($modifiers, '~') !== false) {
-            if ($firstRunOldValue !== $decorator::$firstRun) {
-                $firstRunTmp = $decorator::$firstRun;
-                $decorator::$firstRun = $firstRunOldValue;
-                $decorator = 'SageDecoratorsPlain';
-                $firstRunOldValue = $decorator::$firstRun;
-                $decorator::$firstRun = $firstRunTmp;
+            // restore values for whatever decorator was set previously
+            $decorator::$firstRun = $firstRunOldValue;
+
+            // simplify mode
+            $decorator = 'SageDecoratorsPlain';
+            $firstRunOldValue = $decorator::$firstRun;
+            if ($enabledMode !== self::MODE_TEXT_ONLY) { // if not already in plainest mode...
+                self::enabled( // remove cli colors in cli mode; remove rich interface in HTML mode
+                    $enabledMode === self::MODE_PLAIN ? self::MODE_TEXT_ONLY : self::MODE_PLAIN
+                );
             }
-            self::enabled(self::MODE_TEXT_ONLY);
+
+            // process modifier combinations
+            if (strpos($modifiers, '-') !== false) {
+                $decorator::$firstRun = true;
+            }
         }
 
         $output = '';
@@ -407,10 +444,10 @@ class Sage
         }
 
         $trace = false;
-        if ($names === array(null) && func_num_args() === 1 && $data === 1) { # Sage::dump(1) shorthand
+        if ($data === 1 && $names === array(null) && func_num_args() === 1) { // Sage::dump(1) shorthand
             $trace = SageHelper::php53() ? debug_backtrace(true) : debug_backtrace();
         } elseif (func_num_args() === 1 && is_array($data)) {
-            $trace = $data; # test if the single parameter is result of debug_backtrace()
+            $trace = $data; // test if the single parameter is result of debug_backtrace()
         }
         $trace and $trace = self::_parseTrace($trace);
 
@@ -424,25 +461,25 @@ class Sage
 
             foreach ($data as $k => $argument) {
                 SageParser::reset();
-                # when the dump arguments take long to generate output, user might have changed the file and
-                # Sage might not parse the arguments correctly, so check if names are set and while the
-                # displayed names might be wrong, at least don't throw an error
+                // when the dump arguments take long to generate output, user might have changed the file and
+                // Sage might not parse the arguments correctly, so check if names are set and while the
+                // displayed names might be wrong, at least don't throw an error
                 $output .= call_user_func(
                     array($decorator, 'decorate'),
-                    SageParser::factory($argument, isset($names[$k]) ? $names[$k] : '')
+                    SageParser::process($argument, isset($names[$k]) ? $names[$k] : '')
                 );
             }
         }
 
         $output .= call_user_func(array($decorator, 'wrapEnd'), $callee, $miniTrace, $previousCaller);
 
-        self::enabled($modeOldValue);
+        self::enabled($enabledMode);
 
         $decorator::$firstRun = false;
         if (strpos($modifiers, '~') !== false) {
             $decorator::$firstRun = $firstRunOldValue;
         } else {
-            self::enabled($modeOldValue);
+            self::enabled($enabledMode);
         }
         if (strpos($modifiers, '!') !== false) {
             self::$expandedByDefault = $expandedByDefaultOldValue;
@@ -490,50 +527,48 @@ class Sage
     private static function _showSource($file, $lineNumber, $padding = 7)
     {
         if (! $file || ! is_readable($file)) {
-            # continuing will cause errors
+            // continuing will cause errors
             return false;
         }
 
-        # open the file and set the line position
+        // open the file and set the line position
         $file = fopen($file, 'r');
         $line = 0;
 
-        # Set the reading range
+        // Set the reading range
         $range = array(
             'start' => $lineNumber - $padding,
             'end'   => $lineNumber + $padding,
         );
 
-        # set the zero-padding amount for line numbers
+        // set the zero-padding amount for line numbers
         $format = '% '.strlen($range['end']).'d';
 
         $source = '';
         while (($row = fgets($file)) !== false) {
-            # increment the line number
+            // increment the line number
             if (++$line > $range['end']) {
                 break;
             }
 
             if ($line >= $range['start']) {
-                # make the row safe for output
-                $row = htmlspecialchars($row, ENT_NOQUOTES, 'UTF-8');
+                $row = SageHelper::esc($row);
 
-                # trim whitespace and sanitize the row
                 $row = '<span>'.sprintf($format, $line).'</span> '.$row;
 
                 if ($line === $lineNumber) {
-                    # apply highlighting to this row
+                    // apply highlighting to this row
                     $row = '<div class="_sage-highlight">'.$row.'</div>';
                 } else {
                     $row = '<div>'.$row.'</div>';
                 }
 
-                # add to the captured source
+                // add to the captured source
                 $source .= $row;
             }
         }
 
-        # close the file
+        // close the file
         fclose($file);
 
         return $source;
@@ -553,9 +588,9 @@ class Sage
         $miniTrace = array();
         $prevStep = array();
 
-        # go from back of trace to find first occurrence of call to Sage or its wrappers
+        // go from back of trace to find first occurrence of call to Sage or its wrappers
         while ($step = array_pop($trace)) {
-            if (self::_stepIsInternal($step)) {
+            if (SageHelper::stepIsInternal($step)) {
                 $previousCaller = $prevStep;
                 break;
             }
@@ -573,7 +608,7 @@ class Sage
             return array(null, null, $callee, $previousCaller, $miniTrace);
         }
 
-        # open the file and read it up to the position where the function call expression ended
+        // open the file and read it up to the position where the function call expression ended
         $file = fopen($callee['file'], 'r');
         $line = 0;
         $source = '';
@@ -596,7 +631,7 @@ class Sage
             }
         }
 
-        # get the position of the last call to the function
+        // get the position of the last call to the function
         preg_match_all("
             [
             # beginning of statement
@@ -641,7 +676,7 @@ class Sage
         $bracket = end($matches[4]);
 
         if (empty($callToSage)) {
-            # if a wrapper is misconfigured, don't display the whole file as variable name
+            // if a wrapper is misconfigured, don't display the whole file as variable name
             return array(array(), $modifiers, $callee, $previousCaller, $miniTrace);
         }
 
@@ -651,11 +686,11 @@ class Sage
         }
 
         $paramsString = preg_replace("[\x07+]", ' ', substr($source, $bracket[1] + 1));
-        # we now have a string like this:
-        # <parameters passed>); <the rest of the last read line>
+        // we now have a string like this:
+        // <parameters passed>); <the rest of the last read line>
 
-        # remove everything in brackets and quotes, we don't need nested statements nor literal strings which would
-        # only complicate separating individual arguments
+        // remove everything in brackets and quotes, we don't need nested statements nor literal strings which would
+        // only complicate separating individual arguments
         $c = strlen($paramsString);
         $inString = $escaped = $openedBracket = $closingBracket = false;
         $i = 0;
@@ -685,8 +720,8 @@ class Sage
                 $inString = false;
             }
 
-            # replace whatever was inside quotes or brackets with untypeable characters, we don't
-            # need that info. We'll later replace the whole string with '...'
+            // replace whatever was inside quotes or brackets with untypeable characters, we don't
+            // need that info. We'll later replace the whole string with '...'
             if ($inBrackets > 0) {
                 if ($inBrackets > 1 || $letter !== $openedBracket) {
                     $paramsString[$i] = "\x07";
@@ -702,10 +737,10 @@ class Sage
             $i++;
         }
 
-        # by now we have an un-nested arguments list, lets make it to an array for processing further
+        // by now we have an un-nested arguments list, lets make it to an array for processing further
         $arguments = explode(',', preg_replace("[\x07+]", '...', $paramsString));
 
-        # test each argument whether it was passed literary or was it an expression or a variable name
+        // test each argument whether it was passed literary or was it an expression or a variable name
         $parameters = array();
         $blacklist = array('null', 'true', 'false', 'array(...)', 'array()', '"..."', '[...]', 'b"..."',);
         foreach ($arguments as $argument) {
@@ -766,58 +801,14 @@ class Sage
         return $cleanedSource;
     }
 
-    /**
-     * returns whether current trace step belongs to Sage or its wrappers
-     *
-     * @param $step
-     *
-     * @return array|bool
-     */
-    private static function _stepIsInternal($step)
-    {
-        $aliases = array(
-            'methods'   => array(
-                array('sage', 'dump'),
-                array('sage', 'trace'),
-            ),
-            'functions' => array(
-                'd',
-                'sage',
-                'dd',
-                'saged',
-                'ddd',
-                's',
-                'sd',
-            ),
-        );
-
-        if (! empty(self::$aliases)) {
-            $aliases['functions'] = array_merge(
-                $aliases['functions'],
-                is_string(self::$aliases) ? explode(',', self::$aliases) : self::$aliases
-            );
-        }
-
-        if (isset($step['class'])) {
-            foreach ($aliases['methods'] as $alias) {
-                if ($alias[0] === strtolower($step['class']) && $alias[1] === strtolower($step['function'])) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        return in_array(strtolower($step['function']), $aliases['functions'], true);
-    }
 
     private static function _parseTrace(array $data)
     {
         $trace = array();
         $traceFields = array('file', 'line', 'args', 'class');
-        $fileFound = false; # file element must exist in one of the steps
+        $fileFound = false; // file element must exist in one of the steps
 
-        # validate whether a trace was indeed passed
+        // validate whether a trace was indeed passed
         while ($step = array_pop($data)) {
             if (! is_array($step) || ! isset($step['function'])) {
                 return false;
@@ -837,7 +828,7 @@ class Sage
                 return false;
             }
 
-            if (self::_stepIsInternal($step)) {
+            if (SageHelper::stepIsInternal($step)) {
                 $step = array(
                     'file'     => $step['file'],
                     'line'     => $step['line'],
@@ -846,7 +837,7 @@ class Sage
                 array_unshift($trace, $step);
                 break;
             }
-            if ($step['function'] !== 'spl_autoload_call') { # meaningless
+            if ($step['function'] !== 'spl_autoload_call') { // meaningless
                 array_unshift($trace, $step);
             }
         }
@@ -861,7 +852,7 @@ class Sage
 
                 if (isset($step['line'])) {
                     $line = $step['line'];
-                    # include the source of this step
+                    // include the source of this step
                     if (self::enabled() === self::MODE_RICH) {
                         $source = self::_showSource($file, $line);
                     }
@@ -872,15 +863,15 @@ class Sage
 
             if (in_array($function, array('include', 'include_once', 'require', 'require_once'))) {
                 if (empty($step['args'])) {
-                    # no arguments
+                    // no arguments
                     $args = array();
                 } else {
-                    # sanitize the included file path
+                    // sanitize the included file path
                     $args = array('file' => SageHelper::shortenPath($step['args'][0]));
                 }
             } elseif (isset($step['args'])) {
                 if (empty($step['class']) && ! function_exists($function)) {
-                    # introspection on closures or language constructs in a stack trace is impossible before PHP 5.3
+                    // introspection on closures or language constructs in a stack trace is impossible before PHP 5.3
                     $params = null;
                 } else {
                     try {
@@ -896,9 +887,9 @@ class Sage
                             $reflection = new ReflectionFunction($function);
                         }
 
-                        # get the function parameters
+                        // get the function parameters
                         $params = $reflection->getParameters();
-                    } catch (Exception $e) { # avoid various PHP version incompatibilities
+                    } catch (Exception $e) { // avoid various PHP version incompatibilities
                         $params = null;
                     }
                 }
@@ -906,17 +897,17 @@ class Sage
                 $args = array();
                 foreach ($step['args'] as $i => $arg) {
                     if (isset($params[$i])) {
-                        # assign the argument by the parameter name
+                        // assign the argument by the parameter name
                         $args[$params[$i]->name] = $arg;
                     } else {
-                        # assign the argument by number
+                        // assign the argument by number
                         $args['#'.($i + 1)] = $arg;
                     }
                 }
             }
 
             if (isset($step['class'])) {
-                # Class->method() or Class::method()
+                // Class->method() or Class::method()
                 $function = $step['class'].$step['type'].$function;
             }
 
@@ -936,6 +927,16 @@ class Sage
         return $output;
     }
 
+    /*
+     *    ██╗███╗   ██╗██╗████████╗
+     *    ██║████╗  ██║██║╚══██╔══╝
+     *    ██║██╔██╗ ██║██║   ██║
+     *    ██║██║╚██╗██║██║   ██║
+     *    ██║██║ ╚████║██║   ██║
+     *    ╚═╝╚═╝  ╚═══╝╚═╝   ╚═╝
+     *
+     */
+
     private static function _initSetting($name, $default)
     {
         if (! isset(self::$$name)) {
@@ -950,17 +951,18 @@ class Sage
 
     private static function _init()
     {
+        SageHelper::buildAliases();
+
+        if (self::$_initialized) {
+            return;
+        }
+
         // first load defaults for configuration. In this order:
         // 1. If value is set, it means user explicitly set it
         // 2. TODO: composer.json
         // 3. If present in get_cfg_var means user put it into his php.ini
         // 4. Load default from Sage
-        self::_initSetting(
-            'fileLinkFormat',
-            get_cfg_var('sage.fileLinkFormat')
-                ? get_cfg_var('sage.fileLinkFormat') // we're fully compatible with PHP 5.1+
-                : 'http://localhost:8091?message=%f:%l' // requres RemoteCall plugin for PHPStorm
-        );
+        self::_initSetting('editor', ini_get('xdebug.file_link_format'));
         self::_initSetting('fileLinkServerPath', null);
         self::_initSetting('fileLinkLocalPath', null);
         self::_initSetting('displayCalledFrom', true);
@@ -972,12 +974,12 @@ class Sage
         self::_initSetting('cliColors', true);
         self::_initSetting('charEncodings', array(
                 'UTF-8',
-                'Windows-1252', # Western; includes iso-8859-1, replace this with windows-1251 if you have
-                'euc-jp',       # Japanese
+                'Windows-1252', // Western; includes iso-8859-1, replace this with windows-1251 if you have
+                'euc-jp',       // Japanese
             )
         );
         self::_initSetting('returnOutput', false);
-        self::_initSetting('aliases', null);
+        self::_initSetting('aliases', array());
     }
 }
 
@@ -1099,17 +1101,15 @@ if (! function_exists('s')) {
             return '';
         }
 
-        if ($enabled === Sage::MODE_TEXT_ONLY) { # if already in whitespace, don't elevate to plain
-            $restoreMode = Sage::MODE_TEXT_ONLY;
-        } else {
-            $restoreMode = Sage::enabled( # remove cli colors in cli mode; remove rich interface in HTML mode
+        if ($enabled !== Sage::MODE_TEXT_ONLY) { // if already in whitespace, don't elevate to plain
+            Sage::enabled( // remove cli colors in cli mode; remove rich interface in HTML mode
                 PHP_SAPI === 'cli' ? Sage::MODE_TEXT_ONLY : Sage::MODE_PLAIN
             );
         }
 
         $params = func_get_args();
         $dump = call_user_func_array(array('Sage', 'dump'), $params);
-        Sage::enabled($restoreMode);
+        Sage::enabled($enabled);
 
         return $dump;
     }
@@ -1140,4 +1140,9 @@ if (! function_exists('sd')) {
         call_user_func_array(array('Sage', 'dump'), $params);
         die;
     }
+}
+
+
+if (get_cfg_var('sage.enabled') !== false) {
+    Sage::enabled(get_cfg_var('sage.enabled'));
 }

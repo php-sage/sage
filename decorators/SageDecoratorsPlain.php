@@ -10,7 +10,7 @@ class SageDecoratorsPlain
     private static $_enableColors;
 
     private static $_cliEffects = array(
-        # effects
+        // effects
         'bold'             => '1',
         'dark'             => '2',
         'italic'           => '3',
@@ -20,7 +20,7 @@ class SageDecoratorsPlain
         'concealed'        => '8',
         'default'          => '39',
 
-        # colors
+        // colors
         'black'            => '30',
         'red'              => '31',
         'green'            => '32',
@@ -38,7 +38,7 @@ class SageDecoratorsPlain
         'light_cyan'       => '96',
         'white'            => '97',
 
-        # backgrounds
+        // backgrounds
         'bg_default'       => '49',
         'bg_black'         => '40',
         'bg_red'           => '41',
@@ -100,18 +100,18 @@ class SageDecoratorsPlain
         $output .= $space.self::_drawHeader($varData);
 
 
-        if ($varData->extendedValue !== null) {
+        if (isset($varData->extendedValue)) {
             $output .= ' '.($varData->type === 'array' ? '[' : '(').PHP_EOL;
-
 
             if (is_array($varData->extendedValue)) {
                 foreach ($varData->extendedValue as $v) {
                     $output .= self::decorate($v, $level + 1);
                 }
             } elseif (is_string($varData->extendedValue)) {
-                $output .= $space.$s.$varData->extendedValue.PHP_EOL; # "depth too great" or similar
+                $output .= $space.$s.self::_colorize($varData->extendedValue, 'value').PHP_EOL; // "depth too great" or similar
             } else {
-                $output .= self::decorate($varData->extendedValue, $level + 1); //it's SageVariableData
+//                throw new RuntimeException();
+//                $output .= self::decorate($varData->extendedValue, $level + 1); // it's SageVariableData
             }
             $output .= $space.($varData->type === 'array' ? ']' : ')').PHP_EOL;
         } else {
@@ -129,7 +129,11 @@ class SageDecoratorsPlain
             $title = str_pad(++$stepNo.': ', 4, ' ');
 
             $title .= self::_colorize(
-                (isset($step['file']) ? self::_buildCalleeString($step) : 'PHP internal call'),
+                (
+                isset($step['file'])
+                    ? SageHelper::ideLink($step['file'], $step['line'])
+                    : 'PHP internal call'
+                ),
                 'title'
             );
 
@@ -139,7 +143,6 @@ class SageDecoratorsPlain
                     $title .= '(';
                     if (empty($step['args'])) {
                         $title .= ')';
-                    } else {
                     }
                     $title .= PHP_EOL;
                 }
@@ -152,7 +155,7 @@ class SageDecoratorsPlain
 
                 $i = 0;
                 foreach ($step['args'] as $name => $argument) {
-                    $argument = SageParser::factory(
+                    $argument = SageParser::process(
                         $argument,
                         $name ? $appendDollar.$name : '#'.++$i
                     );
@@ -177,12 +180,12 @@ class SageDecoratorsPlain
 
                 $maxLevels = Sage::$maxLevels;
                 if ($maxLevels) {
-                    # in cli the terminal window is filled too quickly to display huge objects
+                    // in cli the terminal window is filled too quickly to display huge objects
                     Sage::$maxLevels = Sage::enabled() === Sage::MODE_CLI
                         ? 1
                         : $maxLevels + 1;
                 }
-                $output .= self::decorate(SageParser::factory($step['object']), 1);
+                $output .= self::decorate(SageParser::process($step['object']), 1);
                 if ($maxLevels) {
                     Sage::$maxLevels = $maxLevels;
                 }
@@ -199,12 +202,12 @@ class SageDecoratorsPlain
 
     private static function _colorize($text, $type, $nlAfter = true)
     {
-        $nlAfter = $nlAfter ? PHP_EOL : '';
+        $nl = $nlAfter ? PHP_EOL : '';
 
         switch (Sage::enabled()) {
             case Sage::MODE_PLAIN:
                 if (! self::$_enableColors) {
-                    return $text.$nlAfter;
+                    return $text.$nl;
                 }
 
                 switch ($type) {
@@ -219,24 +222,24 @@ class SageDecoratorsPlain
                         break;
                 }
 
-                return $text.$nlAfter;
+                return $text.$nl;
                 break;
             case Sage::MODE_CLI:
                 if (! self::$_enableColors) {
-                    return $text.$nlAfter;
+                    return $text.$nl;
                 }
 
                 $optionsMap = array(
-                    'title' => "\x1b[36m", # cyan
-                    'type'  => "\x1b[35;1m", # magenta bold
-                    'value' => "\x1b[32m", # green
+                    'title' => "\x1b[36m", // cyan
+                    'type'  => "\x1b[35;1m", // magenta bold
+                    'value' => "\x1b[32m", // green
                 );
 
-                return $optionsMap[$type].$text."\x1b[0m".$nlAfter;
+                return $optionsMap[$type].$text."\x1b[0m".$nl;
                 break;
             case Sage::MODE_TEXT_ONLY:
             default:
-                return $text.$nlAfter;
+                return $text.$nl;
                 break;
         }
     }
@@ -264,7 +267,7 @@ class SageDecoratorsPlain
 
     private static function _title($text)
     {
-        $escaped = SageParser::decodeStr($text);
+        $escaped = SageHelper::decodeStr($text);
         $lengthDifference = strlen($escaped) - strlen($text);
 
         return
@@ -303,12 +306,18 @@ class SageDecoratorsPlain
         }
 
 
-        return $lastLine.self::_colorize('Called from '.self::_buildCalleeString($callee), 'title').$lastChar;
+        return $lastLine
+            .self::_colorize(
+                'Called from '.SageHelper::ideLink($callee['file'], $callee['line']),
+                'title'
+            )
+            .$lastChar;
     }
 
 
     private static function _drawHeader(SageVariableData $varData)
     {
+
         $output = '';
 
         if ($varData->access) {
@@ -316,7 +325,7 @@ class SageDecoratorsPlain
         }
 
         if ($varData->name !== null && $varData->name !== '') {
-            $output .= ' '.SageParser::decodeStr($varData->name);
+            $output .= ' '.SageHelper::decodeStr($varData->name);
         }
 
         if ($varData->operator) {
@@ -332,37 +341,13 @@ class SageDecoratorsPlain
 
         if ($varData->value !== null && $varData->value !== '') {
             $output .= ' '.self::_colorize(
-                    $varData->value, # escape shell
+                    $varData->value, // escape shell
                     'value',
                     false
                 );
         }
 
         return ltrim($output);
-    }
-
-    private static function _buildCalleeString($callee)
-    {
-        if (Sage::enabled() === Sage::MODE_CLI) { // todo win/nix
-            return "{$callee['file']}:{$callee['line']}";
-        }
-
-        $url = SageHelper::getIdeLink($callee['file'], $callee['line']);
-        $shortenedName = SageHelper::shortenPath($callee['file']).':'.$callee['line'];
-
-        if (Sage::enabled() === Sage::MODE_PLAIN) {
-            if (strpos($url, 'http://') === 0) {
-                $calleeInfo = <<<HTML
-<a href="{$url}"onclick="X=new XMLHttpRequest;X.open('GET',this.href);X.send();return!1">{$shortenedName}</a>
-HTML;
-            } else {
-                $calleeInfo = "<a href=\"{$url}\">{$shortenedName}</a>";
-            }
-        } else {
-            $calleeInfo = $shortenedName;
-        }
-
-        return $calleeInfo;
     }
 
     public static function init()

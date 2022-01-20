@@ -2,20 +2,18 @@
 
 /**
  * @internal
- * @noinspection AutoloadingIssuesInspection
  */
-class Sage_Objects_Smarty extends SageObject
+class SageParsersSmarty extends SageParser
 {
-    public function parse(&$variable)
+    protected static function parse(&$variable, $varData)
     {
         if (! $variable instanceof Smarty
-            || ! defined('Smarty::SMARTY_VERSION') # lower than 3.x
+            || ! defined('Smarty::SMARTY_VERSION') // lower than 3.x
         ) {
             return false;
         }
 
-
-        $this->name = 'object Smarty (v'.Smarty::SMARTY_VERSION.')'; # trim 'Smarty-'
+        $varData->name = 'Smarty v'.Smarty::SMARTY_VERSION;
 
         $assigned = $globalAssigns = array();
         foreach ($variable->tpl_vars as $name => $var) {
@@ -29,15 +27,15 @@ class Sage_Objects_Smarty extends SageObject
             $globalAssigns[$name] = $var->value;
         }
 
-        return array(
-            'Assigned'          => $assigned,
-            'Assigned globally' => $globalAssigns,
-            'Configuration'     => array(
+        $varData->addTabToView($variable, 'Assigned to view', $assigned);
+        $varData->addTabToView($variable, 'Assigned globally', $globalAssigns);
+        $varData->addTabToView($variable, 'Configuration', array(
                 'Compiled files stored in' => isset($variable->compile_dir)
                     ? $variable->compile_dir
                     : $variable->getCompileDir(),
             )
         );
 
+        return true;
     }
 }
