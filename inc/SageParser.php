@@ -445,7 +445,7 @@ class SageParser
              * These prepended values have null bytes on either side.
              * http://www.php.net/manual/en/language.types.array.php#language.types.array.casting
              */
-            if ($key[0] === "\x00") {
+            if (is_string($key) && $key[0] === "\x00") {
 
                 $access = $key[1] === "*" ? "protected" : "private";
 
@@ -470,6 +470,9 @@ class SageParser
             $variableData->size++;
         }
 
+        if ($variable instanceof __PHP_Incomplete_Class) {
+            return $castedArray;
+        }
 
         foreach ($reflector->getProperties() as $property) {
             $name = $property->name;
@@ -491,9 +494,16 @@ class SageParser
                 continue;
             }
 
-            $value = $property->getValue($variable);
-
+            if (method_exists($property, 'isInitialized')
+                && ! $property->isInitialized($variable)) {
+                $value = null;
+                $access .= ' [uninitialized]';
+            } else {
+                $value = $property->getValue($variable);
+            }
+	    
             $output = self::process($value, SageHelper::decodeStr($name));
+
             $output->access = $access;
             $output->operator = '->';
             $extendedValue[] = $output;

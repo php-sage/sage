@@ -258,6 +258,10 @@ class SageHelper
         if (self::isHtmlMode()) {
             $value = self::esc($value);
 
+            if ($value === '') {
+                return '‹binary data›';
+            }
+
             $controlCharsMap = array(
                 "\v"   => '<u>\v</u>',
                 "\f"   => '<u>\f</u>',
@@ -267,25 +271,23 @@ class SageHelper
                 "\n"   => "<u>\\n</u>\n",
                 "\r"   => "<u>\\r</u>"
             );
-            $dontEscape = array();
-            $replaceTemplate = '<u>\x%02X</u>';
+            $replaceTemplate = '<u>‹0x%db›</u>';
         } else {
             $controlCharsMap = array(
                 "\v"   => '\v',
                 "\f"   => '\f',
                 "\033" => '\e',
             );
-            $dontEscape = array("\t", "\n", "\r");
             $replaceTemplate = '\x%02X';
         }
-
 
         $out = '';
         $i = 0;
         do {
             $character = $value[$i];
             $ord = ord($character);
-            if ($ord < 32 && ! in_array($character, $dontEscape, true)) {
+            // escape all invisible characters except \t, \n and \r - ORD 9, 10 and 13 respectively
+            if ($ord < 32 && $ord !== 9 && $ord !== 10 && $ord !== 13 ) {
                 if (isset($controlCharsMap[$character])) {
                     $out .= $controlCharsMap[$character];
                 } else {

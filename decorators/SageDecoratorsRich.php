@@ -86,6 +86,10 @@ class SageDecoratorsRich
                 $class .= ' _sage-show';
             }
 
+            if (empty($step['source']) && empty($step['args']) &&empty($step['object']) ) {
+                $class .= ' _sage-childless';
+            }
+
             $output .= '<dt class="'.$class.'">'
                 .'<b>'.($i + 1).'</b> '
                 .'<nav></nav>'
@@ -298,6 +302,10 @@ class SageDecoratorsRich
                 $output .= self::decorate($v);
             }
         } elseif (is_string($alternative)) {
+            // the browser does not render leading new line in <pre>
+            if ($alternative[0] === "\n" || $alternative[0] === "\r") {
+                $alternative = "\n" . $alternative;
+            }
             $output .= "<pre>{$alternative}</pre>";
         } elseif (isset($alternative)) {
             // error in custom parser, but don't let the user know

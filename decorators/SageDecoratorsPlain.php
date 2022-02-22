@@ -144,8 +144,8 @@ class SageDecoratorsPlain
                     if (empty($step['args'])) {
                         $title .= ')';
                     }
-                    $title .= PHP_EOL;
                 }
+                $title .= PHP_EOL;
             }
 
             $output .= $title;

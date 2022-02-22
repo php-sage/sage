@@ -962,7 +962,7 @@ class Sage
         // 2. TODO: composer.json
         // 3. If present in get_cfg_var means user put it into his php.ini
         // 4. Load default from Sage
-        self::_initSetting('editor', ini_get('xdebug.file_link_format'));
+        self::_initSetting('editor', ini_get('xdebug.file_link_format') ? ini_get('xdebug.file_link_format') : 'phpstorm-remotecall');
         self::_initSetting('fileLinkServerPath', null);
         self::_initSetting('fileLinkLocalPath', null);
         self::_initSetting('displayCalledFrom', true);
