@@ -1032,7 +1032,8 @@ if (! function_exists('sage')) {
 if (! function_exists('dd')) {
     /**
      * Alias of Sage::dump(); die;
-     * [!!!] IMPORTANT: execution will halt after call to this function
+     *
+     * @return never [!!!] IMPORTANT: execution will halt after call to this function
      */
     function dd()
     {
@@ -1049,7 +1050,8 @@ if (! function_exists('dd')) {
 if (! function_exists('ddd')) {
     /**
      * Alias of Sage::dump(); die;
-     * [!!!] IMPORTANT: execution will halt after call to this function
+     *
+     * @return never [!!!] IMPORTANT: execution will halt after call to this function
      */
     function ddd()
     {
@@ -1066,7 +1068,8 @@ if (! function_exists('ddd')) {
 if (! function_exists('saged')) {
     /**
      * Alias of Sage::dump(); die;
-     * [!!!] IMPORTANT: execution will halt after call to this function
+     *
+     * @return never [!!!] IMPORTANT: execution will halt after call to this function
      */
     function saged()
     {
@@ -1120,8 +1123,8 @@ if (! function_exists('sd')) {
      * @return string
      * @see s()
      *
-     * [!!!] IMPORTANT: execution will halt after call to this function
      *
+     * @return never [!!!] IMPORTANT: execution will halt after call to this function
      */
     function sd()
     {
