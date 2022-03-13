@@ -19,27 +19,28 @@ class SageParsersClassStatics extends SageParser
 
         // first show static values
         foreach ($reflection->getProperties(ReflectionProperty::IS_STATIC) as $property) {
-            $property->setAccessible(true);
-            $_ = $property->getValue();
-            $output = SageParser::process($_, '$'.$property->getName());
-
-            if (method_exists($property, 'isInitialized') && ! $property->isInitialized()) {
-                $output->type .= ' (uninitialized)';
-            }
-
-            if ($property->isPrivate()) {
-                if (! method_exists($property, 'setAccessible')) {
-                    break;
-                }
+            if ($property->isProtected()) {
                 $property->setAccessible(true);
-                $output->access = "private";
-            } elseif ($property->isProtected()) {
+                $access = "protected";
+            } elseif ($property->isPrivate()) {
                 $property->setAccessible(true);
-                $output->access = "protected";
+                $access = "private";
             } else {
-                $output->access = 'public';
+                $access = "public";
             }
 
+            if (method_exists($property, 'isInitialized')
+                && ! $property->isInitialized($variable)) {
+                $value = null;
+                $access .= ' [uninitialized]';
+            } else {
+                $value = $property->getValue($variable);
+            }
+
+            $name = '$'.$property->getName();
+            $output = self::process($value, SageHelper::decodeStr($name));
+
+            $output->access = $access;
             $output->operator = '::';
             $statics[] = $output;
         }

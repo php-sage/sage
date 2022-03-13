@@ -471,11 +471,12 @@ class SageParser
         }
 
         if ($variable instanceof __PHP_Incomplete_Class) {
+            $variableData->extendedValue = $extendedValue;
+
             return $castedArray;
         }
 
         foreach ($reflector->getProperties() as $property) {
-            $name = $property->name;
             if ($property->isStatic()) {
                 continue;
             }
@@ -490,6 +491,7 @@ class SageParser
                 $access = "public";
             }
 
+            $name = $property->getName();
             if (isset($encountered[$name])) {
                 continue;
             }
