@@ -8,15 +8,14 @@ class SageParsersSplFileInfo extends SageParser
 {
     protected static function parse(&$variable, $varData)
     {
-        if (! SageHelper::isRichMode()
-            || ! SageHelper::php53()
+        if ( ! SageHelper::php53()
             || ! $variable instanceof SplFileInfo
             || $variable instanceof SplFileObject
         ) {
             return false;
         }
 
-        $variable->value = $variable->getBasename();
+        $varData->value = $variable->getBasename();
 
         try {
             $flags = array();
@@ -67,7 +66,17 @@ class SageParsersSplFileInfo extends SageParser
             $flags = implode($flags);
             $path = $variable->getRealPath();
 
-            $varData->addTabToView($variable, "Existing {$type} ({$size})", "$flags    $path");
+            if (SageHelper::isRichMode()) {
+                $varData->addTabToView($variable, "Existing {$type} ({$size})", "$flags    $path");
+            } else {
+                $varData->value = $variable->getBasename();
+                $varData->extendedValue = array(
+                    ' path'  => $path,
+                    ' type'  => $type,
+                    ' size'  => $size,
+                    'flags' => $flags,
+                );
+            }
         } catch (Exception $e) {
             return false;
         }
