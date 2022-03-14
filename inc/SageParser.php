@@ -348,10 +348,14 @@ class SageParser
 
                     return false;
                 }
-                if (! $isSequential) {
+                if ($isSequential) {
+                    $output->name = null;
+                } else {
                     $output->operator = '=>';
+                    $output->name = is_int($key)
+                        ? $key
+                        : "'".SageHelper::decodeStr($key)."'";
                 }
-                $output->name = $isSequential ? null : "'".SageHelper::decodeStr($key)."'";
                 $extendedValue[] = $output;
             }
             $variableData->extendedValue = $extendedValue;

@@ -251,6 +251,10 @@ class SageHelper
 
     public static function decodeStr($value)
     {
+        if (is_int($value)) {
+            return (string)$value;
+        }
+
         if (strlen($value) === 0) {
             return '';
         }
