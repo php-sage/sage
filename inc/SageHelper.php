@@ -48,30 +48,6 @@ class SageHelper
         return $enabledMode === Sage::MODE_RICH || $enabledMode === Sage::MODE_PLAIN;
     }
 
-    public static function errorHandler($errno, $errstr, $errfile = null, $errline = null, $errcontext = null)
-    {
-        if (error_reporting() & $errno) {
-            // This error is not suppressed by current error reporting settings
-            // Convert the error into an ErrorException
-            throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
-        }
-
-        // Do not execute the PHP error handler
-        return true;
-    }
-
-    public static function exceptionText(Exception $e)
-    {
-        return sprintf(
-            '%s [ %s ]: %s ~ %s [ %d ]',
-            get_class($e),
-            $e->getCode(),
-            strip_tags($e->getMessage()),
-            str_replace(SAGE_DIR, 'SAGE_DIR/', $e->getFile()),
-            $e->getLine()
-        );
-    }
-
     /**
      * generic path display callback, can be configured in the settings; purpose is to show relevant path info and hide
      * as much of the path as possible.
@@ -255,7 +231,7 @@ class SageHelper
             return (string)$value;
         }
 
-        if (strlen($value) === 0) {
+        if ($value === '') {
             return '';
         }
 
@@ -311,35 +287,35 @@ class SageHelper
         $enabledMode = Sage::enabled();
         if (! self::isHtmlMode()) {
             return $file.':'.$line;
-        } else {
-            $linkText = $linkText ? $linkText : self::shortenPath($file).':'.$line;
-            $linkText = self::esc($linkText);
+        }
 
-            if (! Sage::$editor) {
-                return $linkText;
-            }
+        $linkText = $linkText ? $linkText : self::shortenPath($file).':'.$line;
+        $linkText = self::esc($linkText);
 
-            $ideLink = str_replace(
-                array('%f', '%l', Sage::$fileLinkServerPath),
-                array($file, $line, Sage::$fileLinkLocalPath),
-                isset(self::$editors[Sage::$editor]) ? self::$editors[Sage::$editor] : Sage::$editor
-            );
+        if (! Sage::$editor) {
+            return $linkText;
+        }
 
-            if ($enabledMode === Sage::MODE_RICH) {
-                $class = (strpos($ideLink, 'http://') === 0) ? 'class="_sage-ide-link" ' : '';
+        $ideLink = str_replace(
+            array('%f', '%l', Sage::$fileLinkServerPath),
+            array($file, $line, Sage::$fileLinkLocalPath),
+            isset(self::$editors[Sage::$editor]) ? self::$editors[Sage::$editor] : Sage::$editor
+        );
 
-                return "<a {$class}href=\"{$ideLink}\">{$linkText}</a>";
-            }
+        if ($enabledMode === Sage::MODE_RICH) {
+            $class = (strpos($ideLink, 'http://') === 0) ? ' class="_sage-ide-link" ' : ' ';
 
-            // MODE_PLAIN
-            if (strpos($ideLink, 'http://') === 0) {
-                return <<<HTML
+            return "<a{$class}href=\"{$ideLink}\">{$linkText}</a>";
+        }
+
+        // MODE_PLAIN
+        if (strpos($ideLink, 'http://') === 0) {
+            return <<<HTML
 <a href="{$ideLink}"onclick="X=new XMLHttpRequest;X.open('GET',this.href);X.send();return!1">{$linkText}</a>
 HTML;
-            } else {
-                return "<a href=\"{$ideLink}\">{$linkText}</a>";
-            }
         }
+
+        return "<a href=\"{$ideLink}\">{$linkText}</a>";
     }
 
     public static function esc($value, $encoding = 'UTF-8')
