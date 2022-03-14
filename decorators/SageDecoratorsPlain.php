@@ -104,11 +104,17 @@ class SageDecoratorsPlain
             $output .= ' '.($varData->type === 'array' ? '[' : '(').PHP_EOL;
 
             if (is_array($varData->extendedValue)) {
-                foreach ($varData->extendedValue as $v) {
-                    $output .= self::decorate($v, $level + 1);
+                foreach ($varData->extendedValue as $k => $v) {
+                    if (is_string($v)) {
+                        $output .= $space.$s
+                            .self::_colorize($k, 'key', false). ': '
+                            .self::_colorize($v, 'value');
+                    } else {
+                        $output .= self::decorate($v, $level + 1);
+                    }
                 }
             } elseif (is_string($varData->extendedValue)) {
-                $output .= $space.$s.self::_colorize($varData->extendedValue, 'value').PHP_EOL; // "depth too great" or similar
+                $output .= $space.$s.self::_colorize($varData->extendedValue, 'value').PHP_EOL;
             } else {
 //                throw new RuntimeException();
 //                $output .= self::decorate($varData->extendedValue, $level + 1); // it's SageVariableData
@@ -214,6 +220,9 @@ class SageDecoratorsPlain
                     case 'value':
                         $text = "<i>{$text}</i>";
                         break;
+                    case 'key':
+                        $text = $text;
+                        break;
                     case 'type':
                         $text = "<b>{$text}</b>";
                         break;
@@ -230,6 +239,7 @@ class SageDecoratorsPlain
                 }
 
                 $optionsMap = array(
+                    'key'   => "\x1b[33m", // yellow
                     'title' => "\x1b[36m", // cyan
                     'type'  => "\x1b[35;1m", // magenta bold
                     'value' => "\x1b[32m", // green
@@ -325,7 +335,7 @@ class SageDecoratorsPlain
         }
 
         if ($varData->name !== null && $varData->name !== '') {
-            $output .= ' '.SageHelper::decodeStr($varData->name);
+            $output .= ' '.self::_colorize(SageHelper::decodeStr($varData->name), 'key', false);
         }
 
         if ($varData->operator) {
