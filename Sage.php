@@ -500,6 +500,10 @@ class Sage
 
         echo $output;
 
+        if (strpos($modifiers, '-') !== false) {
+            return 0;
+        }
+
         return '';
     }
 
@@ -556,7 +560,7 @@ class Sage
 
                 $row = '<span>'.sprintf($format, $line).'</span> '.$row;
 
-                if ($line === $lineNumber) {
+                if ($line === (int)$lineNumber) {
                     // apply highlighting to this row
                     $row = '<div class="_sage-highlight">'.$row.'</div>';
                 } else {
