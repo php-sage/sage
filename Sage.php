@@ -361,13 +361,21 @@ class Sage
      *
      * @param mixed $data
      *
-     * @return string
+     * @return string|int returns 5463 (Sage in l33tspeak) if disabled
+     *
+     * Explanation for the magic number in return:
+     *   The return value has to be an int otherwise modifiers throw typesafe warinings, eg if we return null:
+     *
+     *       ~d(); // TypeError: Cannot perform bitwise not on null
+     *
+     *   It's not zero because it doesn't matter and if you find this somewhere in your logs or something - you know who
+     *   to blame :))
      */
     public static function dump($data = null)
     {
         $enabledMode = self::enabled();
         if (! $enabledMode) {
-            return '';
+            return 5463;
         }
 
         self::_init();
@@ -500,11 +508,7 @@ class Sage
 
         echo $output;
 
-        if (strpos($modifiers, '-') !== false) {
-            return 0;
-        }
-
-        return '';
+        return 5463;
     }
 
 
@@ -1003,12 +1007,12 @@ if (! function_exists('d')) {
     /**
      * Alias of Sage::dump()
      *
-     * @return string
+     * @return string|int @see Sage::dump()
      */
     function d()
     {
         if (! Sage::enabled()) {
-            return '';
+            return 5463;
         }
         $_ = func_get_args();
 
@@ -1020,12 +1024,12 @@ if (! function_exists('sage')) {
     /**
      * Alias of Sage::dump()
      *
-     * @return string
+     * @return string|int @see Sage::dump()
      */
     function sage()
     {
         if (! Sage::enabled()) {
-            return '';
+            return 5463;
         }
         $_ = func_get_args();
 
@@ -1042,7 +1046,7 @@ if (! function_exists('dd')) {
     function dd()
     {
         if (! Sage::enabled()) {
-            return '';
+            return 5463;
         }
 
         $_ = func_get_args();
@@ -1060,7 +1064,7 @@ if (! function_exists('ddd')) {
     function ddd()
     {
         if (! Sage::enabled()) {
-            return '';
+            return 5463;
         }
 
         $_ = func_get_args();
@@ -1078,7 +1082,7 @@ if (! function_exists('saged')) {
     function saged()
     {
         if (! Sage::enabled()) {
-            return '';
+            return 5463;
         }
 
         $_ = func_get_args();
@@ -1099,13 +1103,13 @@ if (! function_exists('s')) {
      *
      * [!!!] IMPORTANT: execution will halt after call to this function
      *
-     * @return string
+     * @return string|int @see Sage::dump()
      */
     function s()
     {
         $enabled = Sage::enabled();
         if (! $enabled) {
-            return '';
+            return 5463;
         }
 
         if ($enabled !== Sage::MODE_TEXT_ONLY) { // if already in whitespace, don't elevate to plain
@@ -1124,7 +1128,7 @@ if (! function_exists('s')) {
 
 if (! function_exists('sd')) {
     /**
-     * @return string
+     * @return string|int @see Sage::dump
      * @see s()
      *
      *
@@ -1134,7 +1138,7 @@ if (! function_exists('sd')) {
     {
         $enabled = Sage::enabled();
         if (! $enabled) {
-            return '';
+            return 5463;
         }
 
         if ($enabled !== Sage::MODE_TEXT_ONLY) {
