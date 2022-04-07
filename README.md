@@ -307,16 +307,6 @@ ddd( microtime(), 'final call, after sleep(2)' );
 * There's no such feature as a dump server, at least until someone convinces me it's actually useful.
 * It's not made by Symfony foundation nor does it have industry-grade backing & support. It's made buy just this one guy (and [contributors](https://github.com/php-sage/sage/graphs/contributors)) since [pre-2012](https://github.com/php-sage/sage/commit/3c49968cb912fb627c6650c4bfd4673bb1b44277).
 
-
-### 💬 How is `var_dump` - style debugging still relevant when we have Xdebug?
-
-1. In practice, Xdebug is quite often very difficult and time-consuming to install and configure.
-2. There's many usecases where dump&die is just faster to bring up.
-3. There is no way you can visualise a timeline of changed data with XDebug. For example, all values dumped from within a loop.
-4. And there's more subtle usecases, eg. if you stepped over something there's no way to go back, but with var-dumping the values of interest are still there in the output...
-
-I use xdebug almost daily, by the way. Side by side with Sage.
-
 ### 💬 What are the other dumpers out there
 
  * [Symfony/var-dumper](https://symfony.com/doc/current/components/var_dumper.html)
@@ -325,11 +315,20 @@ I use xdebug almost daily, by the way. Side by side with Sage.
  * [PHP Debug Bar](https://github.com/maximebf/php-debugbar)
  * [Kint](https://kint-php.github.io/kint/)
 
-### 💬 Why does Sage look so much like Kint?
+### 💬 Why does Sage look so much like Kint? A.K.A. Why does this have so few stars?
 
-Because it <u>is</u> Kint, and I am its author, however the project was [blatantly **stolen**](https://github.com/kint-php/kint/commit/1ea81f3add81b586756515673f8364f60feb86a3) from me by a malicious contributor!
+Because it <b>is</b> Kint, and I am its author, however the project was [blatantly **stolen**](https://github.com/kint-php/kint/commit/1ea81f3add81b586756515673f8364f60feb86a3) from me by a malicious contributor!
 
 Instead of fighting DMCA windmills, I chose to fork and rename the last good version and continue under a new name!
+
+### 💬 How is `var_dump` - style debugging still relevant when we have Xdebug?
+
+1. In practice, Xdebug is quite often very difficult and time-consuming to install and configure.
+2. There's many use-cases where dump&die is just faster to bring up.
+3. There is no way you can visualise a timeline of changed data with XDebug. For example, all values dumped from within a loop.
+4. And there's more subtle use-cases, eg. if you stepped over something there's no way to go back, but with var-dumping the values are still there...
+
+I use xdebug almost daily, by the way. Side by side with Sage.
 
 ---
 

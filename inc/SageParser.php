@@ -149,8 +149,8 @@ class SageParser
         $arrayKeys = array();
         $keys = null;
         $closeEnough = false;
-        foreach ($variable as $row) {
-            if (isset(self::$_marker) && $row === self::$_marker) {
+        foreach ($variable as $k => $row) {
+            if (isset(self::$_marker) && $k === self::$_marker) {
                 continue;
             }
 
@@ -263,7 +263,7 @@ class SageParser
         }
 
         $isSequential = SageHelper::isArraySequential($variable);
-        $variable[self::$_marker] = true; // this must be AFTER _isArrayTabular
+        $variable[self::$_marker] = true;
 
         if ($variableData->size > 1 && ($arrayKeys = self::_isArrayTabular($variable)) !== false) {
             // tabular array parse
