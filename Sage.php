@@ -408,26 +408,26 @@ class Sage
         $firstRunOldValue = $decorator::$firstRun;
 
         // process modifiers: @, +, !, ~ and -
-        if (strpos($modifiers, '-') !== false) {
+        if (!empty($modifiers) && strpos($modifiers, '-') !== false) {
             $decorator::$firstRun = true;
             while (ob_get_level()) {
                 ob_end_clean();
             }
         }
-        if (strpos($modifiers, '!') !== false) {
+        if (!empty($modifiers) && strpos($modifiers, '!') !== false) {
             $expandedByDefaultOldValue = self::$expandedByDefault;
             self::$expandedByDefault = true;
         }
-        if (strpos($modifiers, '+') !== false) {
+        if (!empty($modifiers) && strpos($modifiers, '+') !== false) {
             $maxLevelsOldValue = self::$maxLevels;
             self::$maxLevels = false;
         }
-        if (strpos($modifiers, '@') !== false) {
+        if (!empty($modifiers) && strpos($modifiers, '@') !== false) {
             $returnOldValue = self::$returnOutput;
             self::$returnOutput = true;
             $decorator::$firstRun = true;
         }
-        if (strpos($modifiers, '~') !== false) {
+        if (!empty($modifiers) && strpos($modifiers, '~') !== false) {
             // restore values for whatever decorator was set previously
             $decorator::$firstRun = $firstRunOldValue;
 
@@ -441,7 +441,7 @@ class Sage
             }
 
             // process modifier combinations
-            if (strpos($modifiers, '-') !== false) {
+            if (!empty($modifiers) && strpos($modifiers, '-') !== false) {
                 $decorator::$firstRun = true;
             }
         }
@@ -484,18 +484,18 @@ class Sage
         self::enabled($enabledMode);
 
         $decorator::$firstRun = false;
-        if (strpos($modifiers, '~') !== false) {
+        if (!empty($modifiers) && strpos($modifiers, '~') !== false) {
             $decorator::$firstRun = $firstRunOldValue;
         } else {
             self::enabled($enabledMode);
         }
-        if (strpos($modifiers, '!') !== false) {
+        if (!empty($modifiers) && strpos($modifiers, '!') !== false) {
             self::$expandedByDefault = $expandedByDefaultOldValue;
         }
-        if (strpos($modifiers, '+') !== false) {
+        if (!empty($modifiers) && strpos($modifiers, '+') !== false) {
             self::$maxLevels = $maxLevelsOldValue;
         }
-        if (strpos($modifiers, '@') !== false) {
+        if (!empty($modifiers) && strpos($modifiers, '@') !== false) {
             self::$returnOutput = $returnOldValue;
             $decorator::$firstRun = $firstRunOldValue;
 
