@@ -354,7 +354,7 @@ class SageParser
                     $output->operator = '=>';
                     $output->name = is_int($key)
                         ? $key
-                        : "'".SageHelper::decodeStr($key)."'";
+                        : "'".$key."'";
                 }
                 $extendedValue[] = $output;
             }
