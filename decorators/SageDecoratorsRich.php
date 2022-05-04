@@ -160,8 +160,6 @@ class SageDecoratorsRich
     /**
      * called for each dump, opens the html tag
      *
-     * @param array $callee caller information taken from debug backtrace
-     *
      * @return string
      */
     public static function wrapStart()

@@ -83,7 +83,7 @@ sage.enabled = 0
 
 3. Include the desired settings in your bootstrap process anywhere™.
 
-## List of available customization options
+# All available customization options
 
 ```php
 Sage::$theme = Sage::THEME_ORIGINAL;
@@ -210,7 +210,7 @@ Sage::$aliases[] = 'my_dump'; // let Sage know about it. In lowercase please.
 ```
 
 ---
-# 🧙 Tips & Tricks
+# 🧙 Advanced Tips & Tricks
 
 ```php
 // we already saw:
@@ -289,23 +289,17 @@ ddd( microtime(), 'final call, after sleep(2)' );
 ### 💬 How is it different or better than [symfony/var-dumper](https://symfony.com/doc/current/components/var_dumper.html)?
 
 * Visible **Variable name**
-* Keyboard shortcuts. Type <kbd>d</kbd> and the rest is just self-explanatory.
+* Keyboard shortcuts. Type <kbd>d</kbd> and the rest is just self-explanatory (use arrows, space, tab, enter, you'll get it!).
 * **Debug backtraces** with full insight of arguments, callee objects and more.
   ![Trace view](.github/img/trace.png)
 * Custom display for a lot of recognized types:
   ![](.github/img/alternative-view.png)
-* Has text-only, plain and rich views, is trivial to configure, has several visual themes - actually created by a pro designer.
-* A huge amount of small usability enhancements - like the (clickable) call **trace** in the footer of each output.
-* Supports convenience modifiers, for example `@sage($var);` will return instead of outputting, `-sage($var);` will `ob_clean` all output to be the only thing on page.
-* Supports PHP 5.1+! That's the lowest physically possible version to extend compatibility to. Next time you headbang on something incredibly legacy, remember Sage!
-* Is way less complex - to read and contribute to.
-
-#### 🔀 How is it worse?
-
-* Does not come pre-bundled with your cool framework (but it is zero-setup!)
-* Although Sage predates var-dumper, and I'm pretty sure it ["inspired"](https://github.com/php-sage/sage/commit/fa6c8074ea1870bb5c6a080e94f7130e9a0f2fda#diff-2cdf3c423d47e373c75638c910674ec68c5aa434e11d4074037c91a543d9cb58R549) the widespread use of the wonderful shorthand `dd`, I stepped down to let var-dumper use this name. To dump & die with Sage you can `ddd()` or `saged()`
-* There's no such feature as a dump server, at least until someone convinces me it's actually useful.
-* It's not made by Symfony foundation nor does it have industry-grade backing & support. It's made buy just this one guy (and [contributors](https://github.com/php-sage/sage/graphs/contributors)) since [pre-2012](https://github.com/php-sage/sage/commit/3c49968cb912fb627c6650c4bfd4673bb1b44277).
+* Has text-only, plain and rich views, has several visual themes - actually created by a pro designer.
+* A huge amount of small usability enhancements - like the (clickable) **call trace** in the footer of each output.
+* Supports convenience modifiers, for example `@sage($var);` will return instead of outputting, `-sage($var);` will `ob_clean` all output to be the only thing on page (see advanced section above for more).
+* Compatibility! Fully works on **PHP 5.1 - 8.1+**!
+* Code is way less complex - to read and contribute to.
+* Sage came first - developed since [pre-2012](https://github.com/php-sage/sage/commit/3c49968cb912fb627c6650c4bfd4673bb1b44277). It inspired the now ubiquitous [dd](https://github.com/php-sage/sage/commit/fa6c8074ea1870bb5c6a080e94f7130e9a0f2fda#diff-2cdf3c423d47e373c75638c910674ec68c5aa434e11d4074037c91a543d9cb58R549) shorthand, pioneered a lot of the concepts in the tool niche. 
 
 ### 💬 What are the other dumpers out there
 
@@ -313,13 +307,13 @@ ddd( microtime(), 'final call, after sleep(2)' );
  * [yii\helpers\VarDumper](https://www.yiiframework.com/doc/api/2.0/yii-helpers-vardumper)
  * [Tracy](https://tracy.nette.org/)
  * [PHP Debug Bar](https://github.com/maximebf/php-debugbar)
- * [Kint](https://kint-php.github.io/kint/)
+ * [Kint](https://kint-php.github.io/kint/) - sage superseeds Kint.
 
 ### 💬 Why does Sage look so much like Kint? A.K.A. Why does this have so few stars?
 
 Because it <b>is</b> Kint, and I am its author, however the project was [blatantly **stolen**](https://github.com/kint-php/kint/commit/1ea81f3add81b586756515673f8364f60feb86a3) from me by a malicious contributor!
 
-Instead of fighting DMCA windmills, I chose to fork and rename the last good version and continue under a new name!
+Instead of fighting DMCA windmills, I chose to fork and rename the last **good** version and continue under a new name!
 
 ### 💬 How is `var_dump` - style debugging still relevant when we have Xdebug?
 
@@ -335,6 +329,8 @@ I use xdebug almost daily, by the way. Side by side with Sage.
 ## Author
 
 **Rokas Šleinius** ([Raveren](https://github.com/raveren))
+
+Contributors: https://github.com/php-sage/sage/graphs/contributors
 
 ### License
 

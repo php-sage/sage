@@ -1,6 +1,10 @@
 <?php
 
 /*
+ * Sage is a zero-setup PHP debugging assistant. It provides insightful data about variables and program flow.
+ *
+ * https://github.com/php-sage/sage
+ *
  * The MIT License (MIT)
  *
  * Copyright (c) 2013 Rokas Sleinius (raveren@gmail.com) and contributors (https://github.com/php-sage/sage/contributors)
@@ -21,12 +25,6 @@
  * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
-/**
- * Sage is a zero-setup debugging tool to output insightful information about variables and stack traces.
- *
- * https://github.com/php-sage/sage
  */
 
 if (defined('SAGE_DIR')) {
