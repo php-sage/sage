@@ -326,6 +326,24 @@ I use xdebug almost daily, by the way. Side by side with Sage.
 
 ---
 
+### Contributing
+
+#### 🎲 Prerequisites
+
+* Install [Docker Compose](https://docs.docker.com/compose/install/#install-compose').
+* If you're on **Windows** 10+ you need to use WSL2:
+  1. Setup: `wsl --install`
+  2. Set Ubuntu as your default wsl shell: `wsl --set-version Ubuntu 2`.
+  3. All commands listed below must be run from inside wsl shell: `wsl`
+
+Do your changes but before committing run
+
+```bash
+ docker compose run php composer build
+```
+
+To compile resources and build the phar file.
+
 ## Author
 
 **Rokas Šleinius** ([Raveren](https://github.com/raveren))

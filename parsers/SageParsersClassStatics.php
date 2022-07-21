@@ -9,7 +9,7 @@ class SageParsersClassStatics extends SageParser
 
     protected static function parse(&$variable, $varData)
     {
-        if (!SageHelper::isRichMode() || ! SageHelper::php53() || ! is_object($variable)) {
+        if (! SageHelper::isRichMode() || ! SageHelper::php53orLater() || ! is_object($variable)) {
             return false;
         }
 

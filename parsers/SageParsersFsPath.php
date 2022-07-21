@@ -8,7 +8,7 @@ class SageParsersFsPath extends SageParser
     protected static function parse(&$variable, $varData)
     {
         if (! SageHelper::isRichMode()
-            || ! SageHelper::php53()
+            || ! SageHelper::php53orLater()
             || ! is_string($variable)
             || strlen($variable) > 2048
             || preg_match('[[:?<>"*|]]', $variable)

@@ -8,7 +8,7 @@ class SageParsersSplFileInfo extends SageParser
 {
     protected static function parse(&$variable, $varData)
     {
-        if ( ! SageHelper::php53()
+        if ( ! SageHelper::php53orLater()
             || ! $variable instanceof SplFileInfo
             || $variable instanceof SplFileObject
         ) {

@@ -451,7 +451,7 @@ class Sage
 
         $trace = false;
         if ($data === 1 && $names === array(null) && func_num_args() === 1) { // Sage::dump(1) shorthand
-            $trace = SageHelper::php53() ? debug_backtrace(true) : debug_backtrace();
+            $trace = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
         } elseif (func_num_args() === 1 && is_array($data)) {
             $trace = $data; // test if the single parameter is result of debug_backtrace()
         }

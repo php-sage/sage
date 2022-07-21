@@ -27,13 +27,13 @@ class SageHelper
         'xdebug'                 => 'xdebug://%f@%l',
     );
 
-    public static function php53()
+    public static function php53orLater()
     {
         if (! isset(self::$_php53)) {
             self::$_php53 = version_compare(PHP_VERSION, '5.3.0');
         }
 
-        return self::$_php53;
+        return self::$_php53 > 0;
     }
 
     public static function isRichMode()

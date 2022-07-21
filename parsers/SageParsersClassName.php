@@ -7,7 +7,12 @@ class SageParsersClassName extends SageParser
 {
     protected static function parse(&$variable, $varData)
     {
-        if (! SageHelper::isHtmlMode() || ! is_string($variable) || !class_exists($variable)) {
+        if (
+            ! SageHelper::isHtmlMode()
+            || empty($variable)
+            || ! is_string($variable)
+            || strlen($variable) < 3
+            || ! class_exists($variable)) {
             return false;
         }
 
