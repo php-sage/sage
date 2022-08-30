@@ -57,7 +57,7 @@ class SageDecoratorsPlain
         'bg_light_cyan'    => '106',
         'bg_white'         => '107',
     );
-    private static $_utfSymbols = array(
+    private static $_utfSymbols = [
         '┌',
         '═',
         '┐',
@@ -65,16 +65,7 @@ class SageDecoratorsPlain
         '└',
         '─',
         '┘',
-    );
-    private static $_winShellSymbols = array(
-        "\xda",
-        "\xdc",
-        "\xbf",
-        "\xb3",
-        "\xc0",
-        "\xc4",
-        "\xd9",
-    );
+    ];
     private static $_htmlSymbols = array(
         "&#9484;",
         "&#9604;",
@@ -114,8 +105,8 @@ class SageDecoratorsPlain
             } elseif (is_string($varData->extendedValue)) {
                 $output .= $space . $s . self::_colorize($varData->extendedValue, 'value') . PHP_EOL;
             } else {
-                // throw new RuntimeException();
-                // $output .= self::decorate($varData->extendedValue, $level + 1); // it's SageVariableData
+                //                throw new RuntimeException();
+                //                $output .= self::decorate($varData->extendedValue, $level + 1); // it's SageVariableData
             }
             $output .= $space . ($varData->type === 'array' ? ']' : ')') . PHP_EOL;
         } else {
@@ -218,7 +209,7 @@ class SageDecoratorsPlain
                         $text = "<i>{$text}</i>";
                         break;
                     case 'key':
-                        //  $text = $text;
+                        // $text = $text;
                         break;
                     case 'type':
                         $text = "<b>{$text}</b>";
@@ -236,10 +227,10 @@ class SageDecoratorsPlain
                 }
 
                 $optionsMap = array(
-                    'key'   => "\x1b[33m", // yellow
-                    'title' => "\x1b[36m", // cyan
+                    'key'   => "\x1b[33m",   // yellow
+                    'title' => "\x1b[36m",   // cyan
                     'type'  => "\x1b[35;1m", // magenta bold
-                    'value' => "\x1b[32m", // green
+                    'value' => "\x1b[32m",   // green
                 );
 
                 return $optionsMap[$type] . $text . "\x1b[0m" . $nl;
@@ -258,11 +249,6 @@ class SageDecoratorsPlain
                 $char = self::$_htmlSymbols[array_search($char, self::$_utfSymbols, true)];
                 break;
             case Sage::MODE_CLI:
-                $inWindowsShell = PHP_SAPI === 'cli' && DIRECTORY_SEPARATOR !== '/';
-                if ($inWindowsShell) {
-                    $char = self::$_winShellSymbols[array_search($char, self::$_utfSymbols, true)];
-                }
-                break;
             case Sage::MODE_TEXT_ONLY:
             default:
                 break;
@@ -367,7 +353,7 @@ class SageDecoratorsPlain
                 || getenv('ConEmuANSI') === 'ON'
                 || getenv('TERM') === 'xterm';
         } else {
-            self::$_enableColors = false;
+            self::$_enableColors = true;
         }
 
         return Sage::enabled() === Sage::MODE_PLAIN
