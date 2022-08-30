@@ -3,8 +3,8 @@
 use Seld\PharUtils\Timestamps;
 use Symfony\Component\Finder\Finder;
 
-require_once __DIR__.'/../../vendor/autoload.php';
-$pharPath = SAGE_DIR.'sage.phar';
+require_once __DIR__ . '/../../vendor/autoload.php';
+$pharPath = SAGE_DIR . 'sage.phar';
 
 if (is_file($pharPath)) {
     unlink($pharPath);
@@ -14,13 +14,13 @@ $rootPathLength = strlen(SAGE_DIR);
 
 $phar = new Phar($pharPath);
 $phar->setStub("<?php require 'phar://'.__FILE__.'/Sage.php'; __HALT_COMPILER();");
-$phar->addFile(SAGE_DIR.'Sage.php', 'Sage.php');
+$phar->addFile(SAGE_DIR . 'Sage.php', 'Sage.php');
 
 $includeInPhar = array(
-    SAGE_DIR.'/decorators',
-    SAGE_DIR.'/inc',
-    SAGE_DIR.'/parsers',
-    SAGE_DIR.'/resources/compiled'
+    SAGE_DIR . '/decorators',
+    SAGE_DIR . '/inc',
+    SAGE_DIR . '/parsers',
+    SAGE_DIR . '/resources/compiled'
 );
 foreach (Finder::create()->files()->in($includeInPhar)->sortByName() as $file) {
     $local = substr($file, $rootPathLength);

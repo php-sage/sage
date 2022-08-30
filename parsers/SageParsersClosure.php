@@ -13,7 +13,7 @@ class SageParsersClosure extends SageParser
         }
 
         $varData->type = 'Closure';
-        $reflection = new ReflectionFunction($variable);
+        $reflection    = new ReflectionFunction($variable);
 
         $parameters = array();
         foreach ($reflection->getParameters() as $parameter) {
@@ -22,7 +22,6 @@ class SageParsersClosure extends SageParser
         if (! empty($parameters)) {
             $varData->addTabToView($variable, 'Parameters', $parameters);
         }
-
 
         $uses = array();
         if ($val = $reflection->getStaticVariables()) {

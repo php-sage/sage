@@ -17,7 +17,7 @@ class SageParsersClassName extends SageParser
         }
 
         $reflector = new ReflectionClass($variable);
-        if (!$reflector->isUserDefined()) {
+        if (! $reflector->isUserDefined()) {
             return false;
         }
 

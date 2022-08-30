@@ -21,25 +21,25 @@ class SageParsersMicrotime extends SageParser
 
         $size = memory_get_usage(true);
 
-        $unit = array('B', 'KB', 'MB', 'GB', 'TB');
-        $memoryUsage = round($size / pow(1024, ($i = floor(log($size, 1024)))), 3).$unit[$i];
+        $unit        = array('B', 'KB', 'MB', 'GB', 'TB');
+        $memoryUsage = round($size / pow(1024, ($i = floor(log($size, 1024)))), 3) . $unit[$i];
 
         $numberOfCalls = count(self::$times);
         if ($numberOfCalls > 0) {
-            $lap = $time - end(self::$times);
+            $lap          = $time - end(self::$times);
             self::$laps[] = $lap;
 
-            $sinceLast = round($lap, 4).'s.';
+            $sinceLast = round($lap, 4) . 's.';
             if ($numberOfCalls > 1) {
-                $sinceStart = round($time - self::$times[0], 4).'s.';
-                $averageDuration = round(array_sum(self::$laps) / $numberOfCalls, 4).'s.';
+                $sinceStart      = round($time - self::$times[0], 4) . 's.';
+                $averageDuration = round(array_sum(self::$laps) / $numberOfCalls, 4) . 's.';
             } else {
-                $sinceStart = null;
+                $sinceStart      = null;
                 $averageDuration = null;
             }
 
             if (SageHelper::isRichMode()) {
-                $tabContents = "<b>SINCE LAST CALL:</b> <b class=\"_sage-microtime\">".round($lap, 4).'</b>s.';
+                $tabContents = "<b>SINCE LAST CALL:</b> <b class=\"_sage-microtime\">" . round($lap, 4) . '</b>s.';
                 if ($numberOfCalls > 1) {
                     $tabContents .= "\n<b>SINCE START:</b> {$sinceStart}";
                     $tabContents .= "\n<b>AVERAGE DURATION:</b> {$averageDuration}";
@@ -53,16 +53,16 @@ class SageParsersMicrotime extends SageParser
                 );
 
                 if ($sinceStart !== null) {
-                    $varData->extendedValue['Since start'] = $sinceStart;
-                    $varData->extendedValue['Average duration'] =  $averageDuration;
+                    $varData->extendedValue['Since start']      = $sinceStart;
+                    $varData->extendedValue['Average duration'] = $averageDuration;
                 }
 
                 $varData->extendedValue['Memory usage'] = $memoryUsage;
             }
         } else {
             $varData->extendedValue = array(
-                'Time (from microtime)' => @date('Y-m-d H:i:s', (int)$sec).substr($usec, 1),
-                'PHP MEMORY USAGE' => $memoryUsage
+                'Time (from microtime)' => @date('Y-m-d H:i:s', (int)$sec) . substr($usec, 1),
+                'PHP MEMORY USAGE'      => $memoryUsage
             );
         }
 

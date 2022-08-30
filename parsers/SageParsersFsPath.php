@@ -19,32 +19,32 @@ class SageParsersFsPath extends SageParser
 
         try {
             $fileInfo = new SplFileInfo($variable);
-            $flags = array();
-            $perms = $fileInfo->getPerms();
+            $flags    = array();
+            $perms    = $fileInfo->getPerms();
 
             if (($perms & 0xC000) === 0xC000) {
-                $type = 'File socket';
+                $type    = 'File socket';
                 $flags[] = 's';
             } elseif (($perms & 0xA000) === 0xA000) {
-                $type = 'File symlink';
+                $type    = 'File symlink';
                 $flags[] = 'l';
             } elseif (($perms & 0x8000) === 0x8000) {
-                $type = 'File';
+                $type    = 'File';
                 $flags[] = '-';
             } elseif (($perms & 0x6000) === 0x6000) {
-                $type = 'Block special file';
+                $type    = 'Block special file';
                 $flags[] = 'b';
             } elseif (($perms & 0x4000) === 0x4000) {
-                $type = 'Directory';
+                $type    = 'Directory';
                 $flags[] = 'd';
             } elseif (($perms & 0x2000) === 0x2000) {
-                $type = 'Character special file';
+                $type    = 'Character special file';
                 $flags[] = 'c';
             } elseif (($perms & 0x1000) === 0x1000) {
-                $type = 'FIFO pipe file';
+                $type    = 'FIFO pipe file';
                 $flags[] = 'p';
             } else {
-                $type = 'Unknown file';
+                $type    = 'Unknown file';
                 $flags[] = 'u';
             }
 
@@ -63,9 +63,9 @@ class SageParsersFsPath extends SageParser
             $flags[] = (($perms & 0x0002) ? 'w' : '-');
             $flags[] = (($perms & 0x0001) ? (($perms & 0x0200) ? 't' : 'x') : (($perms & 0x0200) ? 'T' : '-'));
 
-            $size = sprintf('%.2fK', $fileInfo->getSize() / 1024);
+            $size  = sprintf('%.2fK', $fileInfo->getSize() / 1024);
             $flags = implode($flags);
-            $path = $fileInfo->getRealPath();
+            $path  = $fileInfo->getRealPath();
 
             $varData->addTabToView($variable, "Existing {$type} ({$size})", "$flags    $path");
         } catch (Exception $e) {

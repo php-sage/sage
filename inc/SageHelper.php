@@ -58,9 +58,9 @@ class SageHelper
      */
     public static function shortenPath($file)
     {
-        $file = str_replace('\\', '/', $file);
+        $file          = str_replace('\\', '/', $file);
         $shortenedName = $file;
-        $replaced = false;
+        $replaced      = false;
         if (is_array(Sage::$appRootDirs)) {
             foreach (Sage::$appRootDirs as $path => $replaceString) {
                 if (empty($path)) {
@@ -70,8 +70,8 @@ class SageHelper
                 $path = str_replace('\\', '/', $path);
 
                 if (strpos($file, $path) === 0) {
-                    $shortenedName = $replaceString.substr($file, strlen($path));
-                    $replaced = true;
+                    $shortenedName = $replaceString . substr($file, strlen($path));
+                    $replaced      = true;
                     break;
                 }
             }
@@ -81,14 +81,14 @@ class SageHelper
         if (! $replaced) {
             $pathParts = explode('/', str_replace('\\', '/', SAGE_DIR));
             $fileParts = explode('/', $file);
-            $i = 0;
+            $i         = 0;
             foreach ($fileParts as $i => $filePart) {
                 if (! isset($pathParts[$i]) || $pathParts[$i] !== $filePart) {
                     break;
                 }
             }
 
-            $shortenedName = ($i ? '.../' : '').implode('/', array_slice($fileParts, $i));
+            $shortenedName = ($i ? '.../' : '') . implode('/', array_slice($fileParts, $i));
         }
 
         return $shortenedName;
@@ -198,7 +198,6 @@ class SageHelper
             }
         }
 
-
         if (! function_exists('iconv')) {
             return ! empty($mbDetected) ? $mbDetected : 'UTF-8';
         }
@@ -262,12 +261,12 @@ class SageHelper
         }
 
         $out = '';
-        $i = 0;
+        $i   = 0;
         do {
             $character = $value[$i];
-            $ord = ord($character);
+            $ord       = ord($character);
             // escape all invisible characters except \t, \n and \r - ORD 9, 10 and 13 respectively
-            if ($ord < 32 && $ord !== 9 && $ord !== 10 && $ord !== 13 ) {
+            if ($ord < 32 && $ord !== 9 && $ord !== 10 && $ord !== 13) {
                 if (isset($controlCharsMap[$character])) {
                     $out .= $controlCharsMap[$character];
                 } else {
@@ -278,7 +277,6 @@ class SageHelper
             }
         } while (isset($value[++$i]));
 
-
         return $out;
     }
 
@@ -286,10 +284,10 @@ class SageHelper
     {
         $enabledMode = Sage::enabled();
         if (! self::isHtmlMode()) {
-            return $file.':'.$line;
+            return $file . ':' . $line;
         }
 
-        $linkText = $linkText ? $linkText : self::shortenPath($file).':'.$line;
+        $linkText = $linkText ? $linkText : self::shortenPath($file) . ':' . $line;
         $linkText = self::esc($linkText);
 
         if (! Sage::$editor) {

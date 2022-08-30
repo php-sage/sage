@@ -13,7 +13,7 @@ class SageParsersSmarty extends SageParser
             return false;
         }
 
-        $varData->name = 'Smarty v'.Smarty::SMARTY_VERSION;
+        $varData->name = 'Smarty v' . Smarty::SMARTY_VERSION;
 
         $assigned = $globalAssigns = array();
         foreach ($variable->tpl_vars as $name => $var) {

@@ -155,7 +155,6 @@ class SageParsersColor extends SageParser
         'yellowgreen'          => '#9acd32'
     );
 
-
     protected static function parse(&$variable, $varData)
     {
         if (! self::_fits($variable)) {
@@ -163,11 +162,10 @@ class SageParsersColor extends SageParser
         }
 
         // todo after we migrate from less:
-// $originalVarData->name .= "<div style=\"background:{$variable}\" class=\"_sage-color-preview\">{$variable}</div>";
-
+        // $originalVarData->name .= "<div style=\"background:{$variable}\" class=\"_sage-color-preview\">{$variable}</div>";
 
         $variants = self::_convert($variable);
-        $value = <<<HTML
+        $value    = <<<HTML
 <div style="background:{$variable}" class="_sage-color-preview">{$variable}</div>
 <strong>hex :</strong> {$variants['hex']}
 <strong>rgb :</strong> {$variants['rgb']}
@@ -177,7 +175,6 @@ HTML;
         $varData->alreadyEscaped = true;
         $varData->addTabToView($variable, 'CSS color', $value);
     }
-
 
     private static function _fits($variable)
     {
@@ -204,9 +201,9 @@ HTML;
 
     private static function _convert($color)
     {
-        $color = strtolower($color);
+        $color         = strtolower($color);
         $decimalColors = array();
-        $variants = array(
+        $variants      = array(
             'hex'  => null,
             'rgb'  => null,
             'name' => null,
@@ -215,19 +212,19 @@ HTML;
 
         if (isset(self::$_css3Named[$color])) {
             $variants['name'] = $color;
-            $color = self::$_css3Named[$color];
+            $color            = self::$_css3Named[$color];
         }
 
         if ($color[0] === '#') {
             $variants['hex'] = $color;
-            $color = substr($color, 1);
+            $color           = substr($color, 1);
             if (strlen($color) === 6) {
                 $colors = str_split($color, 2);
             } else {
                 $colors = array(
-                    $color[0].$color[0],
-                    $color[1].$color[1],
-                    $color[2].$color[2],
+                    $color[0] . $color[0],
+                    $color[1] . $color[1],
+                    $color[2] . $color[2],
                 );
             }
 
@@ -241,13 +238,11 @@ HTML;
                     $color = str_replace('%', '', $color) * 2.55;
                 }
             }
-
-
         } elseif (substr($color, 0, 3) === 'hsl') {
             $variants['hsl'] = $color;
             preg_match_all('#([0-9.%]+)#', $color, $matches);
 
-            $colors = $matches[1];
+            $colors    = $matches[1];
             $colors[0] /= 360;
             $colors[1] = str_replace('%', '', $colors[1]) / 100;
             $colors[2] = str_replace('%', '', $colors[2]) / 100;
@@ -281,11 +276,11 @@ HTML;
                     $rgb = $decimalColors;
                     if (isset($alpha)) {
                         $rgb[] = $alpha;
-                        $a = 'a';
+                        $a     = 'a';
                     } else {
                         $a = '';
                     }
-                    $variant = "rgb{$a}( ".implode(', ', $rgb)." )";
+                    $variant = "rgb{$a}( " . implode(', ', $rgb) . " )";
                     break;
                 case 'hsl':
                     $rgb = self::_RGBtoHSL($decimalColors);
@@ -295,12 +290,12 @@ HTML;
                     }
                     if (isset($alpha)) {
                         $rgb[] = $alpha;
-                        $a = 'a';
+                        $a     = 'a';
                     } else {
                         $a = '';
                     }
 
-                    $variant = "hsl{$a}( ".implode(', ', $rgb)." )";
+                    $variant = "hsl{$a}( " . implode(', ', $rgb) . " )";
                     break;
                 case 'name':
                     // [!] name in initial variants array must go after hex
@@ -311,12 +306,10 @@ HTML;
                     }
                     break;
             }
-
         }
 
         return $variants;
     }
-
 
     private static function _HSLtoRGB(array $hsl)
     {
@@ -330,7 +323,6 @@ HTML;
             round(self::_hue2rgb($m1, $m2, $h - 0.33333) * 255),
         );
     }
-
 
     /**
      * Helper function for _color_hsl2rgb().
@@ -351,13 +343,12 @@ HTML;
         return $m1;
     }
 
-
     private static function _RGBtoHSL(array $rgb)
     {
         list($clrR, $clrG, $clrB) = $rgb;
 
-        $clrMin = min($clrR, $clrG, $clrB);
-        $clrMax = max($clrR, $clrG, $clrB);
+        $clrMin   = min($clrR, $clrG, $clrB);
+        $clrMax   = max($clrR, $clrG, $clrB);
         $deltaMax = $clrMax - $clrMin;
 
         $L = ($clrMax + $clrMin) / 510;
@@ -390,10 +381,9 @@ HTML;
 
         return array(
             round($H * 360),
-            round($S * 100).'%',
-            round($L * 100).'%'
+            round($S * 100) . '%',
+            round($L * 100) . '%'
         );
-
     }
 }
 

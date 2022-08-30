@@ -14,7 +14,6 @@ class SageParser
 
     private static $_placeFullStringInValue = false;
 
-
     private static function _init()
     {
         $special = array(
@@ -22,20 +21,20 @@ class SageParser
             'SageParsersInbuiltTypes', // this always goes last if no other parser ceased parsing
         );
 
-        $fh = opendir(SAGE_DIR.'parsers');
+        $fh = opendir(SAGE_DIR . 'parsers');
         while ($fileName = readdir($fh)) {
             if (substr($fileName, -4) !== '.php') {
                 continue;
             }
 
-            require SAGE_DIR.'parsers/'.$fileName;
+            require SAGE_DIR . 'parsers/' . $fileName;
             self::$_parsers[] = substr($fileName, 0, -4);
         }
     }
 
     public static function reset()
     {
-        self::$_level = 0;
+        self::$_level   = 0;
         self::$_objects = self::$_marker = null;
     }
 
@@ -51,7 +50,6 @@ class SageParser
     {
         throw new RuntimeException("Each parser must override this method!");
     }
-
 
     /**
      * the only public entry point to return a parsed representation of a variable
@@ -82,8 +80,8 @@ class SageParser
             if (strlen($varData->name) > 60) {
                 $varData->name =
                     SageHelper::substr($varData->name, 0, 27)
-                    .'...'
-                    .SageHelper::substr($varData->name, -28, null);
+                    . '...'
+                    . SageHelper::substr($varData->name, -28, null);
             }
         }
 
@@ -100,8 +98,8 @@ class SageParser
                     // use as alternative, do not continue parsing this variable and also discard all other tabs
 
                     self::$_skipAlternatives = false;
-                    self::$_level = $revert['level'];
-                    self::$_objects = $revert['objects'];
+                    self::$_level            = $revert['level'];
+                    self::$_objects          = $revert['objects'];
 
                     return $varData;
                 }
@@ -115,7 +113,7 @@ class SageParser
         // parse the variable based on its type
         $varType = gettype($variable);
         $varType === 'unknown type' and $varType = 'unknown'; // PHP 5.4 inconsistency
-        $methodName = '_parse_'.$varType;
+        $methodName = '_parse_' . $varType;
         if (! method_exists(__CLASS__, $methodName)) {
             $varData->type = $varType; // resource (closed) for example
 
@@ -128,8 +126,7 @@ class SageParser
             return $varData;
         }
 
-
-        self::$_level = $revert['level'];
+        self::$_level   = $revert['level'];
         self::$_objects = $revert['objects'];
 
         return $varData;
@@ -146,8 +143,8 @@ class SageParser
             return false;
         }
 
-        $arrayKeys = array();
-        $keys = null;
+        $arrayKeys   = array();
+        $keys        = null;
         $closeEnough = false;
         foreach ($variable as $k => $row) {
             if (isset(self::$_marker) && $k === self::$_marker) {
@@ -185,27 +182,27 @@ class SageParser
     private static function _decorateCell(SageVariableData $varData)
     {
         if ($varData->extendedValue !== null) {
-            return '<td>'.SageDecoratorsRich::decorate($varData).'</td>';
+            return '<td>' . SageDecoratorsRich::decorate($varData) . '</td>';
         }
 
         $output = '<td';
 
         if ($varData->value !== null) {
-            $output .= ' title="'.$varData->type;
+            $output .= ' title="' . $varData->type;
 
             if ($varData->size !== null) {
-                $output .= " (".$varData->size.")";
+                $output .= " (" . $varData->size . ")";
             }
 
-            $output .= '">'.$varData->value;
+            $output .= '">' . $varData->value;
         } else {
             $output .= '>';
 
             if ($varData->type !== 'NULL') {
-                $output .= '<u>'.$varData->type;
+                $output .= '<u>' . $varData->type;
 
                 if ($varData->size !== null) {
-                    $output .= "(".$varData->size.")";
+                    $output .= "(" . $varData->size . ")";
                 }
 
                 $output .= '</u>';
@@ -214,21 +211,19 @@ class SageParser
             }
         }
 
-
-        return $output.'</td>';
+        return $output . '</td>';
     }
-
 
     private static $_dealingWithGlobals = false;
 
     private static function _parse_array(&$variable, SageVariableData $variableData)
     {
-        isset(self::$_marker) or self::$_marker = "\x00".uniqid();
+        isset(self::$_marker) or self::$_marker = "\x00" . uniqid();
 
         // naturally, $GLOBALS variable is an intertwined recursion nightmare, use black magic
         $globalsDetector = false;
         if (array_key_exists('GLOBALS', $variable) && is_array($variable['GLOBALS'])) {
-            $globalsDetector = "\x01".uniqid();
+            $globalsDetector = "\x01" . uniqid();
 
             $variable['GLOBALS'][$globalsDetector] = true;
             if (isset($variable[$globalsDetector])) {
@@ -262,14 +257,14 @@ class SageParser
             return false;
         }
 
-        $isSequential = SageHelper::isArraySequential($variable);
+        $isSequential             = SageHelper::isArraySequential($variable);
         $variable[self::$_marker] = true;
 
         if ($variableData->size > 1 && ($arrayKeys = self::_isArrayTabular($variable)) !== false) {
             // tabular array parse
             $variableData->alreadyEscaped = true;
-            $firstRow = true;
-            $extendedValue = '<table class="_sage-report"><thead>';
+            $firstRow                     = true;
+            $extendedValue                = '<table class="_sage-report"><thead>';
 
             foreach ($variable as $rowIndex => & $row) {
                 // display strings in their full length
@@ -285,10 +280,9 @@ class SageParser
                     return false;
                 }
 
-
                 $extendedValue .= '<tr>';
                 if ($isSequential) {
-                    $output = '<td>'.(((int)$rowIndex) + 1).'</td>';
+                    $output = '<td>' . (((int)$rowIndex) + 1) . '</td>';
                 } else {
                     $output = self::_decorateCell(self::process($rowIndex));
                 }
@@ -300,7 +294,7 @@ class SageParser
                 // as we only check the first two to assume
                 foreach ($arrayKeys as $key) {
                     if ($firstRow) {
-                        $extendedValue .= '<th>'.SageHelper::decodeStr($key).'</th>';
+                        $extendedValue .= '<th>' . SageHelper::decodeStr($key) . '</th>';
                     }
 
                     if (! array_key_exists($key, $row)) {
@@ -324,15 +318,14 @@ class SageParser
 
                 if ($firstRow) {
                     $extendedValue .= '</tr></thead><tr>';
-                    $firstRow = false;
+                    $firstRow      = false;
                 }
 
-                $extendedValue .= $output.'</tr>';
+                $extendedValue .= $output . '</tr>';
             }
             self::$_placeFullStringInValue = false;
 
-            $variableData->extendedValue = $extendedValue.'</table>';
-
+            $variableData->extendedValue = $extendedValue . '</table>';
         } else {
             $extendedValue = array();
 
@@ -352,9 +345,9 @@ class SageParser
                     $output->name = null;
                 } else {
                     $output->operator = '=>';
-                    $output->name = is_int($key)
+                    $output->name     = is_int($key)
                         ? $key
-                        : "'".$key."'";
+                        : "'" . $key . "'";
                 }
                 $extendedValue[] = $output;
             }
@@ -376,7 +369,7 @@ class SageParser
         if (is_object($originalVar)) {
             self::$_objects[self::getObjectHash($originalVar)] = true;
         } elseif (is_array($originalVar)) {
-            isset(self::$_marker) or self::$_marker = "\x00".uniqid();
+            isset(self::$_marker) or self::$_marker = "\x00" . uniqid();
 
             $originalVar[self::$_marker] = true;
         }
@@ -386,13 +379,12 @@ class SageParser
         return $varData->extendedValue;
     }
 
-
     private static function _parse_object(&$variable, SageVariableData $variableData)
     {
         $hash = self::getObjectHash($variable);
 
-        $castedArray = (array)$variable;
-        $className = get_class($variable);
+        $castedArray        = (array)$variable;
+        $className          = get_class($variable);
         $variableData->type = $className;
         $variableData->size = count($castedArray);
 
@@ -407,7 +399,6 @@ class SageParser
             return false;
         }
 
-
         // ArrayObject (and maybe ArrayIterator, did not try yet) unsurprisingly consist of mainly dark magic.
         // What bothers me most, var_dump sees no problem with it, and ArrayObject also uses a custom,
         // undocumented serialize function, so you can see the properties in internal functions, but
@@ -418,18 +409,20 @@ class SageParser
         }
 
         self::$_objects[$hash] = true;
-        $reflector = new ReflectionObject($variable);
+        $reflector             = new ReflectionObject($variable);
 
         // add link to definition of userland objects
         if (SageHelper::isHtmlMode() && $reflector->isUserDefined()) {
             $variableData->type = SageHelper::ideLink(
-                $reflector->getFileName(), $reflector->getStartLine(), $variableData->type
+                $reflector->getFileName(),
+                $reflector->getStartLine(),
+                $variableData->type
             );
         }
         $variableData->size = 0;
 
         $extendedValue = array();
-        $encountered = array();
+        $encountered   = array();
         static $publicProperties = [];
         if (! isset($publicProperties[$className])) {
             $reflectionClass = new ReflectionClass($className);
@@ -450,7 +443,6 @@ class SageParser
              * http://www.php.net/manual/en/language.types.array.php#language.types.array.casting
              */
             if (is_string($key) && $key[0] === "\x00") {
-
                 $access = $key[1] === "*" ? "protected" : "private";
 
                 // Remove the access level from the variable name
@@ -465,8 +457,8 @@ class SageParser
 
             $encountered[$key] = true;
 
-            $output->name = SageHelper::decodeStr($key);
-            $output->access = $access;
+            $output->name     = SageHelper::decodeStr($key);
+            $output->access   = $access;
             $output->operator = '->';
 
             $extendedValue[] = $output;
@@ -502,20 +494,19 @@ class SageParser
 
             if (method_exists($property, 'isInitialized')
                 && ! $property->isInitialized($variable)) {
-                $value = null;
+                $value  = null;
                 $access .= ' [uninitialized]';
             } else {
                 $value = $property->getValue($variable);
             }
-	    
+
             $output = self::process($value, SageHelper::decodeStr($name));
 
-            $output->access = $access;
+            $output->access   = $access;
             $output->operator = '->';
-            $extendedValue[] = $output;
+            $extendedValue[]  = $output;
             $variableData->size++;
         }
-
 
         if (isset($arrayObjectFlags)) {
             $variable->setFlags($arrayObjectFlags);
@@ -526,22 +517,21 @@ class SageParser
         }
     }
 
-
     private static function _parse_boolean(&$variable, SageVariableData $variableData)
     {
-        $variableData->type = 'bool';
+        $variableData->type  = 'bool';
         $variableData->value = $variable ? 'TRUE' : 'FALSE';
     }
 
     private static function _parse_double(&$variable, SageVariableData $variableData)
     {
-        $variableData->type = 'float';
+        $variableData->type  = 'float';
         $variableData->value = $variable;
     }
 
     private static function _parse_integer(&$variable, SageVariableData $variableData)
     {
-        $variableData->type = 'integer';
+        $variableData->type  = 'integer';
         $variableData->value = $variable;
     }
 
@@ -552,11 +542,10 @@ class SageParser
 
     private static function _parse_resource(&$variable, SageVariableData $variableData)
     {
-        $resourceType = get_resource_type($variable);
+        $resourceType       = get_resource_type($variable);
         $variableData->type = "resource ({$resourceType})";
 
         if ($resourceType === 'stream' && $meta = stream_get_meta_data($variable)) {
-
             if (isset($meta['uri'])) {
                 $file = $meta['uri'];
 
@@ -582,7 +571,7 @@ class SageParser
 
         $encoding = SageHelper::detectEncoding($variable);
         if ($encoding !== 'UTF-8') {
-            $variableData->type .= ' '.$encoding;
+            $variableData->type .= ' ' . $encoding;
         }
 
         $variableData->size = SageHelper::strlen($variable, $encoding);
@@ -590,7 +579,7 @@ class SageParser
         if (self::$_placeFullStringInValue) { // in tabular view
             $variableData->value = SageHelper::decodeStr($variable);
         } elseif (! SageHelper::isRichMode()) {
-            $variableData->value = '"'.SageHelper::decodeStr($variable).'"';
+            $variableData->value = '"' . SageHelper::decodeStr($variable) . '"';
         } else {
             $decoded = SageHelper::decodeStr($variable);
 
@@ -598,19 +587,24 @@ class SageParser
             if ($variableData->size > (SageHelper::MAX_STR_LENGTH + 8)) {
                 $variableData->value =
                     '"'
-                    .SageHelper::esc(
+                    . SageHelper::esc(
                         SageHelper::substr($variable, 0, SageHelper::MAX_STR_LENGTH, $encoding)
                     )
-                    .'&hellip;"';
+                    . '&hellip;"';
             } else {
-                $variableData->value = '"'.SageHelper::esc($variable).'"';
+                $variableData->value = '"' . SageHelper::esc($variable) . '"';
             }
 
             // detect invisible characters
             if ($variable !== preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]/u', '', $variable)) {
                 $variableData->extendedValue = SageHelper::esc($variable);
                 $variableData->addTabToView($variable, 'Hidden characters escaped', $decoded);
-            } elseif ($variableData->size > (SageHelper::MAX_STR_LENGTH + 8) || $variable !== preg_replace('/\s+/', ' ', $variable)) {
+            } elseif ($variableData->size > (SageHelper::MAX_STR_LENGTH + 8)
+                || $variable !== preg_replace(
+                    '/\s+/',
+                    ' ',
+                    $variable
+                )) {
                 $variableData->extendedValue = $decoded;
             }
         }
@@ -618,8 +612,8 @@ class SageParser
 
     private static function _parse_unknown(&$variable, SageVariableData $variableData)
     {
-        $type = gettype($variable);
-        $variableData->type = "UNKNOWN".(! empty($type) ? " ({$type})" : '');
+        $type                = gettype($variable);
+        $variableData->type  = "UNKNOWN" . (! empty($type) ? " ({$type})" : '');
         $variableData->value = var_export($variable, true);
     }
 

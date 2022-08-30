@@ -18,7 +18,6 @@ class SageParsersTimestamp extends SageParser
         $varData->addTabToView($variable, 'Timestamp', @date('Y-m-d H:i:s', $var));
     }
 
-
     private static function _fits($variable)
     {
         if (! SageHelper::isRichMode()) {

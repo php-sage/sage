@@ -8,7 +8,7 @@ class SageParsersSplObjectStorage extends SageParser
 {
     protected static function parse(&$variable, $varData)
     {
-        if (!SageHelper::isRichMode() || ! is_object($variable) || ! $variable instanceof SplObjectStorage) {
+        if (! SageHelper::isRichMode() || ! is_object($variable) || ! $variable instanceof SplObjectStorage) {
             return false;
         }
 

@@ -31,19 +31,18 @@ if (defined('SAGE_DIR')) {
     return;
 }
 
-define('SAGE_DIR', __DIR__.'/');
+define('SAGE_DIR', __DIR__ . '/');
 
-require SAGE_DIR.'inc/SageVariableData.php';
-require SAGE_DIR.'inc/SageParser.php';
-require SAGE_DIR.'inc/SageHelper.php';
-require SAGE_DIR.'decorators/SageDecoratorsRich.php';
-require SAGE_DIR.'decorators/SageDecoratorsPlain.php';
+require SAGE_DIR . 'inc/SageVariableData.php';
+require SAGE_DIR . 'inc/SageParser.php';
+require SAGE_DIR . 'inc/SageHelper.php';
+require SAGE_DIR . 'decorators/SageDecoratorsRich.php';
+require SAGE_DIR . 'decorators/SageDecoratorsPlain.php';
 
 class Sage
 {
     private static $_initialized = false;
     private static $_enabledMode = true;
-
 
     /*
      *     ██████╗ ██████╗ ███╗   ██╗███████╗██╗ ██████╗ ██╗   ██╗██████╗  █████╗ ████████╗██╗ ██████╗ ███╗   ██╗
@@ -93,7 +92,6 @@ class Sage
      */
     public static $editor;
 
-
     /**
      * @var string the full path (not URL) to your project folder on your remote dev server, be this Homestead, Docker,
      *             or in the cloud.
@@ -102,7 +100,6 @@ class Sage
      *             null
      */
     public static $fileLinkServerPath;
-
 
     /**
      * @var string the full path (not URL) to your project on your local machine, the way your IDE or editor accesses
@@ -113,7 +110,6 @@ class Sage
      */
     public static $fileLinkLocalPath;
 
-
     /**
      * @var bool whether to display where Sage was called from
      *
@@ -122,7 +118,6 @@ class Sage
      */
     public static $displayCalledFrom;
 
-
     /**
      * @var int max array/object levels to go deep, set to zero/false to disable
      *
@@ -130,7 +125,6 @@ class Sage
      *          7
      */
     public static $maxLevels;
-
 
     /**
      * @var string theme for rich view
@@ -145,7 +139,6 @@ class Sage
      *             Sage::THEME_ORIGINAL
      */
     public static $theme;
-
 
     /**
      * @var array directories of your application that will be displayed instead of the full path. Keys are paths,
@@ -168,7 +161,6 @@ class Sage
      */
     public static $appRootDirs;
 
-
     /**
      * @var bool draw rich output already expanded without having to click
      *
@@ -176,7 +168,6 @@ class Sage
      *           false
      */
     public static $expandedByDefault;
-
 
     /**
      * @var bool enable detection when running in command line and adjust output format accordingly.
@@ -186,7 +177,6 @@ class Sage
      */
     public static $cliDetection;
 
-
     /**
      * @var bool in addition to above setting, enable detection when Sage is run in *UNIX* command line.
      * Attempts to add coloring, but if seen as plain text, the color information is visible as gibberish
@@ -195,7 +185,6 @@ class Sage
      *           true
      */
     public static $cliColors;
-
 
     /**
      * @var array possible alternative char encodings in order of probability,
@@ -216,7 +205,6 @@ class Sage
      *           false
      */
     public static $returnOutput;
-
 
     /**`
      * @var string|array Add new custom Sage wrapper names. Optional, but needed for backtraces, variable name
@@ -259,7 +247,6 @@ class Sage
     const THEME_SOLARIZED_DARK = 'solarized-dark';
     const THEME_SOLARIZED = 'solarized';
 
-
     /*
      *    ███████╗███╗   ██╗ █████╗ ██████╗ ██╗     ███████╗██████╗
      *    ██╔════╝████╗  ██║██╔══██╗██╔══██╗██║     ██╔════╝██╔══██╗
@@ -288,7 +275,7 @@ class Sage
     {
         // act both as a setter...
         if (isset($forceMode)) {
-            $before = self::$_enabledMode;
+            $before             = self::$_enabledMode;
             self::$_enabledMode = $forceMode;
 
             return $before;
@@ -321,9 +308,11 @@ class Sage
             return '';
         }
 
-        return self::dump(isset($trace)
-            ? $trace
-            : debug_backtrace(true));
+        return self::dump(
+            isset($trace)
+                ? $trace
+                : debug_backtrace(true)
+        );
     }
 
     /**
@@ -406,31 +395,33 @@ class Sage
         $firstRunOldValue = $decorator::$firstRun;
 
         // process modifiers: @, +, !, ~ and -
-        if (!empty($modifiers) && strpos($modifiers, '-') !== false) {
+        if (! empty($modifiers) && strpos($modifiers, '-') !== false) {
             $decorator::$firstRun = true;
             while (ob_get_level()) {
                 ob_end_clean();
             }
         }
-        if (!empty($modifiers) && strpos($modifiers, '!') !== false) {
+        if (! empty($modifiers) && strpos($modifiers, '!') !== false) {
             $expandedByDefaultOldValue = self::$expandedByDefault;
-            self::$expandedByDefault = true;
+            self::$expandedByDefault   = true;
         }
-        if (!empty($modifiers) && strpos($modifiers, '+') !== false) {
+        if (! empty($modifiers) && strpos($modifiers, '+') !== false) {
             $maxLevelsOldValue = self::$maxLevels;
-            self::$maxLevels = false;
+            self::$maxLevels   = false;
         }
-        if (!empty($modifiers) && strpos($modifiers, '@') !== false) {
-            $returnOldValue = self::$returnOutput;
+        if (! empty($modifiers) && strpos($modifiers, '@') !== false) {
+            $returnOldValue     = self::$returnOutput;
             self::$returnOutput = true;
+        }
+        if (self::$returnOutput) {
             $decorator::$firstRun = true;
         }
-        if (!empty($modifiers) && strpos($modifiers, '~') !== false) {
+        if (! empty($modifiers) && strpos($modifiers, '~') !== false) {
             // restore values for whatever decorator was set previously
             $decorator::$firstRun = $firstRunOldValue;
 
             // simplify mode
-            $decorator = 'SageDecoratorsPlain';
+            $decorator        = 'SageDecoratorsPlain';
             $firstRunOldValue = $decorator::$firstRun;
             if ($enabledMode !== self::MODE_TEXT_ONLY) { // if not already in plainest mode...
                 self::enabled( // remove cli colors in cli mode; remove rich interface in HTML mode
@@ -439,7 +430,7 @@ class Sage
             }
 
             // process modifier combinations
-            if (!empty($modifiers) && strpos($modifiers, '-') !== false) {
+            if (! empty($modifiers) && strpos($modifiers, '-') !== false) {
                 $decorator::$firstRun = true;
             }
         }
@@ -482,19 +473,19 @@ class Sage
         self::enabled($enabledMode);
 
         $decorator::$firstRun = false;
-        if (!empty($modifiers) && strpos($modifiers, '~') !== false) {
+        if (! empty($modifiers) && strpos($modifiers, '~') !== false) {
             $decorator::$firstRun = $firstRunOldValue;
         } else {
             self::enabled($enabledMode);
         }
-        if (!empty($modifiers) && strpos($modifiers, '!') !== false) {
+        if (! empty($modifiers) && strpos($modifiers, '!') !== false) {
             self::$expandedByDefault = $expandedByDefaultOldValue;
         }
-        if (!empty($modifiers) && strpos($modifiers, '+') !== false) {
+        if (! empty($modifiers) && strpos($modifiers, '+') !== false) {
             self::$maxLevels = $maxLevelsOldValue;
         }
-        if (!empty($modifiers) && strpos($modifiers, '@') !== false) {
-            self::$returnOutput = $returnOldValue;
+        if (! empty($modifiers) && strpos($modifiers, '@') !== false) {
+            self::$returnOutput   = $returnOldValue;
             $decorator::$firstRun = $firstRunOldValue;
 
             return $output;
@@ -519,7 +510,6 @@ class Sage
      *    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝  ╚═╝  ╚═╝   ╚═╝   ╚══════╝
      *
      */
-
 
     /**
      * trace helper, shows the place in code inline
@@ -548,7 +538,7 @@ class Sage
         );
 
         // set the zero-padding amount for line numbers
-        $format = '% '.strlen($range['end']).'d';
+        $format = '% ' . strlen($range['end']) . 'd';
 
         $source = '';
         while (($row = fgets($file)) !== false) {
@@ -560,13 +550,13 @@ class Sage
             if ($line >= $range['start']) {
                 $row = SageHelper::esc($row);
 
-                $row = '<span>'.sprintf($format, $line).'</span> '.$row;
+                $row = '<span>' . sprintf($format, $line) . '</span> ' . $row;
 
                 if ($line === (int)$lineNumber) {
                     // apply highlighting to this row
-                    $row = '<div class="_sage-highlight">'.$row.'</div>';
+                    $row = '<div class="_sage-highlight">' . $row . '</div>';
                 } else {
-                    $row = '<div>'.$row.'</div>';
+                    $row = '<div>' . $row . '</div>';
                 }
 
                 // add to the captured source
@@ -591,8 +581,8 @@ class Sage
     private static function _getCalleeInfo($trace)
     {
         $previousCaller = array();
-        $miniTrace = array();
-        $prevStep = array();
+        $miniTrace      = array();
+        $prevStep       = array();
 
         // go from back of trace to find first occurrence of call to Sage or its wrappers
         while ($step = array_pop($trace)) {
@@ -615,8 +605,8 @@ class Sage
         }
 
         // open the file and read it up to the position where the function call expression ended
-        $file = fopen($callee['file'], 'r');
-        $line = 0;
+        $file   = fopen($callee['file'], 'r');
+        $line   = 0;
         $source = '';
         while (($row = fgets($file)) !== false) {
             if (++$line > $callee['line']) {
@@ -631,14 +621,15 @@ class Sage
             $codePattern = $callee['function'];
         } else {
             if ($callee['type'] === '::') {
-                $codePattern = $callee['class']."\x07*".$callee['type']."\x07*".$callee['function'];;
+                $codePattern = $callee['class'] . "\x07*" . $callee['type'] . "\x07*" . $callee['function'];;
             } else /*if ( $callee['type'] === '->' )*/ {
-                $codePattern = ".*\x07*".$callee['type']."\x07*".$callee['function'];;
+                $codePattern = ".*\x07*" . $callee['type'] . "\x07*" . $callee['function'];;
             }
         }
 
         // get the position of the last call to the function
-        preg_match_all("
+        preg_match_all(
+            "
             [
             # beginning of statement
             [\x07{(]
@@ -676,10 +667,10 @@ class Sage
             PREG_OFFSET_CAPTURE
         );
 
-        $modifiers = end($matches[1]);
+        $modifiers  = end($matches[1]);
         $assignment = end($matches[2]);
         $callToSage = end($matches[3]);
-        $bracket = end($matches[4]);
+        $bracket    = end($matches[4]);
 
         if (empty($callToSage)) {
             // if a wrapper is misconfigured, don't display the whole file as variable name
@@ -697,10 +688,10 @@ class Sage
 
         // remove everything in brackets and quotes, we don't need nested statements nor literal strings which would
         // only complicate separating individual arguments
-        $c = strlen($paramsString);
-        $inString = $escaped = $openedBracket = $closingBracket = false;
-        $i = 0;
-        $inBrackets = 0;
+        $c              = strlen($paramsString);
+        $inString       = $escaped = $openedBracket = $closingBracket = false;
+        $i              = 0;
+        $inBrackets     = 0;
         $openedBrackets = array();
 
         while ($i < $c) {
@@ -712,11 +703,11 @@ class Sage
                 } elseif ($letter === '(' || $letter === '[') {
                     $inBrackets++;
                     $openedBrackets[] = $openedBracket = $letter;
-                    $closingBracket = $openedBracket === '(' ? ')' : ']';
+                    $closingBracket   = $openedBracket === '(' ? ')' : ']';
                 } elseif ($inBrackets && $letter === $closingBracket) {
                     $inBrackets--;
                     array_pop($openedBrackets);
-                    $openedBracket = end($openedBrackets);
+                    $openedBracket  = end($openedBrackets);
                     $closingBracket = $openedBracket === '(' ? ')' : ']';
                 } elseif (! $inBrackets && $letter === ')') {
                     $paramsString = substr($paramsString, 0, $i);
@@ -748,7 +739,7 @@ class Sage
 
         // test each argument whether it was passed literary or was it an expression or a variable name
         $parameters = array();
-        $blacklist = array('null', 'true', 'false', 'array(...)', 'array()', '"..."', '[...]', 'b"..."',);
+        $blacklist  = array('null', 'true', 'false', 'array(...)', 'array()', '"..."', '[...]', 'b"..."',);
         foreach ($arguments as $argument) {
             $argument = trim($argument);
 
@@ -773,7 +764,7 @@ class Sage
      */
     private static function _removeAllButCode($source)
     {
-        $commentTokens = array(
+        $commentTokens    = array(
             T_COMMENT     => true,
             T_INLINE_HTML => true,
             T_DOC_COMMENT => true,
@@ -807,12 +798,11 @@ class Sage
         return $cleanedSource;
     }
 
-
     private static function _parseTrace(array $data)
     {
-        $trace = array();
+        $trace       = array();
         $traceFields = array('file', 'line', 'args', 'class');
-        $fileFound = false; // file element must exist in one of the steps
+        $fileFound   = false; // file element must exist in one of the steps
 
         // validate whether a trace was indeed passed
         while ($step = array_pop($data)) {
@@ -907,14 +897,14 @@ class Sage
                         $args[$params[$i]->name] = $arg;
                     } else {
                         // assign the argument by number
-                        $args['#'.($i + 1)] = $arg;
+                        $args['#' . ($i + 1)] = $arg;
                     }
                 }
             }
 
             if (isset($step['class'])) {
                 // Class->method() or Class::method()
-                $function = $step['class'].$step['type'].$function;
+                $function = $step['class'] . $step['type'] . $function;
             }
 
             // todo it's possible to parse the object name out from the source!
@@ -946,7 +936,7 @@ class Sage
     private static function _initSetting($name, $default)
     {
         if (! isset(self::$$name)) {
-            $value = get_cfg_var('sage.'.$name);
+            $value = get_cfg_var('sage.' . $name);
             if (! $value) {
                 $value = $default;
             }
@@ -968,7 +958,10 @@ class Sage
         // 2. TODO: composer.json
         // 3. If present in get_cfg_var means user put it into his php.ini
         // 4. Load default from Sage
-        self::_initSetting('editor', ini_get('xdebug.file_link_format') ? ini_get('xdebug.file_link_format') : 'phpstorm-remotecall');
+        self::_initSetting(
+            'editor',
+            ini_get('xdebug.file_link_format') ? ini_get('xdebug.file_link_format') : 'phpstorm-remotecall'
+        );
         self::_initSetting('fileLinkServerPath', null);
         self::_initSetting('fileLinkLocalPath', null);
         self::_initSetting('displayCalledFrom', true);
@@ -989,7 +982,6 @@ class Sage
     }
 }
 
-
 /*
  *    ███████╗██╗  ██╗ ██████╗ ██████╗ ████████╗██╗  ██╗ █████╗ ███╗   ██╗██████╗ ███████╗
  *    ██╔════╝██║  ██║██╔═══██╗██╔══██╗╚══██╔══╝██║  ██║██╔══██╗████╗  ██║██╔══██╗██╔════╝
@@ -999,7 +991,6 @@ class Sage
  *    ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝
  *
  */
-
 
 if (! function_exists('d')) {
     /**
@@ -1117,7 +1108,7 @@ if (! function_exists('s')) {
         }
 
         $params = func_get_args();
-        $dump = call_user_func_array(array('Sage', 'dump'), $params);
+        $dump   = call_user_func_array(array('Sage', 'dump'), $params);
         Sage::enabled($enabled);
 
         return $dump;
@@ -1127,10 +1118,10 @@ if (! function_exists('s')) {
 if (! function_exists('sd')) {
     /**
      * @return string|int @see Sage::dump
+     * @return never [!!!] IMPORTANT: execution will halt after call to this function
      * @see s()
      *
      *
-     * @return never [!!!] IMPORTANT: execution will halt after call to this function
      */
     function sd()
     {
@@ -1150,7 +1141,6 @@ if (! function_exists('sd')) {
         die;
     }
 }
-
 
 if (get_cfg_var('sage.enabled') !== false) {
     Sage::enabled(get_cfg_var('sage.enabled'));

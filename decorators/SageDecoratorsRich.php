@@ -16,14 +16,14 @@ class SageDecoratorsRich
         $output = '<dl>';
 
         $allRepresentations = $varData->getAllRepresentations();
-        $extendedPresent = ! empty($allRepresentations);
+        $extendedPresent    = ! empty($allRepresentations);
 
         if ($extendedPresent) {
             $class = '_sage-parent';
             if (Sage::$expandedByDefault) {
                 $class .= ' _sage-show';
             }
-            $output .= '<dt class="'.$class.'">';
+            $output .= '<dt class="' . $class . '">';
         } else {
             $output .= '<dt>';
         }
@@ -32,8 +32,7 @@ class SageDecoratorsRich
             $output .= '<span class="_sage-popup-trigger" title="Open in new window">&rarr;</span><nav></nav>';
         }
 
-        $output .= self::_drawHeader($varData).$varData->value.'</dt>';
-
+        $output .= self::_drawHeader($varData) . $varData->value . '</dt>';
 
         if ($extendedPresent) {
             $output .= '<dd>';
@@ -45,16 +44,15 @@ class SageDecoratorsRich
         // We don't want to show the tab 'Contents' if $varData->extendedValue is the only tab
         if (count($allRepresentations) === 1 && ! empty($varData->extendedValue)) {
             $extendedValue = reset($allRepresentations);
-            $output .= self::decorateAlternativeView($extendedValue);
-
+            $output        .= self::decorateAlternativeView($extendedValue);
         } elseif ($extendedPresent) {
             $output .= "<ul class=\"_sage-tabs\">";
 
             $isFirst = true;
             foreach ($allRepresentations as $tabName => $_) {
-                $active = $isFirst ? ' class="_sage-active-tab"' : '';
+                $active  = $isFirst ? ' class="_sage-active-tab"' : '';
                 $isFirst = false;
-                $output .= "<li{$active}>".SageHelper::decodeStr($tabName).'</li>';
+                $output  .= "<li{$active}>" . SageHelper::decodeStr($tabName) . '</li>';
             }
 
             $output .= "</ul><ul>";
@@ -86,14 +84,14 @@ class SageDecoratorsRich
                 $class .= ' _sage-show';
             }
 
-            if (empty($step['source']) && empty($step['args']) &&empty($step['object']) ) {
+            if (empty($step['source']) && empty($step['args']) && empty($step['object'])) {
                 $class .= ' _sage-childless';
             }
 
-            $output .= '<dt class="'.$class.'">'
-                .'<b>'.($i + 1).'</b> '
-                .'<nav></nav>'
-                .'<var>';
+            $output .= '<dt class="' . $class . '">'
+                . '<b>' . ($i + 1) . '</b> '
+                . '<nav></nav>'
+                . '<var>';
 
             if (isset($step['file'])) {
                 $output .= SageHelper::ideLink($step['file'], $step['line']);
@@ -106,19 +104,19 @@ class SageDecoratorsRich
             $output .= $step['function'];
 
             if (isset($step['args'])) {
-                $output .= '('.implode(', ', array_keys($step['args'])).')';
+                $output .= '(' . implode(', ', array_keys($step['args'])) . ')';
             }
-            $output .= '</dt><dd>';
+            $output   .= '</dt><dd>';
             $firstTab = ' class="_sage-active-tab"';
-            $output .= '<ul class="_sage-tabs">';
+            $output   .= '<ul class="_sage-tabs">';
 
             if (! empty($step['source'])) {
-                $output .= "<li{$firstTab}>Source</li>";
+                $output   .= "<li{$firstTab}>Source</li>";
                 $firstTab = '';
             }
 
             if (! empty($step['args'])) {
-                $output .= "<li{$firstTab}>Arguments</li>";
+                $output   .= "<li{$firstTab}>Arguments</li>";
                 $firstTab = '';
             }
 
@@ -129,9 +127,7 @@ class SageDecoratorsRich
                 $output .= "<li{$firstTab}>Callee object [{$calleeDump->type}]</li>";
             }
 
-
             $output .= '</ul><ul>';
-
 
             if (! empty($step['source'])) {
                 $output .= "<li><pre class=\"_sage-source\">{$step['source']}</pre></li>";
@@ -146,7 +142,7 @@ class SageDecoratorsRich
                 $output .= "</li>";
             }
             if (! empty($step['object'])) {
-                $output .= "<li>".self::decorate($calleeDump)."</li>";
+                $output .= "<li>" . self::decorate($calleeDump) . "</li>";
             }
 
             $output .= '</ul></dd>';
@@ -155,7 +151,6 @@ class SageDecoratorsRich
 
         return $output;
     }
-
 
     /**
      * called for each dump, opens the html tag
@@ -166,7 +161,6 @@ class SageDecoratorsRich
     {
         return "<div class=\"_sage\">";
     }
-
 
     /**
      * closes Sage::_wrapStart() started html tags and displays callee information
@@ -184,8 +178,8 @@ class SageDecoratorsRich
         }
 
         $callingFunction = '';
-        $calleeInfo = '';
-        $traceDisplay = '';
+        $calleeInfo      = '';
+        $traceDisplay    = '';
         if (isset($prevCaller['class'])) {
             $callingFunction = $prevCaller['class'];
         }
@@ -195,19 +189,18 @@ class SageDecoratorsRich
         if (isset($prevCaller['function'])
             && ! in_array($prevCaller['function'], array('include', 'include_once', 'require', 'require_once'))
         ) {
-            $callingFunction .= $prevCaller['function'].'()';
+            $callingFunction .= $prevCaller['function'] . '()';
         }
         $callingFunction and $callingFunction = " [{$callingFunction}]";
 
-
         if (isset($callee['file'])) {
-            $calleeInfo .= 'Called from '.SageHelper::ideLink($callee['file'], $callee['line']);
+            $calleeInfo .= 'Called from ' . SageHelper::ideLink($callee['file'], $callee['line']);
         }
 
         if (! empty($miniTrace)) {
             $traceDisplay = '<ol>';
             foreach ($miniTrace as $step) {
-                $traceDisplay .= '<li>'.SageHelper::ideLink($step['file'], $step['line']); // closing tag not required
+                $traceDisplay .= '<li>' . SageHelper::ideLink($step['file'], $step['line']); // closing tag not required
                 if (isset($step['function'])
                     && ! in_array($step['function'], array('include', 'include_once', 'require', 'require_once'))
                 ) {
@@ -218,20 +211,19 @@ class SageDecoratorsRich
                     if (isset($step['type'])) {
                         $classString .= $step['type'];
                     }
-                    $classString .= $step['function'].'()]';
+                    $classString  .= $step['function'] . '()]';
                     $traceDisplay .= $classString;
                 }
             }
             $traceDisplay .= '</ol>';
 
-            $calleeInfo = '<nav></nav>'.$calleeInfo;
+            $calleeInfo = '<nav></nav>' . $calleeInfo;
         }
 
-
         return "<footer>"
-            .'<span class="_sage-popup-trigger" title="Open in new window">&rarr;</span> '
-            ."{$calleeInfo}{$callingFunction}{$traceDisplay}"
-            ."</footer></div>";
+            . '<span class="_sage-popup-trigger" title="Open in new window">&rarr;</span> '
+            . "{$calleeInfo}{$callingFunction}{$traceDisplay}"
+            . "</footer></div>";
     }
 
     private static function _drawHeader(SageVariableData $varData)
@@ -243,12 +235,12 @@ class SageDecoratorsRich
 
         if ($varData->name !== null && $varData->name !== '') {
             $output .= "<dfn>"
-                .SageHelper::decodeStr($varData->name)
-                ."</dfn> ";
+                . SageHelper::decodeStr($varData->name)
+                . "</dfn> ";
         }
 
         if ($varData->operator !== null) {
-            $output .= $varData->operator." ";
+            $output .= $varData->operator . " ";
         }
 
         if ($varData->type !== null) {
@@ -257,12 +249,11 @@ class SageDecoratorsRich
         }
 
         if ($varData->size !== null) {
-            $output .= "(".$varData->size.") ";
+            $output .= "(" . $varData->size . ") ";
         }
 
         return $output;
     }
-
 
     /**
      * produces css and js required for display. May be called multiple times, will only produce output once per
@@ -272,15 +263,15 @@ class SageDecoratorsRich
      */
     public static function init()
     {
-        $baseDir = SAGE_DIR.'resources/compiled/';
+        $baseDir = SAGE_DIR . 'resources/compiled/';
 
-        if (! is_readable($cssFile = $baseDir.Sage::$theme.'.css')) {
-            $cssFile = $baseDir.'original.css';
+        if (! is_readable($cssFile = $baseDir . Sage::$theme . '.css')) {
+            $cssFile = $baseDir . 'original.css';
         }
 
         return
-            '<script class="-_sage-js">'.file_get_contents($baseDir.'sage.js').'</script>'
-            .'<style class="-_sage-css">'.file_get_contents($cssFile)."</style>\n";
+            '<script class="-_sage-js">' . file_get_contents($baseDir . 'sage.js') . '</script>'
+            . '<style class="-_sage-css">' . file_get_contents($cssFile) . "</style>\n";
     }
 
     private static function decorateAlternativeView($alternative)

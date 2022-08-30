@@ -13,8 +13,8 @@ class SageParsersClassStatics extends SageParser
             return false;
         }
 
-        $statics = array();
-        $class = get_class($variable);
+        $statics    = array();
+        $class      = get_class($variable);
         $reflection = new ReflectionClass($class);
 
         // first show static values
@@ -31,18 +31,18 @@ class SageParsersClassStatics extends SageParser
 
             if (method_exists($property, 'isInitialized')
                 && ! $property->isInitialized($variable)) {
-                $value = null;
+                $value  = null;
                 $access .= ' [uninitialized]';
             } else {
                 $value = $property->getValue($variable);
             }
 
-            $name = '$'.$property->getName();
+            $name   = '$' . $property->getName();
             $output = self::process($value, SageHelper::decodeStr($name));
 
-            $output->access = $access;
+            $output->access   = $access;
             $output->operator = '::';
-            $statics[] = $output;
+            $statics[]        = $output;
         }
 
         if (! isset(self::$constsCache[$class])) {
@@ -50,8 +50,8 @@ class SageParsersClassStatics extends SageParser
 
             if (method_exists($reflection, 'getReflectionConstants')) {
                 foreach ($reflection->getReflectionConstants() as $constant) {
-                    $val = $constant->getValue();
-                    $output = SageParser::process($val, $constant->getName());
+                    $val            = $constant->getValue();
+                    $output         = SageParser::process($val, $constant->getName());
                     $output->access = '';
                     if (method_exists($constant, 'isFinal') && $constant->isFinal()) {
                         $output->access .= 'final ';
@@ -62,15 +62,15 @@ class SageParsersClassStatics extends SageParser
                     if ($constant->isPrivate()) {
                         $output->access .= 'protected ';
                     }
-                    $output->access .= 'const';
+                    $output->access   .= 'const';
                     $output->operator = '::';
 
                     $constants[] = $output;
                 }
             } else {
                 foreach ($reflection->getConstants() as $name => $val) {
-                    $output = SageParser::process($val, $name);
-                    $output->access = 'const';
+                    $output           = SageParser::process($val, $name);
+                    $output->access   = 'const';
                     $output->operator = '::';
 
                     $constants[] = $output;
@@ -88,7 +88,7 @@ class SageParsersClassStatics extends SageParser
 
         $varData->addTabToView(
             $variable,
-            'Static class properties ('.count($statics).')',
+            'Static class properties (' . count($statics) . ')',
             $statics
         );
     }

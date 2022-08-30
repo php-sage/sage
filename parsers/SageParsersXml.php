@@ -14,7 +14,7 @@ class SageParsersXml extends SageParser
             }
 
             if (is_string($variable) && substr($variable, 0, 5) === '<?xml') {
-                $e = libxml_use_internal_errors(true);
+                $e   = libxml_use_internal_errors(true);
                 $xml = simplexml_load_string($variable);
                 libxml_use_internal_errors($e);
                 if (empty($xml)) {
