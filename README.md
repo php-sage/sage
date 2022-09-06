@@ -38,6 +38,15 @@ sage(1); // shortcut for dumping trace
 
 ![](.github/img/main-screenshot.png)
 
+
+| Function | Shorthand |                   |
+|----------|-----------|-------------------|
+| `sage`   | `s`       | dump              |
+| `saged`  | `sd`      | dump & die        |
+| `ssage`  | `ss`      | simple dump       |
+| `ssaged` | `ssd`     | simple dump & die |
+
+
 ----
 
 # Customization options
@@ -234,8 +243,7 @@ Sage::dump( debug_backtrace() ); // you can even pass a custom result from debug
 
 // dump and die debugging
 dd($GLOBALS, $_SERVER); // dd() might be taken by your framework
-ddd($GLOBALS, $_SERVER); // so here are some equivalent altenratives
-saged($GLOBALS, $_SERVER);
+saged($GLOBALS, $_SERVER); // so this is an equivalent altenrative
 sd($GLOBALS, $_SERVER); // available for plain display too!
 
 // this will disable Sage completely

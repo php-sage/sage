@@ -63,13 +63,28 @@ class SageParsersFsPath extends SageParser
             $flags[] = (($perms & 0x0002) ? 'w' : '-');
             $flags[] = (($perms & 0x0001) ? (($perms & 0x0200) ? 't' : 'x') : (($perms & 0x0200) ? 'T' : '-'));
 
-            $size  = sprintf('%.2fK', $fileInfo->getSize() / 1024);
+            $size  = $type === 'Directory' ? '' : '('. self::humanFilesize($fileInfo->getSize()) . ')';
             $flags = implode($flags);
             $path  = $fileInfo->getRealPath();
 
-            $varData->addTabToView($variable, "Existing {$type} ({$size})", "$flags    $path");
+            $varData->addTabToView($variable, "Existing {$type} {$size}", "$flags    $path");
         } catch (Exception $e) {
             return false;
         }
+    }
+
+    private static function humanFilesize($bytes)
+    {
+        if ($bytes < 10240) {
+            return "{$bytes} bytes";
+        }
+
+        $units           = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
+        $precisionByUnit = array(0, 1, 1, 2, 2, 3, 3, 4, 4);
+        for ($order = 0; ($bytes / 1024) >= 0.9 && $order < count($units); $order++) {
+            $bytes /= 1024;
+        }
+
+        return round($bytes, $precisionByUnit[$order]) . $units[$order];
     }
 }

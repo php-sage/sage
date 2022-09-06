@@ -1044,24 +1044,6 @@ if (! function_exists('dd')) {
     }
 }
 
-if (! function_exists('ddd')) {
-    /**
-     * Alias of Sage::dump(); die;
-     *
-     * @return never [!!!] IMPORTANT: execution will halt after call to this function
-     */
-    function ddd()
-    {
-        if (! Sage::enabled()) {
-            return 5463;
-        }
-
-        $_ = func_get_args();
-        call_user_func_array(array('Sage', 'dump'), $_);
-        die;
-    }
-}
-
 if (! function_exists('saged')) {
     /**
      * Alias of Sage::dump(); die;

@@ -15,8 +15,6 @@ class SageParsersSplFileInfo extends SageParser
             return false;
         }
 
-        $varData->value = $variable->getBasename();
-
         try {
             $flags = array();
             $perms = $variable->getPerms();
@@ -62,23 +60,54 @@ class SageParsersSplFileInfo extends SageParser
             $flags[] = (($perms & 0x0002) ? 'w' : '-');
             $flags[] = (($perms & 0x0001) ? (($perms & 0x0200) ? 't' : 'x') : (($perms & 0x0200) ? 'T' : '-'));
 
-            $size  = sprintf('%.2fK', $variable->getSize() / 1024);
+            $size  = self::humanFilesize($variable->getSize());
             $flags = implode($flags);
             $path  = $variable->getRealPath();
 
+            $varData->value = '"' . $variable->getBasename() . '"';
+            $varData->size  = null;
+
             if (SageHelper::isRichMode()) {
-                $varData->addTabToView($variable, "Existing {$type} ({$size})", "$flags    $path");
+                if ($type === 'Directory') {
+                    $name = "Existing {$type}";
+                } else {
+                    $name = "Existing {$type} ($size)";
+                }
+
+                $varData->addTabToView($variable, $name, $flags . "    " . $path);
             } else {
-                $varData->value         = $variable->getBasename();
-                $varData->extendedValue = array(
-                    ' path' => $path,
-                    ' type' => $type,
-                    ' size' => $size,
-                    'flags' => $flags,
-                );
+                if ($type === 'Directory') {
+                    $varData->extendedValue = array(
+                        ' path' => $path,
+                        ' type' => $type,
+                        'flags' => $flags,
+                    );
+                } else {
+                    $varData->extendedValue = array(
+                        ' path' => $path,
+                        ' type' => $type,
+                        ' size' => $size,
+                        'flags' => $flags,
+                    );
+                }
             }
         } catch (Exception $e) {
             return false;
         }
+    }
+
+    private static function humanFilesize($bytes)
+    {
+        if ($bytes < 10240) {
+            return "{$bytes} bytes";
+        }
+
+        $units           = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
+        $precisionByUnit = array(0, 1, 1, 2, 2, 3, 3, 4, 4);
+        for ($order = 0; ($bytes / 1024) >= 0.9 && $order < count($units); $order++) {
+            $bytes /= 1024;
+        }
+
+        return round($bytes, $precisionByUnit[$order]) . $units[$order];
     }
 }

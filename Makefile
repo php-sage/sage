@@ -23,3 +23,11 @@ docker-build:
 	-$(DOCKER_COMPOSE) rm --force --stop --volumes
 	-$(DOCKER_COMPOSE) build
 	-$(DOCKER_COMPOSE) up -d
+
+
+test:
+	$(DOCKER_COMPOSE) run php pest
+
+
+update-test-snapshots:
+	$(DOCKER_COMPOSE) run php pest -d --update-snapshots
