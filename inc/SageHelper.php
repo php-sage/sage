@@ -109,13 +109,14 @@ class SageHelper
                 array('sage', 'trace'),
             ),
             'functions' => array(
-                'd',
                 'sage',
-                'dd',
-                'saged',
-                'ddd',
                 's',
+                'saged',
                 'sd',
+                'ssage',
+                'ss',
+                'ssaged',
+                'ssd',
             ),
         );
 

@@ -39,12 +39,28 @@ sage(1); // shortcut for dumping trace
 ![](.github/img/main-screenshot.png)
 
 
-| Function | Shorthand |                   |
-|----------|-----------|-------------------|
-| `sage`   | `s`       | dump              |
-| `saged`  | `sd`      | dump & die        |
-| `ssage`  | `ss`      | simple dump       |
-| `ssaged` | `ssd`     | simple dump & die |
+| Function  | Shorthand |                   |
+|-----------|-----------|-------------------|
+| `sage`    | `s`       | Dump              |
+| `saged`   | `sd`      | Dump & die        |
+| `ssage`   | `ss`      | Simple dump       |
+| `ssaged`  | `ssd`     | Simple dump & die |
+| `sage(1)` | `s(1)`    | Debug backtrace   |
+
+### Simple dump:
+
+![simple mode example](.github/img/simple-mode.png)
+
+### Debug backtrace:
+
+![Trace view](.github/img/trace.png)
+
+To output plain-text mode (NO STYLING) prefix with `~`, to return instead of echoing, prefix with `@`:
+
+```php
+~s($var); // outputs plain text
+$output = @ss(); // returns output
+```
 
 
 ----
@@ -299,9 +315,8 @@ ddd( microtime(), 'final call, after sleep(2)' );
 * Visible **Variable name**
 * Keyboard shortcuts. Type <kbd>d</kbd> and the rest is just self-explanatory (use arrows, space, tab, enter, you'll get it!).
 * **Debug backtraces** with full insight of arguments, callee objects and more.
-  ![Trace view](.github/img/trace.png)
 * Custom display for a lot of recognized types:
-  ![](.github/img/alternative-view.png)
+  ![custom types](.github/img/alternative-view.png)
 * Has text-only, plain and rich views, has several visual themes - actually created by a pro designer.
 * A huge amount of small usability enhancements - like the (clickable) **call trace** in the footer of each output.
 * Supports convenience modifiers, for example `@sage($var);` will return instead of outputting, `-sage($var);` will `ob_clean` all output to be the only thing on page (see advanced section above for more).
@@ -319,7 +334,7 @@ ddd( microtime(), 'final call, after sleep(2)' );
 
 ### 💬 Why does Sage look so much like Kint? A.K.A. Why does this have so few stars?
 
-Because it <b>is</b> Kint, and I am its author, however the project was [blatantly **stolen**](https://github.com/kint-php/kint/commit/1ea81f3add81b586756515673f8364f60feb86a3) from me by a malicious contributor!
+Because it <b>is</b> Kint, and I am its author, however the project was [**forcibly taken over**](https://github.com/kint-php/kint/commit/1ea81f3add81b586756515673f8364f60feb86a3) from me by a malicious contributor!
 
 Instead of fighting DMCA windmills, I chose to fork and rename the last **good** version and continue under a new name!
 
