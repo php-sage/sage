@@ -270,8 +270,8 @@ class SageDecoratorsRich
         }
 
         return
-            '<script class="-_sage-js">' . file_get_contents($baseDir . 'sage.js') . '</script>'
-            . '<style class="-_sage-css">' . file_get_contents($cssFile) . "</style>\n";
+            '<script class="_sage-js">' . file_get_contents($baseDir . 'sage.js') . '</script>'
+            . '<style class="_sage-css">' . file_get_contents($cssFile) . "</style>\n";
     }
 
     private static function decorateAlternativeView($alternative)

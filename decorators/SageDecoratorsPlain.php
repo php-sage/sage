@@ -102,7 +102,7 @@ class SageDecoratorsPlain
 
             if (! empty($step['object'])) {
                 $output .= self::_colorize(
-                    '    ' . self::_char('─', 27) . ' Callee object ' . self::_char('─', 34),
+                    '    ' . str_repeat('─', 27) . ' Callee object ' . str_repeat('─', 34),
                     'title'
                 );
 
@@ -120,7 +120,7 @@ class SageDecoratorsPlain
             }
 
             if ($stepNo !== $lastStep) {
-                $output .= self::_colorize(self::_char('─', 80), 'title');
+                $output .= self::_colorize(str_repeat('─', 80), 'title');
             }
         }
 
@@ -175,37 +175,21 @@ class SageDecoratorsPlain
         }
     }
 
-    private static function _char($char, $repeat = null)
-    {
-        return $repeat ? str_repeat($char, $repeat) : $char;
-    }
-
     private static function _title($text)
     {
         $escaped          = SageHelper::decodeStr($text);
         $lengthDifference = strlen($escaped) - strlen($text);
 
         return
-            self::_colorize(
-                self::_char('┌') . self::_char('─', 78) . self::_char('┐') . PHP_EOL
-                . self::_char('│'),
-                'title',
-                false
-            )
-
+            self::_colorize('┌' . str_repeat('─', 78) . '┐' . PHP_EOL . '│', 'title', false)
             . self::_colorize(str_pad($escaped, 78 + $lengthDifference, ' ', STR_PAD_BOTH), 'title', false)
-
-            . self::_colorize(
-                self::_char('│') . PHP_EOL
-                . self::_char('└') . self::_char('─', 78) . self::_char('┘'),
-                'title'
-            );
+            . self::_colorize('│' . PHP_EOL . '└' . str_repeat('─', 78) . '┘', 'title');
     }
 
     public static function wrapStart()
     {
         if (Sage::enabled() === Sage::MODE_PLAIN) {
-            return '<pre class="-_sage">';
+            return '<pre class="_sage">';
         }
 
         return '';
@@ -213,7 +197,7 @@ class SageDecoratorsPlain
 
     public static function wrapEnd($callee, $miniTrace, $prevCaller)
     {
-        $lastLine = self::_colorize(self::_char("═", 80), 'title');
+        $lastLine = self::_colorize(str_repeat('═', 80), 'title');
         $lastChar = Sage::enabled() === Sage::MODE_PLAIN ? '</pre>' : '';
 
         if (! Sage::$displayCalledFrom) {
@@ -251,11 +235,7 @@ class SageDecoratorsPlain
         }
 
         if ($varData->value !== null && $varData->value !== '') {
-            $output .= ' ' . self::_colorize(
-                    $varData->value, // escape shell
-                    'value',
-                    false
-                );
+            $output .= ' ' . self::_colorize($varData->value, 'value', false);
         }
 
         return ltrim($output);
@@ -280,7 +260,7 @@ class SageDecoratorsPlain
         }
 
         return Sage::enabled() === Sage::MODE_PLAIN
-            ? '<style>.-_sage i{color:#d00;font-style:normal}.-_sage u{color:#030;text-decoration:none;font-weight:bold}</style>'
+            ? '<style>._sage i{color:#d00;font-style:normal}._sage u{color:#030;text-decoration:none;font-weight:bold}</style>'
             : '';
     }
 }

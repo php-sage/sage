@@ -1,17 +1,9 @@
 {
   "name": "php-sage/sage",
   "description": "☯ Insightful PHP debugging assistant.",
-  "keywords": [
-    "sage",
-    "php",
-    "debug",
-    "dump",
-    "var_dup",
-    "debug_backtrace",
-    "json_decode"
-  ],
+  "keywords": ["sage", "php", "dumper", "debug", "dump", "var_dup", "debug_backtrace", "json_decode"],
   "type": "library",
-  "homepage": "https://github.com/phpsage/sage",
+  "homepage": "https://github.com/php-sage/sage",
   "license": "MIT",
   "authors": [
     {
@@ -20,7 +12,7 @@
     },
     {
       "name": "Contributors",
-      "homepage": "https://github.com/phpsage/sage/contributors"
+      "homepage": "https://github.com/php-sage/sage/contributors"
     }
   ],
   "require": {

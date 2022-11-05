@@ -157,8 +157,8 @@ if (typeof _sageInitialized === 'undefined') {
                     + _sage.tag('head')
                     + '<title>Sage ☯ (' + new Date().toISOString() + ')</title>'
                     + _sage.tag('meta charset="utf-8"')
-                    + document.getElementsByClassName('-_sage-js')[0].outerHTML
-                    + document.getElementsByClassName('-_sage-css')[0].outerHTML
+                    + document.getElementsByClassName('_sage-js')[0].outerHTML
+                    + document.getElementsByClassName('_sage-css')[0].outerHTML
                     + _sage.tag('/head')
                     + _sage.tag('body')
                     + '<input style="width: 100%" placeholder="Take some notes!">'
