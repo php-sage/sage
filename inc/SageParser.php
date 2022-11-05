@@ -450,7 +450,7 @@ class SageParser
             } else {
                 $access = "public";
 
-                if (! isset($publicProperties[$className][$key])) {
+                if ($variableData->type !== 'stdClass' && ! isset($publicProperties[$className][$key])) {
                     $access .= ' (dynamically added)';
                 }
             }
