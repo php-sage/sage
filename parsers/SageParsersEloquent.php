@@ -16,9 +16,12 @@ class SageParsersEloquent extends SageParser
         $p->setAccessible(true);
 
         if (SageHelper::isRichMode()) {
-            $varData->addTabToView($variable, 'DB data', $p->getValue($variable));
+            $varData->addTabToView($variable, 'DB row', $p->getValue($variable));
         } else {
-            $varData->extendedValue = SageParser::alternativesParse($variable, $p->getValue($variable));
+            $varData->type          = $reflection->getName() . '; ' . $variable->getTable() . ' row data:';
+            $attributes             = $p->getValue($variable);
+            $varData->size          = count($attributes);
+            $varData->extendedValue = SageParser::alternativesParse($variable, $attributes);
         }
 
         return true;

@@ -27,6 +27,24 @@ class SageHelper
         'xdebug'                 => 'xdebug://%f@%l',
     );
 
+    private static $aliases;
+    private static $defaultAliases = array(
+        'methods'   => array(
+            array('sage', 'dump'),
+            array('sage', 'trace'),
+        ),
+        'functions' => array(
+            'sage',
+            's',
+            'saged',
+            'sd',
+            'ssage',
+            'ss',
+            'ssaged',
+            'ssd',
+        ),
+    );
+
     public static function php53orLater()
     {
         if (! isset(self::$_php53)) {
@@ -94,33 +112,11 @@ class SageHelper
         return $shortenedName;
     }
 
-    private static $aliases;
-
-    /**
-     * called during initialization phase of Sage::dump
-     *
-     * @return void
-     */
     public static function buildAliases()
     {
-        $aliases = array(
-            'methods'   => array(
-                array('sage', 'dump'),
-                array('sage', 'trace'),
-            ),
-            'functions' => array(
-                'sage',
-                's',
-                'saged',
-                'sd',
-                'ssage',
-                'ss',
-                'ssaged',
-                'ssd',
-            ),
-        );
+        $aliases = self::$aliases === null ? self::$defaultAliases : self::$aliases;
 
-        if (! empty(Sage::$aliases)) {
+        if (Sage::$aliases !== null) {
             $a = is_string(Sage::$aliases) ?
                 explode(',', strtolower(Sage::$aliases))
                 : Sage::$aliases;

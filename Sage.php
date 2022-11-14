@@ -946,6 +946,7 @@ class Sage
         }
     }
 
+    /** Called before each invocation */
     private static function _init()
     {
         SageHelper::buildAliases();

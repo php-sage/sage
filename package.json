@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "devDependencies": {
+    "uglify-js": "^3"
+  },
+  "scripts": {
+    "build:js": "uglifyjs resources/base.js -cm --toplevel --mangle-props --warn > resources/compiled/sage.js"
+  }
+}
