@@ -189,7 +189,7 @@ class SageDecoratorsPlain
     public static function wrapStart()
     {
         if (Sage::enabled() === Sage::MODE_PLAIN) {
-            return '<pre class="_sage">';
+            return '<pre class="_sage_plain">';
         }
 
         return '';
@@ -260,7 +260,7 @@ class SageDecoratorsPlain
         }
 
         return Sage::enabled() === Sage::MODE_PLAIN
-            ? '<style>._sage i{color:#d00;font-style:normal}._sage u{color:#030;text-decoration:none;font-weight:bold}</style>'
+            ? '<style>._sage_plain i{color:#d00;font-style:normal}._sage_plain u{color:#030;text-decoration:none;font-weight:bold}</style>'
             : '';
     }
 }
