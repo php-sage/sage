@@ -31,7 +31,7 @@ composer require php-sage/sage --dev
 ```php
 sage($GLOBALS, $_SERVER); // dump any number of parameters
 
-saged($GLOBALS, $_SERVER); // alias for sage();die;
+saged($i); // alias for sage();die;
 
 sage(1); // shortcut for dumping trace
 ```
@@ -39,13 +39,13 @@ sage(1); // shortcut for dumping trace
 ![](.github/img/main-screenshot.png)
 
 
-| Function  | Shorthand |                   |
-|-----------|-----------|-------------------|
-| `sage`    | `s`       | Dump              |
-| `saged`   | `sd`      | Dump & die        |
-| `ssage`   | `ss`      | Simple dump       |
-| `ssaged`  | `ssd`     | Simple dump & die |
-| `sage(1)` | `s(1)`    | Debug backtrace   |
+| Function  | Shorthand             |                   |
+|-----------|-----------------------|-------------------|
+| `sage`    | `s`                   | Dump              |
+| `saged`   | `sd`                  | Dump & die        |
+| `ssage`   | `ss`                  | Simple dump       |
+| `ssaged`  | `ssd`                 | Simple dump & die |
+| `sage(1)` | `s(1)`/`sd(1)`        | Debug backtrace   |
 
 ### Simple dump:
 
@@ -84,7 +84,7 @@ Sage::$theme = Sage::THEME_LIGHT;
 
    Add this entry to the `autoload.files` configuration key in `composer.json`:
 
-```javascript
+```json
 "autoload": {
   /* ... */
   "files": [
