@@ -76,9 +76,17 @@ class SageDecoratorsRich
 
     public static function decorateTrace($traceData)
     {
+        // if we're dealing with a framework stack, lets verbosely display last few steps only, and not hang the browser
+        $optimizeOutput = count($traceData) >= 10 && Sage::$maxLevels !== false;
+        $maxLevels      = Sage::$maxLevels;
+
         $output = '<dl class="_sage-trace">';
 
         foreach ($traceData as $i => $step) {
+            if ($optimizeOutput && $i > 2) {
+                Sage::$maxLevels = 3;
+            }
+
             $class = '_sage-parent';
             if (Sage::$expandedByDefault) {
                 $class .= ' _sage-show';
@@ -122,6 +130,7 @@ class SageDecoratorsRich
 
             if (! empty($step['object'])) {
                 SageParser::reset();
+
                 $calleeDump = SageParser::process($step['object']);
 
                 $output .= "<li{$firstTab}>Callee object [{$calleeDump->type}]</li>";
@@ -147,7 +156,10 @@ class SageDecoratorsRich
 
             $output .= '</ul></dd>';
         }
+
         $output .= '</dl>';
+
+        Sage::$maxLevels = $maxLevels;
 
         return $output;
     }

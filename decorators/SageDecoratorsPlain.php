@@ -36,7 +36,7 @@ class SageDecoratorsPlain
                     }
                 }
             } elseif (is_string($varData->extendedValue)) {
-                $output .= $space . $s . self::_colorize($varData->extendedValue, 'value') . PHP_EOL;
+                $output .= $space . $s . self::_colorize($varData->extendedValue, 'value');
             } else {
                 //                throw new RuntimeException();
                 //                $output .= self::decorate($varData->extendedValue, $level + 1); // it's SageVariableData
@@ -51,12 +51,22 @@ class SageDecoratorsPlain
 
     public static function decorateTrace($traceData)
     {
+        // if we're dealing with a framework stack, lets verbosely display last few steps only, and not hang the browser
+        $optimizeOutput = count($traceData) >= 10 && Sage::$maxLevels !== false;
+        $maxLevels      = Sage::$maxLevels;
+
         $output   = self::_title('TRACE');
         $lastStep = count($traceData);
         foreach ($traceData as $stepNo => $step) {
-            $title = str_pad(++$stepNo . ': ', 4, ' ');
+            if ($optimizeOutput) {
+                if ($stepNo > 2) {
+                    Sage::$maxLevels = 3;
+                }
+            }
 
-            $title .= self::_colorize(
+            $output .= str_pad(++$stepNo . ': ', 4, ' ');
+
+            $output .= self::_colorize(
                 (
                 isset($step['file'])
                     ? SageHelper::ideLink($step['file'], $step['line'])
@@ -65,22 +75,26 @@ class SageDecoratorsPlain
                 'title'
             );
 
+            $appendDollar = $step['function'] === '{closure}' ? '' : '$';
+
             if (! empty($step['function'])) {
-                $title .= '    ' . $step['function'];
+                $output .= '    ' . $step['function'];
                 if (isset($step['args'])) {
-                    $title .= '(';
+                    $output .= '(';
                     if (empty($step['args'])) {
-                        $title .= ')';
+                        $output .= ')';
+                    } else {
+                        $output .= $appendDollar . implode(', ' . $appendDollar, array_keys($step['args'])) . ')';
+                        $output .= PHP_EOL . self::_colorize(
+                                '    ' . str_repeat('─', 27) . ' Arguments ' . str_repeat('─', 38),
+                                'title'
+                            );
                     }
                 }
-                $title .= PHP_EOL;
+                $output .= PHP_EOL;
             }
 
-            $output .= $title;
-
             if (! empty($step['args'])) {
-                $appendDollar = $step['function'] === '{closure}' ? '' : '$';
-
                 $i = 0;
                 foreach ($step['args'] as $name => $argument) {
                     $argument           = SageParser::process(
@@ -123,6 +137,8 @@ class SageDecoratorsPlain
                 $output .= self::_colorize(str_repeat('─', 80), 'title');
             }
         }
+
+        Sage::$maxLevels = $maxLevels;
 
         return $output;
     }
