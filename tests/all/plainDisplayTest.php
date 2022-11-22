@@ -14,7 +14,6 @@ test('just random stuff', function() {
     assertSageSnapshot(
         sage(
             $example,
-            microtime(),
             new SplFileInfo(__DIR__ . '/../../LICENCE')
         )
     );

@@ -29,12 +29,13 @@ class SageParser
 
         $fh = opendir(SAGE_DIR . 'parsers');
         while ($fileName = readdir($fh)) {
-            list($className, $extension) = explode('.', $fileName);
-            if ($extension !== 'php') {
+            $fileInfo = explode('.', $fileName);
+            if (count($fileInfo) < 2 || $fileInfo[1] !== 'php') {
                 continue;
             }
 
-            require SAGE_DIR . 'parsers/' . $fileName;
+            require_once SAGE_DIR . 'parsers/' . $fileName;
+            $className = $fileInfo[0];
 
             // process the "there can be only one" parsers first, if they execute, all others will be skipped
             if ($className::$replacesAllOtherParsers) {

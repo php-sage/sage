@@ -2,9 +2,8 @@
 
 /**
  * @internal
- * @noinspection AutoloadingIssuesInspection
  */
-class SageParsersSplFileInfo extends SageParsersFilePath
+class SageParsersSplFileInfo extends SageParser
 {
     public static $replacesAllOtherParsers = true;
 
@@ -17,6 +16,118 @@ class SageParsersSplFileInfo extends SageParsersFilePath
             return false;
         }
 
-        return SageParsersFilePath::run($variable, $varData, $variable);
+        return self::run($variable, $varData, $variable);
+    }
+
+    /**
+     * @param mixed            $variable
+     * @param SageVariableData $varData
+     * @param SplFileInfo      $fileInfo
+     *
+     * @return bool
+     */
+    protected static function run(&$variable, $varData, $fileInfo)
+    {
+        try {
+            $flags = array();
+            $perms = $fileInfo->getPerms();
+
+            if (($perms & 0xC000) === 0xC000) {
+                $type    = 'File socket';
+                $flags[] = 's';
+            } elseif (($perms & 0xA000) === 0xA000) {
+                $type    = 'File symlink';
+                $flags[] = 'l';
+            } elseif (($perms & 0x8000) === 0x8000) {
+                $type    = 'File';
+                $flags[] = '-';
+            } elseif (($perms & 0x6000) === 0x6000) {
+                $type    = 'Block special file';
+                $flags[] = 'b';
+            } elseif (($perms & 0x4000) === 0x4000) {
+                $type    = 'Directory';
+                $flags[] = 'd';
+            } elseif (($perms & 0x2000) === 0x2000) {
+                $type    = 'Character special file';
+                $flags[] = 'c';
+            } elseif (($perms & 0x1000) === 0x1000) {
+                $type    = 'FIFO pipe file';
+                $flags[] = 'p';
+            } else {
+                $type    = 'Unknown file';
+                $flags[] = 'u';
+            }
+
+            // owner
+            $flags[] = (($perms & 0x0100) ? 'r' : '-');
+            $flags[] = (($perms & 0x0080) ? 'w' : '-');
+            $flags[] = (($perms & 0x0040) ? (($perms & 0x0800) ? 's' : 'x') : (($perms & 0x0800) ? 'S' : '-'));
+
+            // group
+            $flags[] = (($perms & 0x0020) ? 'r' : '-');
+            $flags[] = (($perms & 0x0010) ? 'w' : '-');
+            $flags[] = (($perms & 0x0008) ? (($perms & 0x0400) ? 's' : 'x') : (($perms & 0x0400) ? 'S' : '-'));
+
+            // world
+            $flags[] = (($perms & 0x0004) ? 'r' : '-');
+            $flags[] = (($perms & 0x0002) ? 'w' : '-');
+            $flags[] = (($perms & 0x0001) ? (($perms & 0x0200) ? 't' : 'x') : (($perms & 0x0200) ? 'T' : '-'));
+
+            $size  = $type === 'Directory' ? '' : self::humanFilesize($fileInfo->getSize());
+            $flags = implode($flags);
+            $path  = $fileInfo->getRealPath();
+
+            $c = array(
+                'realPath'      => $fileInfo->getRealPath(),
+                'type'          => $type,
+                'size'          => $size,
+                'size in bytes' => (string)$fileInfo->getSize(),
+                'aTime'         => date('Y-m-d H:i:s', $fileInfo->getATime()),
+                'mTime'         => date('Y-m-d H:i:s', $fileInfo->getMTime()),
+                'cTime'         => date('Y-m-d H:i:s', $fileInfo->getCTime()),
+                'flags'         => $flags,
+                'permissions'   => (string)$fileInfo->getPerms(),
+                'owner'         => (string)$fileInfo->getOwner(),
+                'group'         => (string)$fileInfo->getGroup(),
+                'writable'      => $fileInfo->isWritable() ? 'true' : 'false',
+                'readable'      => $fileInfo->isReadable() ? 'true' : 'false',
+                'executable'    => $fileInfo->isExecutable() ? 'true' : 'false',
+                'link'          => $fileInfo->isLink() ? 'true' : 'false',
+                'linkTarget'    => $fileInfo->getLinkTarget(),
+            );
+
+            $varData->value = $fileInfo->getRealPath();
+
+            if (SageHelper::isRichMode()) {
+                if ($type === 'Directory') {
+                    $name = "Existing Directory";
+                } else {
+                    $name = "Existing {$type} ($size)";
+                }
+
+                $varData->addTabToView($variable, $name, $c);
+            } else {
+                $varData->extendedValue = $c;
+            }
+        } catch (Exception $e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static function humanFilesize($bytes)
+    {
+        if ($bytes < 10240) {
+            return "{$bytes} bytes";
+        }
+
+        $units           = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
+        $precisionByUnit = array(0, 1, 1, 2, 2, 3, 3, 4, 4);
+        for ($order = 0; ($bytes / 1024) >= 0.9 && $order < count($units); $order++) {
+            $bytes /= 1024;
+        }
+
+        return round($bytes, $precisionByUnit[$order]) . $units[$order];
     }
 }
