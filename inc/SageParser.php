@@ -10,7 +10,7 @@ class SageParser
 
     private static $_level = 0;
     /** @var SageParser[] $parser */
-    private static $_parsers;
+    private static $_parsers = array();
     /** @var array<string, true> */
     private static $_objects;
     /** @var string */
@@ -77,7 +77,9 @@ class SageParser
      */
     final public static function process(&$variable, $name = null)
     {
-        isset(self::$_parsers) or self::_init();
+        if (! self::$_parsers) {
+            self::_init();
+        }
 
         // save internal data to revert after dumping to properly handle recursions etc
         $revert = array(
