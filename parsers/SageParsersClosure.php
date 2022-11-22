@@ -6,6 +6,8 @@
  */
 class SageParsersClosure extends SageParser
 {
+    public static $replacesAllOtherParsers = true;
+
     protected static function parse(&$variable, $varData)
     {
         if (! $variable instanceof Closure) {
@@ -37,7 +39,5 @@ class SageParsersClosure extends SageParser
         if ($reflection->getFileName()) {
             $varData->value = SageHelper::ideLink($reflection->getFileName(), $reflection->getStartLine());
         }
-
-        return true;
     }
 }

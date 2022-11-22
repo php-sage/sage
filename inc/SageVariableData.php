@@ -31,7 +31,7 @@ class SageVariableData
      *
      * @return void
      */
-    public function addTabToView($originalVariable, $name, $value)
+    public function addTabToView($originalVariable, $tabName, $value)
     {
         if (is_array($value)) {
             if (! (reset($value) instanceof self)) {
@@ -44,7 +44,7 @@ class SageVariableData
             // ERROR: incorrect parser
         }
 
-        $this->alternativeRepresentations[$name] = $value;
+        $this->alternativeRepresentations[$tabName] = $value;
     }
 
     public function getAllRepresentations()

@@ -29,8 +29,7 @@ class SageParsersClassStatics extends SageParser
                 $access = "public";
             }
 
-            if (method_exists($property, 'isInitialized')
-                && ! $property->isInitialized($variable)) {
+            if (method_exists($property, 'isInitialized') && ! $property->isInitialized($variable)) {
                 $value  = null;
                 $access .= ' [uninitialized]';
             } else {

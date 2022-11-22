@@ -5,6 +5,8 @@
  */
 class SageParsersSmarty extends SageParser
 {
+    public static $replacesAllOtherParsers = true;
+
     protected static function parse(&$variable, $varData)
     {
         if (! $variable instanceof Smarty
@@ -35,7 +37,5 @@ class SageParsersSmarty extends SageParser
                     : $variable->getCompileDir(),
             )
         );
-
-        return true;
     }
 }

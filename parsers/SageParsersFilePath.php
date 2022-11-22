@@ -3,24 +3,39 @@
 /**
  * @internal
  */
-class SageParsersFsPath extends SageParser
+class SageParsersFilePath extends SageParser
 {
+    public static $replacesAllOtherParsers = false;
+
     protected static function parse(&$variable, $varData)
     {
         if (! SageHelper::isRichMode()
             || ! SageHelper::php53orLater()
             || ! is_string($variable)
-            || strlen($variable) > 2048
-            || preg_match('[[:?<>"*|]]', $variable)
+            || ($strlen = strlen($variable)) > 2048
+            || $strlen < 3
+            || ! preg_match('#[\\\\/]#', $variable)
+            || preg_match('/[?<>"*|]/', $variable)
             || ! @is_readable($variable) // f@#! PHP and its random warnings
         ) {
             return false;
         }
 
+        return self::run($variable, $varData, new SplFileInfo($variable));
+    }
+
+    /**
+     * @param mixed            $variable
+     * @param SageVariableData $varData
+     * @param SplFileInfo      $fileInfo
+     *
+     * @return bool
+     */
+    protected static function run(&$variable, $varData, $fileInfo)
+    {
         try {
-            $fileInfo = new SplFileInfo($variable);
-            $flags    = array();
-            $perms    = $fileInfo->getPerms();
+            $flags = array();
+            $perms = $fileInfo->getPerms();
 
             if (($perms & 0xC000) === 0xC000) {
                 $type    = 'File socket';
@@ -63,14 +78,47 @@ class SageParsersFsPath extends SageParser
             $flags[] = (($perms & 0x0002) ? 'w' : '-');
             $flags[] = (($perms & 0x0001) ? (($perms & 0x0200) ? 't' : 'x') : (($perms & 0x0200) ? 'T' : '-'));
 
-            $size  = $type === 'Directory' ? '' : '('. self::humanFilesize($fileInfo->getSize()) . ')';
+            $size  = $type === 'Directory' ? '' : self::humanFilesize($fileInfo->getSize());
             $flags = implode($flags);
             $path  = $fileInfo->getRealPath();
 
-            $varData->addTabToView($variable, "Existing {$type} {$size}", "$flags    $path");
+            $c = array(
+                'realPath'      => $fileInfo->getRealPath(),
+                'type'          => $type,
+                'size'          => $size,
+                'size in bytes' => $fileInfo->getSize(),
+                'aTime'         => date('Y-m-d H:i:s', $fileInfo->getATime()),
+                'mTime'         => date('Y-m-d H:i:s', $fileInfo->getMTime()),
+                'cTime'         => date('Y-m-d H:i:s', $fileInfo->getCTime()),
+                'flags'         => $flags,
+                'permissions'   => $fileInfo->getPerms(),
+                'owner'         => $fileInfo->getOwner(),
+                'group'         => $fileInfo->getGroup(),
+                'writable'      => $fileInfo->isWritable(),
+                'readable'      => $fileInfo->isReadable(),
+                'executable'    => $fileInfo->isExecutable(),
+                'link'          => $fileInfo->isLink(),
+                'linkTarget'    => $fileInfo->getLinkTarget(),
+            );
+
+            $varData->value = $fileInfo->getRealPath();
+
+            if (SageHelper::isRichMode()) {
+                if ($type === 'Directory') {
+                    $name = "Existing Directory";
+                } else {
+                    $name = "Existing {$type} ($size)";
+                }
+
+                $varData->addTabToView($variable, $name, $c);
+            } else {
+                $varData->extendedValue = $c;
+            }
         } catch (Exception $e) {
             return false;
         }
+
+        return true;
     }
 
     private static function humanFilesize($bytes)

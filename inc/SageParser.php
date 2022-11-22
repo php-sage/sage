@@ -5,12 +5,18 @@
  */
 class SageParser
 {
+    /** @var bool set to true in inheriting custom parser to only show that one parser in output */
+    public static $replacesAllOtherParsers = false;
+
     private static $_level = 0;
+    /** @var SageParser[] $parser */
     private static $_parsers;
+    /** @var array<string, true> */
     private static $_objects;
+    /** @var string */
     private static $_marker;
 
-    private static $_skipAlternatives = false;
+    private static $parsingAlternative = false;
 
     private static $_placeFullStringInValue = false;
 
@@ -23,12 +29,19 @@ class SageParser
 
         $fh = opendir(SAGE_DIR . 'parsers');
         while ($fileName = readdir($fh)) {
-            if (substr($fileName, -4) !== '.php') {
+            list($className, $extension) = explode('.', $fileName);
+            if ($extension !== 'php') {
                 continue;
             }
 
             require SAGE_DIR . 'parsers/' . $fileName;
-            self::$_parsers[] = substr($fileName, 0, -4);
+
+            // process the "there can be only one" parsers first, if they execute, all others will be skipped
+            if ($className::$replacesAllOtherParsers) {
+                array_unshift(self::$_parsers, $className);
+            } else {
+                self::$_parsers[] = $className;
+            }
         }
     }
 
@@ -44,7 +57,7 @@ class SageParser
      * @param mixed            $variable
      * @param SageVariableData $varData
      *
-     * @return mixed [!!!] false is returned if the variable is not of current type
+     * @return bool|void false is returned if the variable is not of current type
      */
     protected static function parse(&$variable, $varData)
     {
@@ -73,6 +86,7 @@ class SageParser
 
         self::$_level++;
 
+        // set name
         $varData = new SageVariableData();
         if (isset($name)) {
             $varData->name = $name;
@@ -85,27 +99,24 @@ class SageParser
             }
         }
 
-        if (! self::$_skipAlternatives) {
-            // if an immediate alternative returns something that can be represented in an alternative way, don't :)
-            self::$_skipAlternatives = true;
+        // first go through alternative parsers (eg.: json detection)
+        if (! self::$parsingAlternative) {
+            self::$parsingAlternative = true;
 
             foreach (self::$_parsers as $parser) {
-                /** @var SageParser $parser */
-
                 $parseResult = $parser::parse($variable, $varData);
 
-                if ($parseResult === true) { // special return case
-                    // use as alternative, do not continue parsing this variable and also discard all other tabs
-
-                    self::$_skipAlternatives = false;
-                    self::$_level            = $revert['level'];
-                    self::$_objects          = $revert['objects'];
+                // if var was parsed by "can only be one"-parser - return here
+                if ($parseResult !== false && $parser::$replacesAllOtherParsers === true) {
+                    self::$parsingAlternative = false;
+                    self::$_level             = $revert['level'];
+                    self::$_objects           = $revert['objects'];
 
                     return $varData;
                 }
             }
 
-            self::$_skipAlternatives = false;
+            self::$parsingAlternative = false;
         }
 
         // todo still run internal types and blacklist - what to do with eg smarty
@@ -361,24 +372,6 @@ class SageParser
         unset($variable[self::$_marker]);
     }
 
-    public static function alternativesParse($originalVar, $alternativesArray)
-    {
-        $varData = new SageVariableData();
-
-        // if the alternatives contain references to the object itself it's an ∞ loop
-        if (is_object($originalVar)) {
-            self::$_objects[self::getObjectHash($originalVar)] = true;
-        } elseif (is_array($originalVar)) {
-            isset(self::$_marker) or self::$_marker = "\x00" . uniqid();
-
-            $originalVar[self::$_marker] = true;
-        }
-
-        self::_parse_array($alternativesArray, $varData);
-
-        return $varData->extendedValue;
-    }
-
     private static function _parse_object(&$variable, SageVariableData $variableData)
     {
         $hash = self::getObjectHash($variable);
@@ -628,5 +621,23 @@ class SageParser
         preg_match('[#(\d+)]', ob_get_clean(), $match);
 
         return $match[1];
+    }
+
+    public static function alternativesParse($originalVar, $alternativesArray)
+    {
+        $varData = new SageVariableData();
+
+        // if the alternatives contain references to the object itself it's an ∞ loop
+        if (is_object($originalVar)) {
+            self::$_objects[self::getObjectHash($originalVar)] = true;
+        } elseif (is_array($originalVar)) {
+            isset(self::$_marker) or self::$_marker = "\x00" . uniqid();
+
+            $originalVar[self::$_marker] = true;
+        }
+
+        self::_parse_array($alternativesArray, $varData);
+
+        return $varData->extendedValue;
     }
 }

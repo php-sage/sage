@@ -5,6 +5,8 @@
  */
 class SageParsersEloquent extends SageParser
 {
+    public static $replacesAllOtherParsers = true;
+
     protected static function parse(&$variable, $varData)
     {
         if (! SageHelper::php53orLater() || ! $variable instanceof Illuminate\Database\Eloquent\Model) {
@@ -12,18 +14,20 @@ class SageParsersEloquent extends SageParser
         }
 
         $reflection = new ReflectionObject($variable);
-        $p          = $reflection->getProperty('attributes');
-        $p->setAccessible(true);
 
+        $attrReflecion = $reflection->getProperty('attributes');
+        $attrReflecion->setAccessible(true);
+        $attributes = $attrReflecion->getValue($variable);
+
+        $reference = '`' . $variable->getConnection()->getDatabaseName() . '`.`' . $variable->getTable() . '`';
+
+        $varData->size = count($attributes);
         if (SageHelper::isRichMode()) {
-            $varData->addTabToView($variable, 'DB row', $p->getValue($variable));
+            $varData->type = $reflection->getName();
+            $varData->addTabToView($variable, 'data from ' . $reference, $attributes);
         } else {
-            $varData->type          = $reflection->getName() . '; ' . $variable->getTable() . ' row data:';
-            $attributes             = $p->getValue($variable);
-            $varData->size          = count($attributes);
+            $varData->type          = $reflection->getName() . '; ' . $reference . ' row data:';
             $varData->extendedValue = SageParser::alternativesParse($variable, $attributes);
         }
-
-        return true;
     }
 }
