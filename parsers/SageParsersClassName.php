@@ -7,9 +7,7 @@ class SageParsersClassName extends SageParser
 {
     protected static function parse(&$variable, $varData)
     {
-        if (
-            ! SageHelper::isHtmlMode()
-            || empty($variable)
+        if (empty($variable)
             || ! is_string($variable)
             || strlen($variable) < 3
             || ! class_exists($variable)) {
@@ -21,14 +19,19 @@ class SageParsersClassName extends SageParser
             return false;
         }
 
-        $varData->addTabToView(
-            $variable,
-            'Existing class',
-            SageHelper::ideLink(
-                $reflector->getFileName(),
-                $reflector->getStartLine(),
-                $reflector->getShortName()
-            )
-        );
+        if (SageHelper::isHtmlMode()) {
+            $varData->addTabToView(
+                $variable,
+                'Existing class',
+                SageHelper::ideLink(
+                    $reflector->getFileName(),
+                    $reflector->getStartLine(),
+                    $reflector->getShortName()
+                )
+            );
+        } else {
+            $varData->extendedValue =
+                'Existing class: ' . $reflector->getFileName() . ':' . $reflector->getStartLine();
+        }
     }
 }
