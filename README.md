@@ -236,35 +236,35 @@ Sage::$aliases[] = 'my_dump'; // let Sage know about it. In lowercase please.
 
 ---
 # 🧙 Advanced Tips & Tricks
-
+> this section is under construction :)
 ```php
 // we already saw:
 sage($GLOBALS, $_SERVER); 
 // you can also go shorter for the same result:
-d($GLOBALS, $_SERVER);
+s($GLOBALS, $_SERVER);
 // or you can go the verbose way, it's all equivalent:
 Sage::dump($GLOBALS, $_SERVER); 
 
 
-// s() will display a more basic, javascript-free display (but with colors)
-s($GLOBALS, $_SERVER);
+// ss() will display a more basic, javascript-free display (but with colors)
+ss($GLOBALS, $_SERVER);
 
-// prepending a tilde will make the output even more basic (rich->basic and basic->plain text)
+// prepending a tilde will make the output *even more basic* (rich->basic and basic->plain text)
 ~d($GLOBALS, $_SERVER); // more on modifiers below
 
 // show a trace
 Sage::trace();
-d(1); // shorthand works too!
+s(1); // shorthand works too!
 Sage::dump( debug_backtrace() ); // you can even pass a custom result from debug_trace and it will be recognized
 
 // dump and die debugging
-dd($GLOBALS, $_SERVER); // dd() might be taken by your framework
+sd($GLOBALS, $_SERVER); // dd() might be taken by your framework
 saged($GLOBALS, $_SERVER); // so this is an equivalent altenrative
-sd($GLOBALS, $_SERVER); // available for plain display too!
+ssd($GLOBALS, $_SERVER); // available for plain display too!
 
 // this will disable Sage completely
 Sage::enabled(false);
-ddd('Get off my lawn!'); // no effect
+sd('Get off my lawn!'); // no effect
 ```
 
 * Sage supports keyboard shortcuts! Just press <kbd>d</kbd> when viewing output and the rest is self-explanatory (p.s. vim-style `hjkl` works as well);
@@ -284,11 +284,11 @@ ddd('Get off my lawn!'); // no effect
   For customization instructions read the section below.
 * If a variable is an object, its classname can be clicked to open the class in your IDE.
 * There are a couple of real-time modifiers you can use:
-  * `~d($var)` this call will output in plain text format.
-  * `+d($var)` will disregard depth level limits and output everything (careful, this can hang your browser on huge
+  * `~s($var)` this call will output in plain text format.
+  * `+s($var)` will disregard depth level limits and output everything (careful, this can hang your browser on huge
     objects)
-  * `!d($var)` will show uncollapsed rich output.
-  * `-d($var)` will attempt to `ob_clean` the previous output - useful when Sage is obscured by already present HTML.
+  * `!s($var)` will show uncollapsed rich output.
+  * `-s($var)` will attempt to `ob_clean` the previous output - useful when Sage is obscured by already present HTML.
 
   [Here's a little bit](https://stackoverflow.com/a/69890023/179104) on how it works.
 
@@ -301,7 +301,7 @@ Sage::dump( microtime() ); // just pass microtime()
 sleep( 1 );
 Sage::dump( microtime(), 'after sleep(1)' );
 sleep( 2 );
-ddd( microtime(), 'final call, after sleep(2)' );
+sd( microtime(), 'final call, after sleep(2)' );
 ```
 
 ![](.github/img/profiling.png)
