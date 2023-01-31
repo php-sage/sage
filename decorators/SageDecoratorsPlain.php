@@ -213,16 +213,32 @@ class SageDecoratorsPlain
 
     public static function wrapEnd($callee, $miniTrace, $prevCaller)
     {
-        $lastLine = self::_colorize(str_repeat('═', 80), 'title');
-        $lastChar = Sage::enabled() === Sage::MODE_PLAIN ? '</pre>' : '';
+        $lastLine     = self::_colorize(str_repeat('═', 80), 'title');
+        $isHtml       = Sage::enabled() === Sage::MODE_PLAIN;
+        $lastChar     = $isHtml ? '</pre>' : '';
+        $traceDisplay = '';
 
         if (! Sage::$displayCalledFrom) {
             return $lastLine . $lastChar;
         }
 
+        if (! empty($miniTrace)) {
+            $traceDisplay = $isHtml ? '<ol>' : PHP_EOL;
+            $i            = 0;
+            foreach ($miniTrace as $step) {
+                $traceDisplay .= $isHtml ? '<li>' : '           ';
+                $traceDisplay .= SageHelper::ideLink($step['file'], $step['line']);
+                $traceDisplay .= $isHtml ? '' : PHP_EOL;
+                if ($i++ > 2) {
+                    break;
+                }
+            }
+            $traceDisplay .= $isHtml ? '</ol>' : '';
+        }
+
         return $lastLine
             . self::_colorize(
-                'Called from ' . SageHelper::ideLink($callee['file'], $callee['line']),
+                'Call stack ' . SageHelper::ideLink($callee['file'], $callee['line']) . $traceDisplay,
                 'title'
             )
             . $lastChar;
