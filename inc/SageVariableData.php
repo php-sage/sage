@@ -21,6 +21,8 @@ class SageVariableData
     public $extendedValue;
     /** @var string short inline value */
     public $value;
+    /** @var bool */
+    public $alreadyEscaped;
 
     /** @var array extra views of the same variable data used in rich view. Keys are tab names, values is content */
     private $alternativeRepresentations = array();
