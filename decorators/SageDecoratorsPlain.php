@@ -291,8 +291,12 @@ class SageDecoratorsPlain
             self::$_enableColors = true;
         }
 
-        return Sage::enabled() === Sage::MODE_PLAIN
-            ? '<style>._sage_plain i{color:#d00;font-style:normal}._sage_plain u{color:#030;text-decoration:none;font-weight:bold}</style>'
-            : '';
+        if (Sage::enabled() !== Sage::MODE_PLAIN) {
+            return '';
+        }
+
+        return <<<'HTML'
+<style>._sage_plain i{color:#d00;font-style:normal}._sage_plain u{color:#030;text-decoration:none;font-weight:bold}._sage_plain ol,._sage_plain li{margin:0;line-height:.6}</style>
+HTML;
     }
 }

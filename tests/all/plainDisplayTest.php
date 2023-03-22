@@ -1,8 +1,10 @@
 <?php
 
 test('just random stuff', function() {
-    Sage::enabled(Sage::MODE_PLAIN);
+    Sage::enabled(Sage::MODE_TEXT_ONLY);
     Sage::$returnOutput = true;
+
+    // putenv('UPDATE_SNAPSHOTS=true');
 
     $example = [
         'foo' => 'far',
@@ -13,8 +15,7 @@ test('just random stuff', function() {
     ];
     assertSageSnapshot(
         sage(
-            $example,
-            new SplFileInfo(__DIR__ . '/../../LICENCE')
+            $example
         )
     );
 });

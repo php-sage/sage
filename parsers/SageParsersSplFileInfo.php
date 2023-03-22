@@ -28,6 +28,15 @@ class SageParsersSplFileInfo extends SageParser
      */
     protected static function run(&$variable, $varData, $fileInfo)
     {
+        $varData->value = $fileInfo->getPath();
+        $varData->type  = get_class($fileInfo);
+
+        if (! $fileInfo->getRealPath()) {
+            $varData->size = 'invalid path';
+
+            return true;
+        }
+
         try {
             $flags = array();
             $perms = $fileInfo->getPerms();
@@ -75,28 +84,34 @@ class SageParsersSplFileInfo extends SageParser
 
             $size  = $type === 'Directory' ? '' : self::humanFilesize($fileInfo->getSize());
             $flags = implode($flags);
-            $path  = $fileInfo->getRealPath();
 
             $c = array(
-                'realPath'      => $fileInfo->getRealPath(),
-                'type'          => $type,
-                'size'          => $size,
-                'size in bytes' => (string)$fileInfo->getSize(),
-                'aTime'         => date('Y-m-d H:i:s', $fileInfo->getATime()),
-                'mTime'         => date('Y-m-d H:i:s', $fileInfo->getMTime()),
-                'cTime'         => date('Y-m-d H:i:s', $fileInfo->getCTime()),
-                'flags'         => $flags,
-                'permissions'   => (string)$fileInfo->getPerms(),
-                'owner'         => (string)$fileInfo->getOwner(),
-                'group'         => (string)$fileInfo->getGroup(),
-                'writable'      => $fileInfo->isWritable() ? 'true' : 'false',
-                'readable'      => $fileInfo->isReadable() ? 'true' : 'false',
-                'executable'    => $fileInfo->isExecutable() ? 'true' : 'false',
-                'link'          => $fileInfo->isLink() ? 'true' : 'false',
-                'linkTarget'    => $fileInfo->getLinkTarget(),
+                'realPath' => $fileInfo->getRealPath(),
+                'type'     => $type,
             );
 
-            $varData->value = $fileInfo->getRealPath();
+            if ($size) {
+                $c['size']          = $size;
+                $c['size in bytes'] = (string)$fileInfo->getSize();
+            }
+
+            $c['aTime']       = date('Y-m-d H:i:s', $fileInfo->getATime());
+            $c['mTime']       = date('Y-m-d H:i:s', $fileInfo->getMTime());
+            $c['cTime']       = date('Y-m-d H:i:s', $fileInfo->getCTime());
+            $c['flags']       = $flags;
+            $c['permissions'] = (string)$fileInfo->getPerms();
+            $c['owner']       = (string)$fileInfo->getOwner();
+            $c['group']       = (string)$fileInfo->getGroup();
+            $c['readable']    = $fileInfo->isReadable() ? 'true' : 'false';
+            $c['writable']    = $fileInfo->isWritable() ? 'true' : 'false';
+            $c['executable']  = $fileInfo->isExecutable() ? 'true' : 'false';
+
+            if ($fileInfo->isLink()) {
+                $c['link']       = 'true';
+                $c['linkTarget'] = $fileInfo->getLinkTarget();
+            }
+
+            $varData->type = get_class($fileInfo);
 
             if (SageHelper::isRichMode()) {
                 if ($type === 'Directory') {

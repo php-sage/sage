@@ -172,7 +172,6 @@ class SageParsersColor extends SageParser
 ?<strong>hsl :</strong> {$variants['hsl']}
 HTML;
 
-        $varData->alreadyEscaped = true;
         $varData->addTabToView($variable, 'CSS color', $value);
     }
 

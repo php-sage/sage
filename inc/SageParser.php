@@ -276,7 +276,6 @@ class SageParser
 
         if ($variableData->size > 1 && ($arrayKeys = self::_isArrayTabular($variable)) !== false) {
             // tabular array parse
-            $variableData->alreadyEscaped = true;
             $firstRow                     = true;
             $extendedValue                = '<table class="_sage-report"><thead>';
 
@@ -506,6 +505,10 @@ class SageParser
 
         if (isset($arrayObjectFlags)) {
             $variable->setFlags($arrayObjectFlags);
+        }
+
+        if (method_exists($reflector, 'isEnum') && $reflector->isEnum()) {
+            $variableData->size = 'enum';
         }
 
         if ($variableData->size) {

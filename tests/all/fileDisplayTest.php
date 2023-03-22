@@ -3,18 +3,15 @@
 test('display filesizes correctly', function() {
     Sage::enabled(Sage::MODE_RICH);
 
+    // putenv('UPDATE_SNAPSHOTS=true');
 
     assertSageSnapshot(
         sage(
             'LICENCE',
-            __FILE__,
-            getcwd(),
-            __DIR__,
-            __DIR__ . '/../.github/img/trace.png',
+            'non-existing',
             new SplFileInfo('LICENCE'),
-            new SplFileInfo(__FILE__),
-            new SplFileInfo(__DIR__),
-            new SplFileInfo(__DIR__ . '/../.github/img/trace.png')
+            new SplFileInfo('non-existing'),
+            new SplFileInfo(__DIR__ . '/../.github/')
         )
     );
 });
@@ -22,17 +19,15 @@ test('display filesizes correctly', function() {
 test('display filesizes correctly - plain', function() {
     Sage::enabled(Sage::MODE_PLAIN);
 
+    // putenv('UPDATE_SNAPSHOTS=true');
+
     assertSageSnapshot(
         sage(
             'LICENCE',
-            __FILE__,
-            getcwd(),
-            __DIR__,
-            __DIR__ . '/../.github/img/trace.png',
+            'non-existing',
             new SplFileInfo('LICENCE'),
-            new SplFileInfo(__FILE__),
-            new SplFileInfo(__DIR__),
-            new SplFileInfo(__DIR__ . '/../.github/img/trace.png')
+            new SplFileInfo('non-existing'),
+            new SplFileInfo(__DIR__ . '/../.github/')
         )
     );
 });
