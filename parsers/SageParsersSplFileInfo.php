@@ -28,10 +28,10 @@ class SageParsersSplFileInfo extends SageParser
      */
     protected static function run(&$variable, $varData, $fileInfo)
     {
-        $varData->value = $fileInfo->getPath();
+        $varData->value = '"' . SageHelper::esc($fileInfo->getPathname()) . '"';
         $varData->type  = get_class($fileInfo);
 
-        if (! $fileInfo->getRealPath()) {
+        if (! $fileInfo->getPathname() || ! $fileInfo->getRealPath()) {
             $varData->size = 'invalid path';
 
             return true;
@@ -82,47 +82,37 @@ class SageParsersSplFileInfo extends SageParser
             $flags[] = (($perms & 0x0002) ? 'w' : '-');
             $flags[] = (($perms & 0x0001) ? (($perms & 0x0200) ? 't' : 'x') : (($perms & 0x0200) ? 'T' : '-'));
 
-            $size  = $type === 'Directory' ? '' : self::humanFilesize($fileInfo->getSize());
-            $flags = implode($flags);
-
-            $c = array(
-                'realPath' => $fileInfo->getRealPath(),
-                'type'     => $type,
-            );
-
-            if ($size) {
-                $c['size']          = $size;
-                $c['size in bytes'] = (string)$fileInfo->getSize();
+            if ($type === 'Directory') {
+                $name = 'Existing Directory';
+            } else {
+                $size = self::humanFilesize($fileInfo->getSize());
+                $name = "Existing {$type} [$size]";
             }
 
-            $c['aTime']       = date('Y-m-d H:i:s', $fileInfo->getATime());
-            $c['mTime']       = date('Y-m-d H:i:s', $fileInfo->getMTime());
-            $c['cTime']       = date('Y-m-d H:i:s', $fileInfo->getCTime());
-            $c['flags']       = $flags;
-            $c['permissions'] = (string)$fileInfo->getPerms();
-            $c['owner']       = (string)$fileInfo->getOwner();
-            $c['group']       = (string)$fileInfo->getGroup();
-            $c['readable']    = $fileInfo->isReadable() ? 'true' : 'false';
-            $c['writable']    = $fileInfo->isWritable() ? 'true' : 'false';
-            $c['executable']  = $fileInfo->isExecutable() ? 'true' : 'false';
+            $extra = array(
+                'realPath' => $fileInfo->getRealPath(),
+                'flags'    => implode($flags),
+            );
+
+            if ($fileInfo->getGroup() || $fileInfo->getOwner()) {
+                $extra['group&owner'] = $fileInfo->getGroup() . ':' . $fileInfo->getOwner();
+            }
+
+            $extra['created']  = date('Y-m-d H:i:s', $fileInfo->getCTime());
+            $extra['modified'] = date('Y-m-d H:i:s', $fileInfo->getMTime());
+            $extra['accessed'] = date('Y-m-d H:i:s', $fileInfo->getATime());
 
             if ($fileInfo->isLink()) {
-                $c['link']       = 'true';
-                $c['linkTarget'] = $fileInfo->getLinkTarget();
+                $extra['link']       = 'true';
+                $extra['linkTarget'] = $fileInfo->getLinkTarget();
             }
 
             $varData->type = get_class($fileInfo);
 
             if (SageHelper::isRichMode()) {
-                if ($type === 'Directory') {
-                    $name = "Existing Directory";
-                } else {
-                    $name = "Existing {$type} ($size)";
-                }
-
-                $varData->addTabToView($variable, $name, $c);
+                $varData->addTabToView($variable, $name, $extra);
             } else {
-                $varData->extendedValue = $c;
+                $varData->extendedValue = [$name => ''] + $extra;
             }
         } catch (Exception $e) {
             return false;
@@ -133,6 +123,7 @@ class SageParsersSplFileInfo extends SageParser
 
     private static function humanFilesize($bytes)
     {
+        $sizeInBytes = $bytes;
         if ($bytes < 10240) {
             return "{$bytes} bytes";
         }
@@ -143,6 +134,6 @@ class SageParsersSplFileInfo extends SageParser
             $bytes /= 1024;
         }
 
-        return round($bytes, $precisionByUnit[$order]) . $units[$order];
+        return $sizeInBytes . ' bytes (' . round($bytes, $precisionByUnit[$order]) . $units[$order] . ')';
     }
 }

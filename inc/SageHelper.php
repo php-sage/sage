@@ -231,9 +231,9 @@ class SageHelper
             return '';
         }
 
-        if (self::isHtmlMode()) {
-            $value = self::esc($value);
+        $value = self::esc($value);
 
+        if (self::isHtmlMode()) {
             if ($value === '') {
                 return '‹binary data›';
             }
@@ -315,6 +315,6 @@ HTML;
 
     public static function esc($value, $encoding = 'UTF-8')
     {
-        return htmlspecialchars($value, ENT_NOQUOTES, $encoding);
+        return self::isHtmlMode() ? htmlspecialchars($value, ENT_NOQUOTES, $encoding) : $value;
     }
 }

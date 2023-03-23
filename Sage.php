@@ -650,13 +650,13 @@ class Sage
             # possibly a namespace symbol
             \\\\?
 
-			# spaces again
+            # spaces again
             \x07*
 
             # main call to Sage
             ({$codePattern})
 
-			# spaces everywhere
+            # spaces everywhere
             \x07*
 
             # find the character where Sage's opening bracket resides (group 3)

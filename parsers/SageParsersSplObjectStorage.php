@@ -2,7 +2,6 @@
 
 /**
  * @internal
- * @noinspection AutoloadingIssuesInspection
  */
 class SageParsersSplObjectStorage extends SageParser
 {
@@ -11,8 +10,6 @@ class SageParsersSplObjectStorage extends SageParser
         if (! SageHelper::isRichMode() || ! is_object($variable) || ! $variable instanceof SplObjectStorage) {
             return false;
         }
-
-        /** @var $variable SplObjectStorage */
 
         $count = $variable->count();
         if ($count === 0) {

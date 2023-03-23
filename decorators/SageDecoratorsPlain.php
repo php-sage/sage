@@ -38,8 +38,8 @@ class SageDecoratorsPlain
             } elseif (is_string($varData->extendedValue)) {
                 $output .= $space . $s . self::_colorize($varData->extendedValue, 'value');
             } else {
-                //                throw new RuntimeException();
-                //                $output .= self::decorate($varData->extendedValue, $level + 1); // it's SageVariableData
+                // throw new RuntimeException();
+                // $output .= self::decorate($varData->extendedValue, $level + 1); // it's SageVariableData
             }
             $output .= $space . ($varData->type === 'array' ? ']' : ')') . PHP_EOL;
         } else {
@@ -196,10 +196,16 @@ class SageDecoratorsPlain
         $escaped          = SageHelper::decodeStr($text);
         $lengthDifference = strlen($escaped) - strlen($text);
 
-        return
-            self::_colorize('┌' . str_repeat('─', 78) . '┐' . PHP_EOL . '│', 'title', false)
-            . self::_colorize(str_pad($escaped, 78 + $lengthDifference, ' ', STR_PAD_BOTH), 'title', false)
-            . self::_colorize('│' . PHP_EOL . '└' . str_repeat('─', 78) . '┘', 'title');
+        $ret = self::_colorize('┌' . str_repeat('─', 78) . '┐' . PHP_EOL, 'title', false);
+        if ($text) {
+            $ret .= self::_colorize(
+                '│' . str_pad($escaped, 78 + $lengthDifference, ' ', STR_PAD_BOTH) . '│' . PHP_EOL,
+                'title',
+                false
+            );
+        }
+
+        return $ret . self::_colorize('└' . str_repeat('─', 78) . '┘', 'title');
     }
 
     public static function wrapStart()
@@ -296,7 +302,7 @@ class SageDecoratorsPlain
         }
 
         return <<<'HTML'
-<style>._sage_plain i{color:#d00;font-style:normal}._sage_plain u{color:#030;text-decoration:none;font-weight:bold}._sage_plain ol,._sage_plain li{margin:0;line-height:.6}</style>
+<style>._sage_plain i{color:#d00;font-style:normal}._sage_plain u{color:#030;text-decoration:none;font-weight:bold}._sage_plain ol{padding-left:6em}._sage_plain ol,._sage_plain ol li{margin:0;line-height:.6;}</style>
 HTML;
     }
 }

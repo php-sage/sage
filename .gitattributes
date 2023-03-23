@@ -3,6 +3,7 @@
 
 /sage.phar filter=lfs diff=lfs merge=lfs -text -diff
 
+# Exclude files from distribution via composer
 /.github/ export-ignore
 /resources/themes/ export-ignore
 /resources/base.js export-ignore

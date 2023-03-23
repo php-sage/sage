@@ -17,7 +17,7 @@ class SageParsersFilePath extends SageParsersSplFileInfo
             || $strlen < 3
             || ! preg_match('#[\\\\/]#', $variable)
             || preg_match('/[?<>"*|]/', $variable)
-            || ! @is_readable($variable) // f@#! PHP and its random warnings
+            || ! @is_readable($variable) // PHP and its random warnings
         ) {
             return false;
         }

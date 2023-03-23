@@ -15,6 +15,7 @@
  *                   | `saged`  | `sd`      | Dump & die        |
  *                   | `ssage`  | `ss`      | Simple dump       |
  *                   | `ssaged` | `ssd`     | Simple dump & die |
+ *                   |----------|-----------|-------------------|
  */
 
 if (! function_exists('sage')) {
