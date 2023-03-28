@@ -193,7 +193,7 @@ class SageDecoratorsPlain
 
     private static function _title($text)
     {
-        $escaped          = SageHelper::decodeStr($text);
+        $escaped          = SageHelper::esc($text);
         $lengthDifference = strlen($escaped) - strlen($text);
 
         $ret = self::_colorize('┌' . str_repeat('─', 78) . '┐' . PHP_EOL, 'title', false);
@@ -259,7 +259,7 @@ class SageDecoratorsPlain
         }
 
         if ($varData->name !== null && $varData->name !== '') {
-            $output .= ' ' . self::_colorize(SageHelper::decodeStr($varData->name), 'key', false);
+            $output .= ' ' . self::_colorize(SageHelper::esc($varData->name), 'key', false);
         }
 
         if ($varData->operator) {
@@ -302,7 +302,8 @@ class SageDecoratorsPlain
         }
 
         return <<<'HTML'
-<style>._sage_plain i{color:#d00;font-style:normal}._sage_plain u{color:#030;text-decoration:none;font-weight:bold}._sage_plain ol{padding-left:6em}._sage_plain ol,._sage_plain ol li{margin:0;line-height:.6;}</style>
+<style>._sage_plain i{color:#d00;font-style:normal}._sage_plain u{color:#030;text-decoration:none;font-weight:bold}
+._sage_plain ol{padding-left:6em}._sage_plain ol,._sage_plain ol li{margin:0;line-height:.6;}</style>
 HTML;
     }
 }

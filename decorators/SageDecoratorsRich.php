@@ -52,18 +52,18 @@ class SageDecoratorsRich
             foreach ($allRepresentations as $tabName => $_) {
                 $active  = $isFirst ? ' class="_sage-active-tab"' : '';
                 $isFirst = false;
-                $output  .= "<li{$active}>" . SageHelper::decodeStr($tabName) . '</li>';
+                $output  .= "<li{$active}>" . SageHelper::esc($tabName) . '</li>';
             }
 
-            $output .= "</ul><ul>";
+            $output .= '</ul><ul>';
 
             foreach ($allRepresentations as $alternative) {
-                $output .= "<li>";
+                $output .= '<li>';
                 $output .= self::decorateAlternativeView($alternative);
-                $output .= "</li>";
+                $output .= '</li>';
             }
 
-            $output .= "</ul>";
+            $output .= '</ul>';
         }
         if ($extendedPresent) {
             $output .= '</dd>';
@@ -143,15 +143,15 @@ class SageDecoratorsRich
             }
 
             if (! empty($step['args'])) {
-                $output .= "<li>";
+                $output .= '<li>';
                 foreach ($step['args'] as $k => $arg) {
                     SageParser::reset();
                     $output .= self::decorate(SageParser::process($arg, $k));
                 }
-                $output .= "</li>";
+                $output .= '</li>';
             }
             if (! empty($step['object'])) {
-                $output .= "<li>" . self::decorate($calleeDump) . "</li>";
+                $output .= '<li>' . self::decorate($calleeDump) . '</li>';
             }
 
             $output .= '</ul></dd>';
@@ -232,10 +232,10 @@ class SageDecoratorsRich
             $calleeInfo = '<nav></nav>' . $calleeInfo;
         }
 
-        return "<footer>"
+        return '<footer>'
             . '<span class="_sage-popup-trigger" title="Open in new window">&rarr;</span> '
             . "{$calleeInfo}{$callingFunction}{$traceDisplay}"
-            . "</footer></div>";
+            . '</footer></div>';
     }
 
     private static function _drawHeader(SageVariableData $varData)
@@ -246,22 +246,20 @@ class SageDecoratorsRich
         }
 
         if ($varData->name !== null && $varData->name !== '') {
-            $output .= "<dfn>"
-                . SageHelper::decodeStr($varData->name)
-                . "</dfn> ";
+            $output .= '<dfn>' . SageHelper::esc($varData->name) . '</dfn> ';
         }
 
         if ($varData->operator !== null) {
-            $output .= $varData->operator . " ";
+            $output .= $varData->operator . ' ';
         }
 
         if ($varData->type !== null) {
             // tyoe output is unescaped as it is set internally and contains links to user class
-            $output .= "<var>{$varData->type}</var>";
+            $output .= "<var>{$varData->type}</var> ";
         }
 
         if ($varData->size !== null) {
-            $output .= "(" . $varData->size . ") ";
+            $output .= '(' . $varData->size . ') ';
         }
 
         return $output;

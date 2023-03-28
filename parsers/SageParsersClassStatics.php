@@ -37,7 +37,7 @@ class SageParsersClassStatics extends SageParser
             }
 
             $name   = '$' . $property->getName();
-            $output = self::process($value, SageHelper::decodeStr($name));
+            $output = self::process($value, SageHelper::esc($name));
 
             $output->access   = $access;
             $output->operator = '::';

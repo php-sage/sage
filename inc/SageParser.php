@@ -62,7 +62,7 @@ class SageParser
      */
     protected static function parse(&$variable, $varData)
     {
-        throw new RuntimeException("Each parser must override this method!");
+        throw new RuntimeException('Each parser must override this method!');
     }
 
     /**
@@ -205,7 +205,7 @@ class SageParser
             $output .= ' title="' . $varData->type;
 
             if ($varData->size !== null) {
-                $output .= " (" . $varData->size . ")";
+                $output .= ' (' . $varData->size . ')';
             }
 
             $output .= '">' . $varData->value;
@@ -216,7 +216,7 @@ class SageParser
                 $output .= '<u>' . $varData->type;
 
                 if ($varData->size !== null) {
-                    $output .= "(" . $varData->size . ")";
+                    $output .= '(' . $varData->size . ')';
                 }
 
                 $output .= '</u>';
@@ -266,7 +266,7 @@ class SageParser
             return false;
         }
         if (self::isDepthLimit()) {
-            $variableData->extendedValue = "*DEPTH TOO GREAT*";
+            $variableData->extendedValue = '*DEPTH TOO GREAT*';
 
             return false;
         }
@@ -288,7 +288,7 @@ class SageParser
                 }
 
                 if (isset($row[self::$_marker])) {
-                    $variableData->value = "*RECURSION*";
+                    $variableData->value = '*RECURSION*';
 
                     return false;
                 }
@@ -307,7 +307,7 @@ class SageParser
                 // as we only check the first two to assume
                 foreach ($arrayKeys as $key) {
                     if ($firstRow) {
-                        $extendedValue .= '<th>' . SageHelper::decodeStr($key) . '</th>';
+                        $extendedValue .= '<th>' . SageHelper::esc($key) . '</th>';
                     }
 
                     if (! array_key_exists($key, $row)) {
@@ -350,7 +350,7 @@ class SageParser
                 $output = self::process($val);
                 if ($output->value === self::$_marker) {
                     // recursion occurred on a higher level, thus $variableData is recursion
-                    $variableData->value = "*RECURSION*";
+                    $variableData->value = '*RECURSION*';
 
                     return false;
                 }
@@ -389,7 +389,7 @@ class SageParser
             return false;
         }
         if (self::isDepthLimit()) {
-            $variableData->extendedValue = "*DEPTH TOO GREAT*";
+            $variableData->extendedValue = '*DEPTH TOO GREAT*';
 
             return false;
         }
@@ -401,6 +401,10 @@ class SageParser
         if ($variableData->type === 'ArrayObject' || is_subclass_of($variable, 'ArrayObject')) {
             $arrayObjectFlags = $variable->getFlags();
             $variable->setFlags(ArrayObject::STD_PROP_LIST);
+        }
+
+        if (str_contains($variableData->type, "@anonymous\0")) {
+            $variableData->type = 'Anonymous class';
         }
 
         self::$_objects[$hash] = true;
@@ -417,7 +421,6 @@ class SageParser
         $variableData->size = 0;
 
         $extendedValue = array();
-        $encountered   = array();
         static $publicProperties = [];
         if (! isset($publicProperties[$className])) {
             $reflectionClass = new ReflectionClass($className);
@@ -438,25 +441,23 @@ class SageParser
              * http://www.php.net/manual/en/language.types.array.php#language.types.array.casting
              */
             if (is_string($key) && $key[0] === "\x00") {
-                $access = $key[1] === "*" ? "protected" : "private";
+                $access = $key[1] === '*' ? 'protected' : 'private';
 
                 // Remove the access level from the variable name
                 $key = substr($key, strrpos($key, "\x00") + 1);
             } else {
-                $access = "public";
+                $access = 'public';
 
                 if ($variableData->type !== 'stdClass' && ! isset($publicProperties[$className][$key])) {
                     $access .= ' (dynamically added)';
                 }
             }
 
-            $encountered[$key] = true;
-
-            $output->name     = SageHelper::decodeStr($key);
+            $output->name     = SageHelper::esc($key);
             $output->access   = $access;
             $output->operator = '->';
 
-            $extendedValue[] = $output;
+            $extendedValue[$key] = $output;
 
             $variableData->size++;
         }
@@ -472,19 +473,23 @@ class SageParser
                 continue;
             }
 
-            if ($property->isProtected()) {
-                $property->setAccessible(true);
-                $access = "protected";
-            } elseif ($property->isPrivate()) {
-                $property->setAccessible(true);
-                $access = "private";
-            } else {
-                $access = "public";
+            $name = $property->getName();
+            if (isset($extendedValue[$name])) {
+                if (method_exists($property, 'isReadOnly') && $property->isReadOnly()) {
+                    $extendedValue[$name]->access .= ' readonly';
+                }
+
+                continue;
             }
 
-            $name = $property->getName();
-            if (isset($encountered[$name])) {
-                continue;
+            if ($property->isProtected()) {
+                $property->setAccessible(true);
+                $access = 'protected';
+            } elseif ($property->isPrivate()) {
+                $property->setAccessible(true);
+                $access = 'private';
+            } else {
+                $access = 'public';
             }
 
             if (method_exists($property, 'isInitialized')
@@ -495,7 +500,7 @@ class SageParser
                 $value = $property->getValue($variable);
             }
 
-            $output = self::process($value, SageHelper::decodeStr($name));
+            $output = self::process($value, SageHelper::esc($name));
 
             $output->access   = $access;
             $output->operator = '->';
@@ -576,27 +581,28 @@ class SageParser
         $variableData->size = SageHelper::strlen($variable, $encoding);
 
         if (self::$_placeFullStringInValue) { // in tabular view
-            $variableData->value = SageHelper::decodeStr($variable);
+            $variableData->value = SageHelper::esc($variable);
         } elseif (! SageHelper::isRichMode()) {
-            $variableData->value = '"' . SageHelper::decodeStr($variable) . '"';
+            $variableData->value = '"' . SageHelper::esc($variable) . '"';
         } else {
-            $decoded = SageHelper::decodeStr($variable);
+            $decoded = SageHelper::esc($variable);
 
             // trim inline value if too long
             if ($variableData->size > (SageHelper::MAX_STR_LENGTH + 8)) {
                 $variableData->value =
                     '"'
                     . SageHelper::esc(
-                        SageHelper::substr($variable, 0, SageHelper::MAX_STR_LENGTH, $encoding)
+                        SageHelper::substr($variable, 0, SageHelper::MAX_STR_LENGTH, $encoding),
+                        false
                     )
                     . '&hellip;"';
             } else {
-                $variableData->value = '"' . SageHelper::esc($variable) . '"';
+                $variableData->value = '"' . SageHelper::esc($variable, false) . '"';
             }
 
             // detect invisible characters
             if ($variable !== preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]/u', '', $variable)) {
-                $variableData->extendedValue = SageHelper::esc($variable);
+                $variableData->extendedValue = SageHelper::esc($variable, false);
                 $variableData->addTabToView($variable, 'Hidden characters escaped', $decoded);
             } elseif ($variableData->size > (SageHelper::MAX_STR_LENGTH + 8)
                 || $variable !== preg_replace(
@@ -612,7 +618,7 @@ class SageParser
     private static function _parse_unknown(&$variable, SageVariableData $variableData)
     {
         $type                = gettype($variable);
-        $variableData->type  = "UNKNOWN" . (! empty($type) ? " ({$type})" : '');
+        $variableData->type  = 'UNKNOWN' . (! empty($type) ? " ({$type})" : '');
         $variableData->value = var_export($variable, true);
     }
 

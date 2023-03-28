@@ -208,9 +208,9 @@ class Sage
     public static $returnOutput;
 
     /**`
-     * @var string|array Add new custom Sage wrapper names. Optional, but needed for backtraces, variable name
-     *                   detection and modifiers to work properly. Accepts array or comma separated string.
-     *                   Use notation `Class::method` for methods.
+     * @var array Add new custom Sage wrapper names. Needed for nice backtraces, variable name detection and modifiers.
+     *
+     *            [!] Use notation `Class::method` for methods.
      *
      * Example :
      *            function doom_dump($args)
@@ -223,7 +223,7 @@ class Sage
      * Default:
      *            array()
      */
-    public static $aliases;
+    public static $aliases = [];
 
     /*
      *     ██████╗ ██████╗ ███╗   ██╗███████╗████████╗ █████╗ ███╗   ██╗████████╗███████╗
@@ -621,11 +621,7 @@ class Sage
         if (empty($callee['class'])) {
             $codePattern = $callee['function'];
         } else {
-            if ($callee['type'] === '::') {
-                $codePattern = $callee['class'] . "\x07*" . $callee['type'] . "\x07*" . $callee['function'];;
-            } else /*if ( $callee['type'] === '->' )*/ {
-                $codePattern = ".*\x07*" . $callee['type'] . "\x07*" . $callee['function'];;
-            }
+            $codePattern = "\w+\x07*" . $callee['type'] . "\x07*" . $callee['function'];
         }
 
         // get the position of the last call to the function

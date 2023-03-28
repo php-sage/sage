@@ -6,6 +6,7 @@
 class SageHelper
 {
     private static $_php53;
+
     const MAX_STR_LENGTH = 80;
 
     public static $editors = array(
@@ -24,34 +25,18 @@ class SageHelper
         'atom'                   => 'atom://core/open/file?filename=%f&line=%l',
         'nova'                   => 'nova://core/open/file?filename=%f&line=%l',
         'netbeans'               => 'netbeans://open/?f=%f:%l',
-        'xdebug'                 => 'xdebug://%f@%l',
+        'xdebug'                 => 'xdebug://%f@%l'
     );
 
-    private static $aliases;
-    private static $defaultAliases = array(
-        'methods'   => array(
-            array('sage', 'dump'),
-            array('sage', 'trace'),
-        ),
-        'functions' => array(
-            'sage',
-            's',
-            'saged',
-            'sd',
-            'ssage',
-            'ss',
-            'ssaged',
-            'ssd',
-        ),
-    );
+    private static $aliasesRaw;
 
     public static function php53orLater()
     {
         if (! isset(self::$_php53)) {
-            self::$_php53 = version_compare(PHP_VERSION, '5.3.0');
+            self::$_php53 = version_compare(PHP_VERSION, '5.3.0') > 0;
         }
 
-        return self::$_php53 > 0;
+        return self::$_php53;
     }
 
     public static function isRichMode()
@@ -114,23 +99,22 @@ class SageHelper
 
     public static function buildAliases()
     {
-        $aliases = self::$aliases === null ? self::$defaultAliases : self::$aliases;
+        self::$aliasesRaw = array(
+            'methods' => array(
+                array('sage', 'dump'),
+                array('sage', 'trace')
+            )
+        );
 
-        if (Sage::$aliases !== null) {
-            $a = is_string(Sage::$aliases) ?
-                explode(',', strtolower(Sage::$aliases))
-                : Sage::$aliases;
+        foreach (Sage::$aliases as $alias) {
+            $alias = strtolower($alias);
 
-            foreach ($a as $alias) {
-                if (strpos($alias, '::') !== false) {
-                    $aliases['methods'][] = explode('::', $alias);
-                } else {
-                    $aliases['functions'][] = $alias;
-                }
+            if (strpos($alias, '::') !== false) {
+                self::$aliasesRaw['methods'][] = explode('::', $alias);
+            } else {
+                self::$aliasesRaw['functions'][] = $alias;
             }
         }
-
-        self::$aliases = $aliases;
     }
 
     /**
@@ -143,7 +127,7 @@ class SageHelper
     public static function stepIsInternal($step)
     {
         if (isset($step['class'])) {
-            foreach (self::$aliases['methods'] as $alias) {
+            foreach (self::$aliasesRaw['methods'] as $alias) {
                 if ($alias[0] === strtolower($step['class']) && $alias[1] === strtolower($step['function'])) {
                     return true;
                 }
@@ -152,7 +136,7 @@ class SageHelper
             return false;
         }
 
-        return in_array(strtolower($step['function']), self::$aliases['functions'], true);
+        return in_array(strtolower($step['function']), self::$aliasesRaw['functions'], true);
     }
 
     public static function substr($string, $start, $end, $encoding = null)
@@ -221,62 +205,6 @@ class SageHelper
         return strlen($string);
     }
 
-    public static function decodeStr($value)
-    {
-        if (is_int($value)) {
-            return (string)$value;
-        }
-
-        if ($value === '') {
-            return '';
-        }
-
-        $value = self::esc($value);
-
-        if (self::isHtmlMode()) {
-            if ($value === '') {
-                return '‹binary data›';
-            }
-
-            $controlCharsMap = array(
-                "\v"   => '<u>\v</u>',
-                "\f"   => '<u>\f</u>',
-                "\033" => '<u>\e</u>',
-                "\t"   => "\t<u>\\t</u>",
-                "\r\n" => "<u>\\r\\n</u>\n",
-                "\n"   => "<u>\\n</u>\n",
-                "\r"   => "<u>\\r</u>"
-            );
-            $replaceTemplate = '<u>‹0x%db›</u>';
-        } else {
-            $controlCharsMap = array(
-                "\v"   => '\v',
-                "\f"   => '\f',
-                "\033" => '\e',
-            );
-            $replaceTemplate = '\x%02X';
-        }
-
-        $out = '';
-        $i   = 0;
-        do {
-            $character = $value[$i];
-            $ord       = ord($character);
-            // escape all invisible characters except \t, \n and \r - ORD 9, 10 and 13 respectively
-            if ($ord < 32 && $ord !== 9 && $ord !== 10 && $ord !== 13) {
-                if (isset($controlCharsMap[$character])) {
-                    $out .= $controlCharsMap[$character];
-                } else {
-                    $out .= sprintf($replaceTemplate, $ord);
-                }
-            } else {
-                $out .= $character;
-            }
-        } while (isset($value[++$i]));
-
-        return $out;
-    }
-
     public static function ideLink($file, $line, $linkText = null)
     {
         $enabledMode = Sage::enabled();
@@ -313,8 +241,73 @@ HTML;
         return "<a href=\"{$ideLink}\">{$linkText}</a>";
     }
 
-    public static function esc($value, $encoding = 'UTF-8')
+    public static function esc($value, $decode = true)
     {
-        return self::isHtmlMode() ? htmlspecialchars($value, ENT_NOQUOTES, $encoding) : $value;
+        $value = self::isHtmlMode()
+            ? htmlspecialchars($value, ENT_NOQUOTES, 'UTF-8')
+            : $value;
+
+        if ($decode) {
+            $value = self::decodeStr($value);
+        }
+
+        return $value;
+    }
+
+    /**
+     * Make all invisible characters visible. HTML-escape if needed.
+     */
+    private static function decodeStr($value)
+    {
+        if (is_int($value)) {
+            return (string)$value;
+        }
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (self::isHtmlMode()) {
+            if (htmlspecialchars($value, ENT_NOQUOTES, 'UTF-8') === '') {
+                return '‹binary data›';
+            }
+
+            $controlCharsMap = array(
+                "\v"   => '<u>\v</u>',
+                "\f"   => '<u>\f</u>',
+                "\033" => '<u>\e</u>',
+                "\t"   => "\t<u>\\t</u>",
+                "\r\n" => "<u>\\r\\n</u>\n",
+                "\n"   => "<u>\\n</u>\n",
+                "\r"   => "<u>\\r</u>"
+            );
+            $replaceTemplate = '<u>‹0x%d›</u>';
+        } else {
+            $controlCharsMap = array(
+                "\v"   => '\v',
+                "\f"   => '\f',
+                "\033" => '\e',
+            );
+            $replaceTemplate = '\x%02X';
+        }
+
+        $out = '';
+        $i   = 0;
+        do {
+            $character = $value[$i];
+            $ord       = ord($character);
+            // escape all invisible characters except \t, \n and \r - ORD 9, 10 and 13 respectively
+            if ($ord < 32 && $ord !== 9 && $ord !== 10 && $ord !== 13) {
+                if (isset($controlCharsMap[$character])) {
+                    $out .= $controlCharsMap[$character];
+                } else {
+                    $out .= sprintf($replaceTemplate, $ord);
+                }
+            } else {
+                $out .= $character;
+            }
+        } while (isset($value[++$i]));
+
+        return $out;
     }
 }

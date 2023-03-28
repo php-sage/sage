@@ -29,9 +29,11 @@ if (! function_exists('sage')) {
         if (! Sage::enabled()) {
             return 5463;
         }
-        $_ = func_get_args();
 
-        return call_user_func_array(array('Sage', 'dump'), $_);
+        Sage::$aliases[] = __FUNCTION__;
+
+        $params = func_get_args();
+        return call_user_func_array(['Sage', 'dump'], $params);
     }
 }
 
@@ -46,9 +48,11 @@ if (! function_exists('s')) {
         if (! Sage::enabled()) {
             return 5463;
         }
-        $_ = func_get_args();
 
-        return call_user_func_array(array('Sage', 'dump'), $_);
+        Sage::$aliases[] = __FUNCTION__;
+
+        $params = func_get_args();
+        return call_user_func_array(array('Sage', 'dump'), $params);
     }
 }
 
@@ -64,8 +68,10 @@ if (! function_exists('saged')) {
             return 5463;
         }
 
-        $_ = func_get_args();
-        call_user_func_array(array('Sage', 'dump'), $_);
+        Sage::$aliases[] = __FUNCTION__;
+
+        $params = func_get_args();
+        call_user_func_array(array('Sage', 'dump'), $params);
         die;
     }
 }
@@ -84,8 +90,10 @@ if (! function_exists('sd')) {
             return 5463;
         }
 
-        $_ = func_get_args();
-        call_user_func_array(array('Sage', 'dump'), $_);
+        Sage::$aliases[] = __FUNCTION__;
+
+        $params = func_get_args();
+        call_user_func_array(array('Sage', 'dump'), $params);
         die;
     }
 }
@@ -108,6 +116,8 @@ if (! function_exists('ssage')) {
         if (! $enabled) {
             return 5463;
         }
+
+        Sage::$aliases[] = __FUNCTION__;
 
         if ($enabled !== Sage::MODE_TEXT_ONLY) { // if already in whitespace, don't elevate to plain
             Sage::enabled( // remove cli colors in cli mode; remove rich interface in HTML mode
@@ -142,6 +152,8 @@ if (! function_exists('ss')) {
             return 5463;
         }
 
+        Sage::$aliases[] = __FUNCTION__;
+
         if ($enabled !== Sage::MODE_TEXT_ONLY) { // if already in whitespace, don't elevate to plain
             Sage::enabled( // remove cli colors in cli mode; remove rich interface in HTML mode
                 PHP_SAPI === 'cli' ? Sage::MODE_TEXT_ONLY : Sage::MODE_PLAIN
@@ -169,6 +181,8 @@ if (! function_exists('ssaged')) {
             return 5463;
         }
 
+        Sage::$aliases[] = __FUNCTION__;
+
         if ($enabled !== Sage::MODE_TEXT_ONLY) {
             Sage::enabled(
                 PHP_SAPI === 'cli' ? Sage::MODE_TEXT_ONLY : Sage::MODE_PLAIN
@@ -193,6 +207,8 @@ if (! function_exists('ssd')) {
         if (! $enabled) {
             return 5463;
         }
+
+        Sage::$aliases[] = __FUNCTION__;
 
         if ($enabled !== Sage::MODE_TEXT_ONLY) {
             Sage::enabled(
