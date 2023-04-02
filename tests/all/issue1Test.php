@@ -30,6 +30,8 @@ HTML
 
 //    dump($div);
 
+    Sage::$theme = Sage::THEME_SOLARIZED_DARK;
+
     assertMatchesHtmlSnapshot(sage($xpath->query("//p")));
 
     assertMatchesHtmlSnapshot(sage($xpath->query("//*[@id='id2']/@title")->item(0)));

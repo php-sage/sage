@@ -637,12 +637,6 @@ class Sage
             # spaces
             \x07*
 
-            # check if output is assigned to a variable (group 2) todo: does not detect concat
-            (
-                \\$[a-z0-9_]+ # variable
-                \x07*\\.?=\x07*  # assignment
-            )?
-
             # possibly a namespace symbol
             \\\\?
 
@@ -665,20 +659,15 @@ class Sage
         );
 
         $modifiers  = end($matches[1]);
-        $assignment = end($matches[2]);
-        $callToSage = end($matches[3]);
-        $bracket    = end($matches[4]);
+        $callToSage = end($matches[2]);
+        $bracket    = end($matches[3]);
 
         if (empty($callToSage)) {
             // if a wrapper is misconfigured, don't display the whole file as variable name
             return array(array(), $modifiers, $callee, $previousCaller, $miniTrace);
         }
 
-        $modifiers = $modifiers[0];
-        if ($assignment[1] !== -1) {
-            $modifiers .= '@';
-        }
-
+        $modifiers    = $modifiers[0];
         $paramsString = preg_replace("[\x07+]", ' ', substr($source, $bracket[1] + 1));
         // we now have a string like this:
         // <parameters passed>); <the rest of the last read line>
@@ -690,6 +679,7 @@ class Sage
         $i              = 0;
         $inBrackets     = 0;
         $openedBrackets = array();
+        $bracketPairs   = array('(' => ')', '[' => ']', '{' => '}');
 
         while ($i < $c) {
             $letter = $paramsString[$i];
@@ -697,15 +687,17 @@ class Sage
             if (! $inString) {
                 if ($letter === '\'' || $letter === '"') {
                     $inString = $letter;
-                } elseif ($letter === '(' || $letter === '[') {
+                } elseif ($letter === '(' || $letter === '[' || $letter === '{') {
                     $inBrackets++;
                     $openedBrackets[] = $openedBracket = $letter;
-                    $closingBracket   = $openedBracket === '(' ? ')' : ']';
+                    $closingBracket   = $bracketPairs[$letter];
                 } elseif ($inBrackets && $letter === $closingBracket) {
                     $inBrackets--;
                     array_pop($openedBrackets);
-                    $openedBracket  = end($openedBrackets);
-                    $closingBracket = $openedBracket === '(' ? ')' : ']';
+                    $openedBracket = end($openedBrackets);
+                    if ($openedBracket) {
+                        $closingBracket = $bracketPairs[$openedBracket];
+                    }
                 } elseif (! $inBrackets && $letter === ')') {
                     $paramsString = substr($paramsString, 0, $i);
                     break;

@@ -35,7 +35,7 @@ class SageVariableData
     {
         if (is_array($value)) {
             if (! (reset($value) instanceof self)) {
-                // concert to SageVariableData[]
+                // convert to SageVariableData[]
                 $value = SageParser::alternativesParse($originalVariable, $value);
             }
         } elseif (is_string($value)) {

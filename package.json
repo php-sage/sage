@@ -1,9 +1,20 @@
 {
   "private": true,
   "devDependencies": {
+    "npm-watch": "^0",
+    "sass": "^1",
     "uglify-js": "^3"
   },
+  "watch": {
+    "compile-js": "resources/base.js",
+    "compile-css": "resources/css/*.scss"
+  },
   "scripts": {
-    "build:js": "uglifyjs resources/base.js -cm --toplevel --mangle-props --warn > resources/compiled/sage.js"
+    "sass-dev": "sass --watch --update --no-source-map --style=expanded resources/css/themes/:resources/compiled/",
+    "sass-dev-c": "sass --watch --update --no-source-map --style=compressed resources/css/themes/:resources/compiled/",
+    "compile-css": "sass --style=compressed --no-source-map resources/css/themes/:resources/compiled/",
+    "compile-js": "uglifyjs resources/js/base.js -cm --toplevel --mangle-props -o resources/compiled/sage.js",
+    "watch": "npm-watch",
+    "build": "npm run compile-js; npm run compile-css"
   }
 }

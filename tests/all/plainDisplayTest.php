@@ -18,4 +18,10 @@ test('just random stuff', function() {
             $example
         )
     );
+    assertSageSnapshot(
+        sage()
+    );
+    assertSageSnapshot(
+        sage(1)
+    );
 });

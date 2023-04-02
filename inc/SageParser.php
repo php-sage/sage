@@ -276,8 +276,8 @@ class SageParser
 
         if ($variableData->size > 1 && ($arrayKeys = self::_isArrayTabular($variable)) !== false) {
             // tabular array parse
-            $firstRow                     = true;
-            $extendedValue                = '<table class="_sage-report"><thead>';
+            $firstRow      = true;
+            $extendedValue = '<table class="_sage-report"><thead>';
 
             foreach ($variable as $rowIndex => & $row) {
                 // display strings in their full length
@@ -648,7 +648,11 @@ class SageParser
             $originalVar[self::$_marker] = true;
         }
 
-        self::_parse_array($alternativesArray, $varData);
+        if (is_array($alternativesArray)) {
+            self::_parse_array($alternativesArray, $varData);
+        } else {
+            self::_parse_object($alternativesArray, $varData);
+        }
 
         return $varData->extendedValue;
     }

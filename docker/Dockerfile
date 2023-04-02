@@ -1,6 +1,8 @@
 FROM node:latest AS node
 FROM php:fpm
 
+ARG DOCKER_UID
+
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
@@ -18,3 +20,8 @@ RUN curl -s https://getcomposer.org/installer | php -- --install-dir=/usr/local/
 
 # disable phar readonly
 RUN echo "phar.readonly = Off" >> /usr/local/etc/php/conf.d/php.enable-phar.ini
+
+
+RUN useradd -u ${DOCKER_UID} -m the-whale; \
+    useradd -u ${DOCKER_UID} -m the-whale; \
+    usermod -G www-data,the-whale,root,adm the-whale

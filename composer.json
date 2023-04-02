@@ -41,10 +41,10 @@
     "post-install-cmd": "@post-update-cmd",
     "build": [
       "@post-update-cmd",
-      "@build:js",
+      "@build:resources",
       "@build:php"
     ],
     "build:php": "php .github/build/build.php",
-    "build:js": "npm run build:js"
+    "build:resources": "npm run build"
   }
 }
