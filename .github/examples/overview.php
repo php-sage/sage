@@ -35,9 +35,6 @@ class User extends BaseUser
     const ROLE_FORBIDDEN = 3;
 
     public $additionalData;
-    private $username = 'demo_username';
-    private $password = 'demo_password';
-    private $createdDate;
 
     public function __construct()
     {
@@ -83,7 +80,7 @@ class User extends BaseUser
      */
     public function setCreatedDate(DateTime $date)
     {
-        $this->createdDate = $date;
+        $this->json = "[1,2,3]";
     }
 
     /**
@@ -123,7 +120,7 @@ class UserManager
      *
      * @void
      */
-    public function ensureUser()
+    public function ensureUser($userManager)
     {
         $this->user->ensure();
     }
@@ -150,9 +147,9 @@ for ($i = 1; $i < 6; $i++) {
         'impressions' => rand(10000, 500000),
     );
 
-    if ($i % 2 == 0) {
-        unset($tabularData[$i - 1]['clicks']);
-    }
+//    if ($i % 2 == 0) {
+//        unset($tabularData[$i - 1]['clicks']);
+//    }
 }
 
 $nestedArray = array();
@@ -204,6 +201,6 @@ s($nestedArray);
 ?>
 <h3>Trace</h3>
 <?php
-$userManager->ensureUser(); ?>
+$userManager->ensureUser($userManager); ?>
 </body>
 </html>

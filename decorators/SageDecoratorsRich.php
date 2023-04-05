@@ -107,7 +107,7 @@ class SageDecoratorsRich
                 $output .= 'PHP internal call';
             }
 
-            $output .= '</var>';
+            $output .= '</var> ';
 
             $output .= $step['function'];
 

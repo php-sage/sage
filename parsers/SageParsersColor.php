@@ -169,7 +169,7 @@ class SageParsersColor extends SageParser
 <div style="background:{$variable}" class="_sage-color-preview">{$variable}</div>
 <strong>hex :</strong> {$variants['hex']}
 <strong>rgb :</strong> {$variants['rgb']}
-?<strong>hsl :</strong> {$variants['hsl']}
+<strong>hsl :</strong> {$variants['hsl']}
 HTML;
 
         $varData->addTabToView($variable, 'CSS color', $value);

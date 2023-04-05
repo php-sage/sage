@@ -47,6 +47,11 @@ $border: 1px solid $border-color;
   overflow-x: auto;
   white-space: nowrap;
 
+  // invisible symbols
+  u {
+    color: #ff8c00;
+  }
+
   dt {
     background: $main-background;
     border: $border;
@@ -61,18 +66,8 @@ $border: 1px solid $border-color;
       border-color: $border-color-hover;
     }
 
-    > var {
-      margin-right: 5px;
-    }
 
-    dt > var {
-      margin-right: 0;
-    }
 
-    // invisible symbols
-    u {
-      color: #ff8c00;
-    }
   }
 
   > dl dl {
@@ -131,7 +126,7 @@ $border: 1px solid $border-color;
 
   dfn {
     font-style: normal;
-    font-family: monospace;
+    font-weight: normal;
     color: $variable-name-color;
   }
 
