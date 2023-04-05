@@ -11,8 +11,8 @@ sh:
 
 build:
 	$(DOCKER) up -d
-	make test
 	$(DOCKER) run php composer build # see composer.json -> "scripts" section
+	make test
 
 
 test:

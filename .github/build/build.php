@@ -31,4 +31,4 @@ $phar = new Timestamps($pharPath);
 $phar->updateTimestamps();
 $phar->save($pharPath, Phar::SHA512);
 
-saged("Success!!! /sage.phar updated!");
+saged('Success!!! /sage.phar updated!');

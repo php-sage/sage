@@ -21,12 +21,12 @@ class SageParsersClassStatics extends SageParser
         foreach ($reflection->getProperties(ReflectionProperty::IS_STATIC) as $property) {
             if ($property->isProtected()) {
                 $property->setAccessible(true);
-                $access = "protected";
+                $access = 'protected';
             } elseif ($property->isPrivate()) {
                 $property->setAccessible(true);
-                $access = "private";
+                $access = 'private';
             } else {
-                $access = "public";
+                $access = 'public';
             }
 
             if (method_exists($property, 'isInitialized') && ! $property->isInitialized($variable)) {

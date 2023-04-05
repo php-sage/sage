@@ -267,7 +267,7 @@ HTML;
                 case 'hex':
                     $variant = '#';
                     foreach ($decimalColors as &$color) {
-                        $variant .= str_pad(dechex($color), 2, "0", STR_PAD_LEFT);
+                        $variant .= str_pad(dechex($color), 2, '0', STR_PAD_LEFT);
                     }
                     $variant .= isset($alpha) ? ' (alpha omitted)' : '';
                     break;
@@ -279,7 +279,7 @@ HTML;
                     } else {
                         $a = '';
                     }
-                    $variant = "rgb{$a}( " . implode(', ', $rgb) . " )";
+                    $variant = "rgb{$a}( " . implode(', ', $rgb) . ' )';
                     break;
                 case 'hsl':
                     $rgb = self::_RGBtoHSL($decimalColors);
@@ -294,7 +294,7 @@ HTML;
                         $a = '';
                     }
 
-                    $variant = "hsl{$a}( " . implode(', ', $rgb) . " )";
+                    $variant = "hsl{$a}( " . implode(', ', $rgb) . ' )';
                     break;
                 case 'name':
                     // [!] name in initial variants array must go after hex

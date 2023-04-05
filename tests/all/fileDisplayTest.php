@@ -10,7 +10,7 @@ test('display filesizes correctly', function() {
     // touch(SAGE_DIR, 1600000000, 1600000000);
     // touch(SAGE_DIR . 'LICENCE', 1600000000, 1600000000);
     // touch(SAGE_DIR . '.github/img/trace.png', 1600000000, 1600000000);
-$a = 'ads';
+
     assertSageSnapshot(
         sage(
             SAGE_DIR,
@@ -26,7 +26,6 @@ $a = 'ads';
             SAGE_DIR,
             SAGE_DIR . 'LICENCE',
             'non-existing',
-            $a,
             new SplFileInfo('LICENCE'),
             new SplFileInfo('non-existing'),
             new SplFileInfo(''),

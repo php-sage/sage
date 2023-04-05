@@ -33,6 +33,7 @@ if (! function_exists('sage')) {
         Sage::$aliases[] = __FUNCTION__;
 
         $params = func_get_args();
+
         return call_user_func_array(['Sage', 'dump'], $params);
     }
 }
@@ -52,6 +53,7 @@ if (! function_exists('s')) {
         Sage::$aliases[] = __FUNCTION__;
 
         $params = func_get_args();
+
         return call_user_func_array(array('Sage', 'dump'), $params);
     }
 }

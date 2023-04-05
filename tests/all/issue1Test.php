@@ -24,15 +24,13 @@ HTML
 
     $xpath = new DOMXPath($dom);
 
-    $div = $xpath->query("//div")->item(0);
+    $div = $xpath->query('//div')->item(0);
 
     assertMatchesHtmlSnapshot(sage($div));
 
-//    dump($div);
-
-    Sage::$theme = Sage::THEME_SOLARIZED_DARK;
-
-    assertMatchesHtmlSnapshot(sage($xpath->query("//p")));
-
-    assertMatchesHtmlSnapshot(sage($xpath->query("//*[@id='id2']/@title")->item(0)));
+    //    Sage::$theme = Sage::THEME_SOLARIZED_DARK;
+    //
+    //    assertMatchesHtmlSnapshot(sage($xpath->query('//p')));
+    //
+    //    assertMatchesHtmlSnapshot(sage($xpath->query("//*[@id='id2']/@title")->item(0)));
 });

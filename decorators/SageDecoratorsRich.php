@@ -150,6 +150,7 @@ class SageDecoratorsRich
                 }
                 $output .= '</li>';
             }
+
             if (! empty($step['object'])) {
                 $output .= '<li>' . self::decorate($calleeDump) . '</li>';
             }

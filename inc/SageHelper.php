@@ -10,25 +10,26 @@ class SageHelper
     const MAX_STR_LENGTH = 80;
 
     public static $editors = array(
-        'sublime'                => 'subl://open?url=file://%f&line=%l',
-        'textmate'               => 'txmt://open?url=file://%f&line=%l',
-        'emacs'                  => 'emacs://open?url=file://%f&line=%l',
-        'macvim'                 => 'mvim://open/?url=file://%f&line=%l',
-        'phpstorm'               => 'phpstorm://open?file=%f&line=%l',
-        'phpstorm-remotecall'    => 'http://localhost:8091?message=%f:%l',
-        'idea'                   => 'idea://open?file=%f&line=%l',
-        'vscode'                 => 'vscode://file/%f:%l',
-        'vscode-insiders'        => 'vscode-insiders://file/%f:%l',
-        'vscode-remote'          => 'vscode://vscode-remote/%f:%l',
-        'vscode-insiders-remote' => 'vscode-insiders://vscode-remote/%f:%l',
-        'vscodium'               => 'vscodium://file/%f:%l',
-        'atom'                   => 'atom://core/open/file?filename=%f&line=%l',
-        'nova'                   => 'nova://core/open/file?filename=%f&line=%l',
-        'netbeans'               => 'netbeans://open/?f=%f:%l',
-        'xdebug'                 => 'xdebug://%f@%l'
+        'sublime'                => 'subl://open?url=file://%file&line=%line',
+        'textmate'               => 'txmt://open?url=file://%file&line=%line',
+        'emacs'                  => 'emacs://open?url=file://%file&line=%line',
+        'macvim'                 => 'mvim://open/?url=file://%file&line=%line',
+        'phpstorm'               => 'phpstorm://open?file=%file&line=%line',
+        'phpstorm-plugin'        => 'http://localhost:63342/api/file/%file:%line',
+        'idea'                   => 'idea://open?file=%file&line=%line',
+        'vscode'                 => 'vscode://file/%file:%line',
+        'vscode-insiders'        => 'vscode-insiders://file/%file:%line',
+        'vscode-remote'          => 'vscode://vscode-remote/%file:%line',
+        'vscode-insiders-remote' => 'vscode-insiders://vscode-remote/%file:%line',
+        'vscodium'               => 'vscodium://file/%file:%line',
+        'atom'                   => 'atom://core/open/file?filename=%file&line=%line',
+        'nova'                   => 'nova://core/open/file?filename=%file&line=%line',
+        'netbeans'               => 'netbeans://open/?f=%file:%line',
+        'xdebug'                 => 'xdebug://%file@%line'
     );
 
     private static $aliasesRaw;
+    private static $projectRootDir;
 
     public static function php53orLater()
     {
@@ -61,40 +62,28 @@ class SageHelper
      */
     public static function shortenPath($file)
     {
-        $file          = str_replace('\\', '/', $file);
-        $shortenedName = $file;
-        $replaced      = false;
-        if (is_array(Sage::$appRootDirs)) {
-            foreach (Sage::$appRootDirs as $path => $replaceString) {
-                if (empty($path)) {
-                    continue;
-                }
+        $file = str_replace('\\', '/', $file);
 
-                $path = str_replace('\\', '/', $path);
+        // Find common path with Sage dir
+        if (! isset(self::$projectRootDir)) {
+            self::$projectRootDir = '';
 
-                if (strpos($file, $path) === 0) {
-                    $shortenedName = $replaceString . substr($file, strlen($path));
-                    $replaced      = true;
+            $sagePathParts = explode('/', str_replace('\\', '/', SAGE_DIR));
+            $filePathParts = explode('/', $file);
+            foreach ($filePathParts as $i => $filePart) {
+                if (! isset($sagePathParts[$i]) || $sagePathParts[$i] !== $filePart) {
                     break;
                 }
+
+                self::$projectRootDir .= $filePart . '/';
             }
         }
 
-        // fallback to find common path with Sage dir
-        if (! $replaced) {
-            $pathParts = explode('/', str_replace('\\', '/', SAGE_DIR));
-            $fileParts = explode('/', $file);
-            $i         = 0;
-            foreach ($fileParts as $i => $filePart) {
-                if (! isset($pathParts[$i]) || $pathParts[$i] !== $filePart) {
-                    break;
-                }
-            }
-
-            $shortenedName = ($i ? '.../' : '') . implode('/', array_slice($fileParts, $i));
+        if (strpos($file, self::$projectRootDir) === 0) {
+            return substr($file, strlen(self::$projectRootDir));
         }
 
-        return $shortenedName;
+        return $file;
     }
 
     public static function buildAliases()
@@ -208,11 +197,15 @@ class SageHelper
     public static function ideLink($file, $line, $linkText = null)
     {
         $enabledMode = Sage::enabled();
+        $file        = self::shortenPath($file);
+
         if (! self::isHtmlMode()) {
             return $file . ':' . $line;
         }
 
-        $linkText = $linkText ? $linkText : self::shortenPath($file) . ':' . $line;
+        $linkText = $linkText
+            ? $linkText
+            : $file . ':' . $line;
         $linkText = self::esc($linkText);
 
         if (! Sage::$editor) {
@@ -220,7 +213,7 @@ class SageHelper
         }
 
         $ideLink = str_replace(
-            array('%f', '%l', Sage::$fileLinkServerPath),
+            array('%file', '%line', Sage::$fileLinkServerPath),
             array($file, $line, Sage::$fileLinkLocalPath),
             isset(self::$editors[Sage::$editor]) ? self::$editors[Sage::$editor] : Sage::$editor
         );

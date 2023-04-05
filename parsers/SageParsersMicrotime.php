@@ -15,7 +15,7 @@ class SageParsersMicrotime extends SageParser
             return false;
         }
 
-        list($usec, $sec) = explode(" ", $variable);
+        list($usec, $sec) = explode(' ', $variable);
 
         $time = (float)$usec + (float)$sec;
 

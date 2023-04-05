@@ -1,10 +1,10 @@
 <?php
 
-require('../Sage.php');
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 $selectedTheme = isset($_GET['theme']) ? $_GET['theme'] : 'original';
 $allowedThemes = array();
-$dh            = opendir('../resources/compiled');
+$dh            = opendir(SAGE_DIR . '/resources/compiled');
 while (($filename = readdir($dh)) !== false) {
     if (strpos($filename, '.css') !== false) {
         $allowedThemes[] = str_replace('.css', '', $filename);
@@ -72,14 +72,14 @@ class User extends BaseUser
     }
 
     /**
-     * @return \DateTime date object
+     * @return DateTime date object
      */
     public function getCreatedDate()
     {
     }
 
     /**
-     * @param \DateTime $date
+     * @param DateTime $date
      */
     public function setCreatedDate(DateTime $date)
     {
@@ -110,12 +110,12 @@ class UserManager
     /**
      * Debug specific user
      *
-     * @param \User $user
+     * @param User $user
      */
     public function debugUser($user)
     {
         $this->user = $user;
-        d($this->getUser());
+        s($this->getUser());
     }
 
     /**
@@ -199,8 +199,8 @@ for ($i = 1; $i < 6; $i++) {
 <h3>Debug variables</h3>
 <?php
 $userManager->debugUser($user);
-d($userManager, $tabularData);
-d($nestedArray);
+s($userManager, $tabularData);
+s($nestedArray);
 ?>
 <h3>Trace</h3>
 <?php

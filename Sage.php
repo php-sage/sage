@@ -7,7 +7,8 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2013 Rokas Sleinius (raveren@gmail.com) and contributors (https://github.com/php-sage/sage/contributors)
+ * Copyright (c) 2013 Rokas Sleinius (raveren@gmail.com) and contributors:
+ * (https://github.com/php-sage/sage/contributors)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -60,35 +61,35 @@ class Sage
      * @var string makes visible source file paths clickable to open your editor.
      *
      * Pre-defined values:
-     *             'sublime'                => 'subl://open?url=file://%f&line=%l',
-     *             'textmate'               => 'txmt://open?url=file://%f&line=%l',
-     *             'emacs'                  => 'emacs://open?url=file://%f&line=%l',
-     *             'macvim'                 => 'mvim://open/?url=file://%f&line=%l',
-     *             'phpstorm'               => 'phpstorm://open?file=%f&line=%l',
-     *             'phpstorm-remotecall'    => 'http://localhost:8091?message=%f:%l',
-     *             'idea'                   => 'idea://open?file=%f&line=%l',
-     *             'vscode'                 => 'vscode://file/%f:%l',
-     *             'vscode-insiders'        => 'vscode-insiders://file/%f:%l',
-     *             'vscode-remote'          => 'vscode://vscode-remote/%f:%l',
-     *             'vscode-insiders-remote' => 'vscode-insiders://vscode-remote/%f:%l',
-     *             'vscodium'               => 'vscodium://file/%f:%l',
-     *             'atom'                   => 'atom://core/open/file?filename=%f&line=%l',
-     *             'nova'                   => 'nova://core/open/file?filename=%f&line=%l',
-     *             'netbeans'               => 'netbeans://open/?f=%f:%l',
-     *             'xdebug'                 => 'xdebug://%f@%l',
+     *             'sublime'                => 'subl://open?url=file://%file&line=%line',
+     *             'textmate'               => 'txmt://open?url=file://%file&line=%line',
+     *             'emacs'                  => 'emacs://open?url=file://%file&line=%line',
+     *             'macvim'                 => 'mvim://open/?url=file://%file&line=%line',
+     *             'phpstorm'               => 'phpstorm://open?file=%file&line=%line',
+     *             'phpstorm-plugin'        => 'http://localhost:63342/api/file/%file:%line',
+     *             'idea'                   => 'idea://open?file=%file&line=%line',
+     *             'vscode'                 => 'vscode://file/%file:%line',
+     *             'vscode-insiders'        => 'vscode-insiders://file/%file:%line',
+     *             'vscode-remote'          => 'vscode://vscode-remote/%file:%line',
+     *             'vscode-insiders-remote' => 'vscode-insiders://vscode-remote/%file:%line',
+     *             'vscodium'               => 'vscodium://file/%file:%line',
+     *             'atom'                   => 'atom://core/open/file?filename=%file&line=%line',
+     *             'nova'                   => 'nova://core/open/file?filename=%file&line=%line',
+     *             'netbeans'               => 'netbeans://open/?f=%file:%line',
+     *             'xdebug'                 => 'xdebug://%file@%line'
      *
-     * Or pass a custom string where %f should be replaced with full file path, %l with line number to create a
-     * custom link. Set to null to disable linking.
+     * Or pass a custom string where %fileileileileileile should be replaced with full file path, %line with line number
+     * to create a custom link. Set to null to disable linking.
      *
      * Example:
-     *             // works with for PHPStorm and RemoteCall Plugin
-     *             Sage::$editor = 'phpstorm-remotecall';
+     *             // works with for PHPStorm and IDE Remote Control Plugin
+     *             Sage::$editor = 'phpstorm-plugin';
      * Example:
      *             // same result as above, but explicitly defined
-     *             Sage::$editor = 'http://localhost:8091/?message=%f:%l';
+     *             Sage::$editor = 'http://localhost:63342/api/file/f:%line';
      *
      * Default:
-     *             ini_get('xdebug.file_link_format') ?: 'phpstorm-remotecall'
+     *             ini_get('xdebug.file_link_format') ?: 'phpstorm-plugin'
      *
      */
     public static $editor;
@@ -142,27 +143,6 @@ class Sage
     public static $theme;
 
     /**
-     * @var array directories of your application that will be displayed instead of the full path. Keys are paths,
-     *            values are replacement strings.
-     *
-     *            Use this if you need to hide the access path from output.
-     *
-     * Example (for Kohana framework (R.I.P.)):
-     *            Sage::appRootDirs = array(
-     *                 SYSPATH => 'SYSPATH',
-     *                 MODPATH => 'MODPATH',
-     *                 DOCROOT => 'DOCROOT',
-     *            );
-     *
-     * Example #2:
-     *            Sage::appRootDirs = array( realpath( __DIR__ . '/../../..' ) => 'ROOT' );
-     *
-     * Default:
-     *            array( $_SERVER['DOCUMENT_ROOT'] => 'ROOT' )
-     */
-    public static $appRootDirs;
-
-    /**
      * @var bool draw rich output already expanded without having to click
      *
      * Default:
@@ -192,9 +172,9 @@ class Sage
      *
      * Default:
      *           array(
-     *                 'UTF-8',
-     *                 'Windows-1252', // Western; includes iso-8859-1, replace this with windows-1251 if you have Russian code
-     *                 'euc-jp',       // Japanese
+     *               'UTF-8',
+     *               'Windows-1252', // Western; includes iso-8859-1, replace this with windows-1251 if you have Russian code
+     *               'euc-jp',       // Japanese
      *           );
      */
     public static $charEncodings;
@@ -239,9 +219,6 @@ class Sage
     const MODE_TEXT_ONLY = 'w';
     const MODE_CLI = 'c';
     const MODE_PLAIN = 'p';
-
-    /** @deprecated in favor of Sage::MODE_TEXT_ONLY will be removed in the next version! */
-    const MODE_WHITESPACE = 'w';
 
     const THEME_ORIGINAL = 'original';
     const THEME_LIGHT = 'aante-light';
@@ -431,7 +408,7 @@ class Sage
             }
 
             // process modifier combinations
-            if (! empty($modifiers) && strpos($modifiers, '-') !== false) {
+            if (strpos($modifiers, '-') !== false) {
                 $decorator::$firstRun = true;
             }
         }
@@ -454,7 +431,7 @@ class Sage
             $output .= call_user_func(array($decorator, 'decorateTrace'), $trace);
         } else {
             $data = func_num_args() === 0
-                ? array("[[no arguments passed]]")
+                ? array('[[no arguments passed]]')
                 : func_get_args();
 
             foreach ($data as $k => $argument) {
@@ -474,22 +451,25 @@ class Sage
         self::enabled($enabledMode);
 
         $decorator::$firstRun = false;
-        if (! empty($modifiers) && strpos($modifiers, '~') !== false) {
-            $decorator::$firstRun = $firstRunOldValue;
-        } else {
-            self::enabled($enabledMode);
-        }
-        if (! empty($modifiers) && strpos($modifiers, '!') !== false) {
-            self::$expandedByDefault = $expandedByDefaultOldValue;
-        }
-        if (! empty($modifiers) && strpos($modifiers, '+') !== false) {
-            self::$maxLevels = $maxLevelsOldValue;
-        }
-        if (! empty($modifiers) && strpos($modifiers, '@') !== false) {
-            self::$returnOutput   = $returnOldValue;
-            $decorator::$firstRun = $firstRunOldValue;
+        if (! empty($modifiers)) {
+            if (strpos($modifiers, '~') !== false) {
+                $decorator::$firstRun = $firstRunOldValue;
+            }
 
-            return $output;
+            if (strpos($modifiers, '!') !== false) {
+                self::$expandedByDefault = $expandedByDefaultOldValue;
+            }
+
+            if (strpos($modifiers, '+') !== false) {
+                self::$maxLevels = $maxLevelsOldValue;
+            }
+
+            if (strpos($modifiers, '@') !== false) {
+                self::$returnOutput   = $returnOldValue;
+                $decorator::$firstRun = $firstRunOldValue;
+
+                return $output;
+            }
         }
 
         if (self::$returnOutput) {
@@ -517,11 +497,10 @@ class Sage
      *
      * @param string $file       full path to file
      * @param int    $lineNumber the line to display
-     * @param int    $padding    surrounding lines to show besides the main one
      *
      * @return bool|string
      */
-    private static function _showSource($file, $lineNumber, $padding = 7)
+    private static function _showSource($file, $lineNumber)
     {
         if (! $file || ! is_readable($file)) {
             // continuing will cause errors
@@ -534,8 +513,8 @@ class Sage
 
         // Set the reading range
         $range = array(
-            'start' => $lineNumber - $padding,
-            'end'   => $lineNumber + $padding,
+            'start' => $lineNumber - 7,
+            'end'   => $lineNumber + 7,
         );
 
         // set the zero-padding amount for line numbers
@@ -627,7 +606,7 @@ class Sage
         // get the position of the last call to the function
         preg_match_all(
             "
-            [
+            /
             # beginning of statement
             [\x07{(]
 
@@ -652,7 +631,7 @@ class Sage
             # find the character where Sage's opening bracket resides (group 3)
             (\\()
 
-            ]ix",
+            /ix",
             $source,
             $matches,
             PREG_OFFSET_CAPTURE
@@ -950,20 +929,19 @@ class Sage
         // 4. Load default from Sage
         self::_initSetting(
             'editor',
-            ini_get('xdebug.file_link_format') ? ini_get('xdebug.file_link_format') : 'phpstorm-remotecall'
+            ini_get('xdebug.file_link_format') ? ini_get('xdebug.file_link_format') : 'phpstorm-plugin'
         );
         self::_initSetting('fileLinkServerPath', null);
         self::_initSetting('fileLinkLocalPath', null);
         self::_initSetting('displayCalledFrom', true);
         self::_initSetting('maxLevels', 7);
         self::_initSetting('theme', self::THEME_ORIGINAL);
-        self::_initSetting('appRootDirs', array($_SERVER['DOCUMENT_ROOT'] => 'ROOT'));
         self::_initSetting('expandedByDefault', false);
         self::_initSetting('cliDetection', true);
         self::_initSetting('cliColors', true);
         self::_initSetting('charEncodings', array(
                 'UTF-8',
-                'Windows-1252', // Western; includes iso-8859-1, replace this with windows-1251 if you have
+                'Windows-1252', // Western; includes iso-8859-1, replace this with windows-1251 if you have Russian code
                 'euc-jp',       // Japanese
             )
         );
