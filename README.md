@@ -8,8 +8,6 @@ However, it's much, *much* more.
 
 ---
 
-![](.github/img/main-screenshot.png)
-
 For an overview of Sage's outstanding features jump to the [F.A.Q.](#faq)
 
 ## Installation
@@ -37,6 +35,9 @@ saged($i); // alias for sage();die;
 
 sage(1); // shortcut for dumping trace
 ```
+
+![](.github/img/main-screenshot.png)
+
 
 | Function  | Shorthand      |                   |
 |-----------|----------------|-------------------|
