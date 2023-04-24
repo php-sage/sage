@@ -1,17 +1,24 @@
 # Sage - Insightful PHP debugging assistant ☯
 
-At first glance **Sage** is just a pretty replacement
+At first glance **Sage** is just an effortless, pretty replacement
 for **[var_dump()](http://php.net/manual/en/function.var-dump.php)**
 and **[debug_backtrace()](http://php.net/manual/en/function.debug-backtrace.php)**.
 
 However, it's much, *much* more.
 
 ---
+
+![](.github/img/main-screenshot.png)
+
 For an overview of Sage's outstanding features jump to the [F.A.Q.](#faq)
 
 ## Installation
 
-#### [Download the phar](https://github.com/php-sage/sage/raw/main/sage.phar) and simply
+```bash
+composer require php-sage/sage --dev
+```
+
+#### Or if you prefer, [download the phar](https://github.com/php-sage/sage/raw/main/sage.phar) and simply
 
 ```php
 <?php
@@ -20,11 +27,6 @@ require 'sage.phar';
 sage('Hello, 🌎!');
 ```
 
-#### Or, if your project uses `composer`
-
-```bash
-composer require php-sage/sage --dev
-```
 
 ## Usage
 
@@ -35,8 +37,6 @@ saged($i); // alias for sage();die;
 
 sage(1); // shortcut for dumping trace
 ```
-
-![](.github/img/main-screenshot.png)
 
 | Function  | Shorthand      |                   |
 |-----------|----------------|-------------------|
@@ -54,12 +54,53 @@ sage(1); // shortcut for dumping trace
 
 ![Trace view](.github/img/trace.png)
 
-To output plain-text mode (NO STYLING) prefix with `~`, to return instead of echoing, prefix with `@`:
+### More cool stuff 🤯
+
+To output plain-text mode (no styling **AT ALL**) prefix with `~`. To return instead of echoing, prefix with `@`:
 
 ```php
 ~s($var); // outputs plain text
 $output = @ss(); // returns output
 ```
+
+### Verbose versions
+
+If you want to use Sage as part of permanent code (e.g. part of a test helper/logger/exception reporter etc), you can
+use the verbose way to invoke Sage:
+
+```php
+// instead of sage()
+Sage::dump('this looks way less hacky (yeah right:)');
+
+// equivalent to sage(1);
+Sage::trace(); 
+
+// equivalent to ssage():
+Sage::enabled(Sage::MODE_TEXT_ONLY);
+Sage::dump();
+
+// a real-life test helper:
+function getVarDump(mixed $providedContext): string
+{
+    if (! $providedContext) {
+        return '';
+    }
+
+    Sage::enabled(Sage::MODE_TEXT_ONLY);
+    Sage::$aliases[]         = __CLASS__ . '::' . __FUNCTION__;
+    Sage::$returnOutput      = true;
+    Sage::$displayCalledFrom = false;
+    $debugOutput             = Sage::dump($providedContext);
+    // now reset settings to presumed defaults
+    Sage::enabled(true);
+    Sage::$displayCalledFrom = true;
+    Sage::$returnOutput      = false;
+
+    return PHP_EOL . $debugOutput;
+}
+```
+
+However, Sage is only a debug helper and is made with no guarantees it won't burn your house :)
 
 ----
 
@@ -85,10 +126,10 @@ Sage::$theme = Sage::THEME_LIGHT;
 
 ```json
 "autoload": {
-/* ... */
-"files": [
-"config/sage.php" /* <--------------- this line */
-]
+  /* ... */
+  "files": [
+  "config/sage.php" /* <--------------- this line */
+  ]
 },
 ```
 
