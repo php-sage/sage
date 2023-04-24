@@ -223,3 +223,25 @@ if (! function_exists('ssd')) {
         die;
     }
 }
+
+if (! function_exists('d')) {
+    /**
+     * Alias of Sage::dump()
+     *
+     * Same as sage(), here just to allow drop-in replacement for Kint.
+     *
+     * @return string|int @see Sage::dump()
+     */
+    function d()
+    {
+        if (! Sage::enabled()) {
+            return 5463;
+        }
+
+        Sage::$aliases[] = __FUNCTION__;
+
+        $params = func_get_args();
+
+        return call_user_func_array(array('Sage', 'dump'), $params);
+    }
+}
