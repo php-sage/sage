@@ -40,7 +40,7 @@ sage(1); // shortcut for dumping trace
 
 | Function  | Shorthand      |                   |
 |-----------|----------------|-------------------|
-| `sage`    | `s`            | Dump              |
+| `sage`    | `s` / `d`      | Dump              |
 | `saged`   | `sd`           | Dump & die        |
 | `ssage`   | `ss`           | Simple dump       |
 | `ssaged`  | `ssd`          | Simple dump & die |
@@ -85,10 +85,10 @@ Sage::$theme = Sage::THEME_LIGHT;
 
 ```json
 "autoload": {
-  /* ... */
-  "files": [
-    "config/sage.php" /* <--------------- this line */
-  ]
+/* ... */
+"files": [
+"config/sage.php" /* <--------------- this line */
+]
 },
 ```
 
@@ -166,7 +166,6 @@ Sage::$maxLevels = 7;
 Max array/object levels to go deep, set to zero/false to disable
 
 ---
-
 
 ```php
 Sage::$expandedByDefault = false;
@@ -349,6 +348,8 @@ Because it <b>is</b> Kint, and I am its author, however the project was [**forci
 contributor!
 
 Instead of fighting DMCA windmills, I chose to fork and rename the last **good** version and continue under a new name!
+
+You can use Sage as a drop-in replacement for Kint. Simple.
 
 ### 💬 How is `var_dump` - style debugging still relevant when we have Xdebug?
 
