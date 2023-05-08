@@ -303,4 +303,13 @@ HTML;
 
         return $out;
     }
+
+    public static function str_contains(string $haystack, string $needle): bool
+    {
+        if (function_exists('str_contains')) {
+            return str_contains($haystack, $needle);
+        }
+
+        return '' === $needle || false !== strpos($haystack, $needle);
+    }
 }
