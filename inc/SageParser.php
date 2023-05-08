@@ -403,7 +403,7 @@ class SageParser
             $variable->setFlags(ArrayObject::STD_PROP_LIST);
         }
 
-        if (SageHelper::str_contains($variableData->type, "@anonymous\0")) {
+        if (strpos($variableData->type, "@anonymous\0") !== false) {
             $variableData->type = 'Anonymous class';
         }
 
