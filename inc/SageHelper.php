@@ -304,7 +304,7 @@ HTML;
         return $out;
     }
 
-    public static function str_contains(string $haystack, string $needle): bool
+    public static function str_contains($haystack, $needle)
     {
         if (function_exists('str_contains')) {
             return str_contains($haystack, $needle);
