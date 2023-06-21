@@ -74,7 +74,7 @@ class SageDecoratorsRich
         return $output;
     }
 
-    public static function decorateTrace($traceData)
+    public static function decorateTrace($traceData, $namesOnly = false)
     {
         // if we're dealing with a framework stack, lets verbosely display last few steps only, and not hang the browser
         $optimizeOutput = count($traceData) >= 10 && Sage::$maxLevels !== false;
@@ -123,12 +123,12 @@ class SageDecoratorsRich
                 $firstTab = '';
             }
 
-            if (! empty($step['args'])) {
+            if (! $namesOnly && ! empty($step['args'])) {
                 $output   .= "<li{$firstTab}>Arguments</li>";
                 $firstTab = '';
             }
 
-            if (! empty($step['object'])) {
+            if (! $namesOnly && ! empty($step['object'])) {
                 SageParser::reset();
 
                 $calleeDump = SageParser::process($step['object']);
@@ -142,7 +142,7 @@ class SageDecoratorsRich
                 $output .= "<li><pre class=\"_sage-source\">{$step['source']}</pre></li>";
             }
 
-            if (! empty($step['args'])) {
+            if (! $namesOnly && ! empty($step['args'])) {
                 $output .= '<li>';
                 foreach ($step['args'] as $k => $arg) {
                     SageParser::reset();
@@ -151,7 +151,7 @@ class SageDecoratorsRich
                 $output .= '</li>';
             }
 
-            if (! empty($step['object'])) {
+            if (! $namesOnly && ! empty($step['object'])) {
                 $output .= '<li>' . self::decorate($calleeDump) . '</li>';
             }
 

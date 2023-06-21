@@ -39,7 +39,7 @@ class SageParsersMicrotime extends SageParser
             }
 
             if (SageHelper::isRichMode()) {
-                $tabContents = "<b>SINCE LAST CALL:</b> <b class=\"_sage-microtime\">" . round($lap, 4) . '</b>s.';
+                $tabContents = "<b>SINCE LAST SUCH CALL:</b> <b class=\"_sage-microtime\">" . round($lap, 4) . '</b>s.';
                 if ($numberOfCalls > 1) {
                     $tabContents .= "\n<b>SINCE START:</b> {$sinceStart}";
                     $tabContents .= "\n<b>AVERAGE DURATION:</b> {$averageDuration}";
@@ -49,7 +49,7 @@ class SageParsersMicrotime extends SageParser
                 $varData->addTabToView($variable, 'Benchmark', $tabContents);
             } else {
                 $varData->extendedValue = array(
-                    'Since last call' => $sinceLast
+                    'Since last such call' => $sinceLast
                 );
 
                 if ($sinceStart !== null) {

@@ -49,13 +49,13 @@ class SageDecoratorsPlain
         return $output;
     }
 
-    public static function decorateTrace($traceData)
+    public static function decorateTrace($traceData, $pathsOnly = false)
     {
         // if we're dealing with a framework stack, lets verbosely display last few steps only, and not hang the browser
         $optimizeOutput = count($traceData) >= 10 && Sage::$maxLevels !== false;
         $maxLevels      = Sage::$maxLevels;
 
-        $output   = self::_title('TRACE');
+        $output   = self::_title($pathsOnly ? 'QUICK TRACE' : 'TRACE');
         $lastStep = count($traceData);
         foreach ($traceData as $stepNo => $step) {
             if ($optimizeOutput) {
@@ -72,7 +72,7 @@ class SageDecoratorsPlain
                     ? SageHelper::ideLink($step['file'], $step['line'])
                     : 'PHP internal call'
                 ),
-                'title'
+                'header'
             );
 
             $appendDollar = $step['function'] === '{closure}' ? '' : '$';
@@ -85,16 +85,17 @@ class SageDecoratorsPlain
                         $output .= ')';
                     } else {
                         $output .= $appendDollar . implode(', ' . $appendDollar, array_keys($step['args'])) . ')';
-                        $output .= PHP_EOL . self::_colorize(
-                                '    ' . str_repeat('─', 27) . ' Arguments ' . str_repeat('─', 38),
-                                'title'
-                            );
                     }
                 }
                 $output .= PHP_EOL;
             }
 
-            if (! empty($step['args'])) {
+            if (! $pathsOnly && ! empty($step['args'])) {
+                $output .= self::_colorize(
+                    '    ┌' . str_repeat('─', 26) . ' Arguments ' . str_repeat('─', 37) . '┐',
+                    'header'
+                );
+
                 $i = 0;
                 foreach ($step['args'] as $name => $argument) {
                     $argument           = SageParser::process(
@@ -111,30 +112,33 @@ class SageDecoratorsPlain
                         Sage::$maxLevels = $maxLevels;
                     }
                 }
-                $output .= '    )' . PHP_EOL;
+
+                $output .= '    ' . self::_colorize('└' . str_repeat('─', 74) . '┘', 'header');
             }
 
-            if (! empty($step['object'])) {
+            if (! $pathsOnly && ! empty($step['object'])) {
                 $output .= self::_colorize(
-                    '    ' . str_repeat('─', 27) . ' Callee object ' . str_repeat('─', 34),
-                    'title'
+                    '    ┌' . str_repeat('─', 26) . ' Callee object ' . str_repeat('─', 33) . '┐',
+                    'header'
                 );
 
                 $maxLevels = Sage::$maxLevels;
                 if ($maxLevels) {
                     // in cli the terminal window is filled too quickly to display huge objects
                     Sage::$maxLevels = Sage::enabled() === Sage::MODE_CLI
-                        ? 1
+                        ? 2
                         : $maxLevels + 1;
                 }
-                $output .= self::decorate(SageParser::process($step['object']), 1);
+                $output .= self::decorate(SageParser::process($step['object']), 2);
                 if ($maxLevels) {
                     Sage::$maxLevels = $maxLevels;
                 }
+
+                $output .= '    ' . self::_colorize('└' . str_repeat('─', 74) . '┘', 'header');
             }
 
             if ($stepNo !== $lastStep) {
-                $output .= self::_colorize(str_repeat('─', 80), 'title');
+                $output .= self::_colorize(str_repeat('─', 80), 'header');
             }
         }
 
@@ -163,8 +167,8 @@ class SageDecoratorsPlain
                     case 'type':
                         $text = "<b>{$text}</b>";
                         break;
-                    case 'title':
-                        $text = "<u>{$text}</u>";
+                    case 'header':
+                        $text = "<header>{$text}</header>";
                         break;
                 }
 
@@ -177,7 +181,7 @@ class SageDecoratorsPlain
 
                 $optionsMap = array(
                     'key'   => "\x1b[33m",   // yellow
-                    'title' => "\x1b[36m",   // cyan
+                    'header' => "\x1b[36m",   // cyan
                     'type'  => "\x1b[35;1m", // magenta bold
                     'value' => "\x1b[32m",   // green
                 );
@@ -196,16 +200,13 @@ class SageDecoratorsPlain
         $escaped          = SageHelper::esc($text);
         $lengthDifference = strlen($escaped) - strlen($text);
 
-        $ret = self::_colorize('┌' . str_repeat('─', 78) . '┐' . PHP_EOL, 'title', false);
+        $ret = '┌' . str_repeat('─', 78) . '┐' . PHP_EOL;
         if ($text) {
-            $ret .= self::_colorize(
-                '│' . str_pad($escaped, 78 + $lengthDifference, ' ', STR_PAD_BOTH) . '│' . PHP_EOL,
-                'title',
-                false
-            );
+            $ret .= '│' . str_pad($escaped, 78 + $lengthDifference, ' ', STR_PAD_BOTH) . '│' . PHP_EOL;
         }
+        $ret .= '└' . str_repeat('─', 78) . '┘';
 
-        return $ret . self::_colorize('└' . str_repeat('─', 78) . '┘', 'title');
+        return self::_colorize($ret, 'header');
     }
 
     public static function wrapStart()
@@ -219,7 +220,7 @@ class SageDecoratorsPlain
 
     public static function wrapEnd($callee, $miniTrace, $prevCaller)
     {
-        $lastLine     = self::_colorize(str_repeat('═', 80), 'title');
+        $lastLine     = self::_colorize(str_repeat('═', 80), 'header');
         $isHtml       = Sage::enabled() === Sage::MODE_PLAIN;
         $lastChar     = $isHtml ? '</pre>' : '';
         $traceDisplay = '';
@@ -245,7 +246,7 @@ class SageDecoratorsPlain
         return $lastLine
             . self::_colorize(
                 'Call stack ' . SageHelper::ideLink($callee['file'], $callee['line']) . $traceDisplay,
-                'title'
+                'header'
             )
             . $lastChar;
     }
@@ -302,8 +303,7 @@ class SageDecoratorsPlain
         }
 
         return <<<'HTML'
-<style>._sage_plain i{color:#d00;font-style:normal}._sage_plain u{color:#030;text-decoration:none;font-weight:bold}
-._sage_plain ol{padding-left:6em}._sage_plain ol,._sage_plain ol li{margin:0;line-height:.6;}</style>
+<style>._sage_plain i{color:#d00;font-style:normal}._sage_plain header{font-weight:bold;display:inline} ._sage_plain ol{padding-left:6em;margin:0}</style>
 HTML;
     }
 }

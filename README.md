@@ -38,13 +38,14 @@ saged($i); // alias for sage();die;
 sage(1); // shortcut for dumping trace
 ```
 
-| Function  | Shorthand      |                   |
-|-----------|----------------|-------------------|
-| `sage`    | `s` / `d`      | Dump              |
-| `saged`   | `sd`           | Dump & die        |
-| `ssage`   | `ss`           | Simple dump       |
-| `ssaged`  | `ssd`          | Simple dump & die |
-| `sage(1)` | `s(1)`/`sd(1)` | Debug backtrace   |
+| Function    | Shorthand |                                                  |
+|-------------|-----------|--------------------------------------------------|
+| `sage`      | `s`       | Dump (same as `\Sage::dump()`)                   |
+| `saged`     | `sd`      | Dump & die                                       |
+| `ssage`     | `ss`      | Simple dump                                      |
+| `ssaged`    | `ssd`     | Simple dump & die                                |
+| `sagetrace` | `s(1)`    | Debug backtrace  (same as `\Sage::trace()`)      |
+|  ---        | `s(2)`    | Backtrace without the arguments - just the paths |
 
 ### Simple dump:
 
@@ -56,12 +57,19 @@ sage(1); // shortcut for dumping trace
 
 ### More cool stuff 🤯
 
-To output plain-text mode (no styling **AT ALL**) prefix with `~`. To return instead of echoing, prefix with `@`:
+Sage determines the **passed variable name** and as a side effect can detect all sort of prefixes to the call. Use it 
+for some common on-the-fly adjustments to the dump output.
+
+Examples:
 
 ```php
-~s($var); // outputs plain text
-$output = @ss(); // returns output
+~ss($var); // outputs plain text
+$output = @ss($var); // returns output instead of displaying it
+print sd($var); // saves output into "sage.html" in the current directory
++sage($var); // ignores depth limit for large objects
 ```
+
+See [Advanced section](#-advanced-tips--tricks) below for more tricks.
 
 ### Verbose versions
 
@@ -295,6 +303,7 @@ ss($GLOBALS, $_SERVER);
 // show a trace
 Sage::trace();
 s(1); // shorthand works too!
+s(2); // trace - but just the paths 
 Sage::dump( debug_backtrace() ); // you can even pass a custom result from debug_trace and it will be recognized
 
 // dump and die debugging
@@ -327,15 +336,16 @@ sd('Get off my lawn!'); // no effect
 
   For customization instructions read the section below.
 * If a variable is an object, its classname can be clicked to open the class in your IDE.
-* There are a couple of real-time modifiers you can use:
-    * `~s($var)` this call will output in plain text format.
-    * `+s($var)` will disregard depth level limits and output everything (careful, this can hang your browser on huge
-      objects)
-    * `!s($var)` will show uncollapsed rich output.
-    * `-s($var)` will attempt to `ob_clean` the previous output - useful when Sage is obscured by already present HTML.
+* There are several real-time prefix modifiers you can use (combinations possible):
 
-  [Here's a little bit](https://stackoverflow.com/a/69890023/179104) on how it works.
-
+  | Prefix |                                              | Example      |
+  |--------|----------------------------------------------|--------------|
+  | print  | Puts output into current DIR as sage.html    | print sage() |
+  | +      | Dump ignoring depth limits for large objects | + sage()     |
+  | ~      | Simplifies sage output (rich->html->plain)   | ~ sage()     |
+  | -      | Clean up any output before dumping           | - sage()     |
+  | !      | Expand all nodes (in rich view)              | ! sage()     |
+  | @      | Return output instead of displaying it       | @ sage()     |
 
 * Sage also includes a naïve profiler you may find handy. It's for determining relatively which code blocks take longer
   than others:

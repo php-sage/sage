@@ -67,7 +67,6 @@ $border: 1px solid $border-color;
     }
 
 
-
   }
 
   > dl dl {
@@ -86,6 +85,10 @@ $border: 1px solid $border-color;
     width: 15px;
     margin-right: 3px;
     vertical-align: middle;
+  }
+
+  dt._sage-parent {
+    cursor: pointer;
   }
 
   dt._sage-parent:hover nav {

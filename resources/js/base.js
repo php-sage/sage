@@ -100,26 +100,15 @@ if (typeof _sageInitialized === 'undefined') {
         switchTab: function (target) {
             let lis, el = target, index = 0;
 
-            target.parentNode.getElementsByClassName('_sage-active-tab')[0].className = '';
+            _sage.removeClass(target.parentNode.getElementsByClassName('_sage-active-tab')[0], '_sage-active-tab');
             target.className = '_sage-active-tab';
 
             // take the index of clicked title tab and make the same n-th content tab visible
             while (el = el.previousSibling) el.nodeType === 1 && index++;
+
             lis = target.parentNode.nextSibling.childNodes;
             for (let i = 0; i < lis.length; i++) {
-                if (i === index) {
-                    lis[i].style.display = 'block';
-
-                    if (lis[i].childNodes.length === 1) {
-                        el = lis[i].childNodes[0].childNodes[0];
-
-                        if (_sage.hasClass(el, '_sage-parent')) {
-                            _sage.toggle(el, false)
-                        }
-                    }
-                } else {
-                    lis[i].style.display = 'none';
-                }
+                lis[i].style.display = i === index ? 'block' : 'none';
             }
         },
 
@@ -289,9 +278,8 @@ if (typeof _sageInitialized === 'undefined') {
         } else if (_sage.hasClass(target, '_sage-ide-link')) {
             e.preventDefault();
             const ajax = new XMLHttpRequest(); // add ajax call to contact editor but prevent link default action
-            ajax.open('GET', target.href);
-            ajax.send(null);
-            return false;
+            ajax.open('get', target.href);
+            ajax.send();
         } else if (_sage.hasClass(target, '_sage-popup-trigger')) {
             let _sageContainer = target.parentNode;
             if (_sageContainer.nodeName.toLowerCase() === 'footer') {
@@ -326,6 +314,7 @@ if (typeof _sageInitialized === 'undefined') {
         // do nothing if alt/ctrl key is pressed or if we're actually typing somewhere
         if (e.target !== document.body || e.altKey || e.ctrlKey) return;
 
+        // todo use e.key https://www.toptal.com/developers/keycode
         const keyCode = e.keyCode
             , shiftKey = e.shiftKey
         let i = _sage.currentPlus;
