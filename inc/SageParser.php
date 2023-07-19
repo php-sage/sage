@@ -514,6 +514,7 @@ class SageParser
 
         if (method_exists($reflector, 'isEnum') && $reflector->isEnum()) {
             $variableData->size = 'enum';
+            $variableData->value = '"' . $variable->name . '"';
         }
 
         if ($variableData->size) {
@@ -648,11 +649,16 @@ class SageParser
             $originalVar[self::$_marker] = true;
         }
 
+        // don't stop sub-values from being parsed as normal (example: Eloquent model with Carbon column)
+        self::$parsingAlternative = false;
+
         if (is_array($alternativesArray)) {
             self::_parse_array($alternativesArray, $varData);
         } else {
             self::_parse_object($alternativesArray, $varData);
         }
+
+        self::$parsingAlternative = true;
 
         return $varData->extendedValue;
     }

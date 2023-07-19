@@ -8,6 +8,7 @@ class SageDecoratorsPlain
 {
     public static $firstRun = true;
     private static $_enableColors;
+    private static $levelColors = [];
 
     public static function decorate(SageVariableData $varData, $level = 0)
     {
@@ -19,7 +20,22 @@ class SageDecoratorsPlain
             $output .= self::_title($name);
         }
 
-        $space  = str_repeat($s = '    ', $level);
+        // make each level different-color
+        self::$levelColors = array_slice(self::$levelColors, 0, $level);
+        $s                 = '    ';
+        $space             = '';
+        if (Sage::enabled() === Sage::MODE_CLI) {
+            for ($i = 0; $i < $level; $i++) {
+                if (! array_key_exists($i, self::$levelColors)) {
+                    self::$levelColors[$i] = rand(1, 231);
+                }
+                $color = self::$levelColors[$i];
+                $space .= "\x1b[38;5;{$color}m┆\x1b[0m   ";
+            }
+        } else {
+            $space = str_repeat($s, $level);
+        }
+
         $output .= $space . self::_drawHeader($varData);
 
         if (isset($varData->extendedValue)) {
@@ -41,10 +57,10 @@ class SageDecoratorsPlain
                 // throw new RuntimeException();
                 // $output .= self::decorate($varData->extendedValue, $level + 1); // it's SageVariableData
             }
-            $output .= $space . ($varData->type === 'array' ? ']' : ')') . PHP_EOL;
-        } else {
-            $output .= PHP_EOL;
+            $output .= $space . ($varData->type === 'array' ? ']' : ')');
         }
+
+        $output .= PHP_EOL;
 
         return $output;
     }
@@ -158,17 +174,20 @@ class SageDecoratorsPlain
                 }
 
                 switch ($type) {
-                    case 'value':
+                    case 'key':
+                        $text = "<dfn>{$text}</dfn>";
+                        break;
+                    case 'access':
                         $text = "<i>{$text}</i>";
                         break;
-                    case 'key':
-                        // $text = $text;
+                    case 'value':
+                        $text = "<var>{$text}</var>";
                         break;
                     case 'type':
                         $text = "<b>{$text}</b>";
                         break;
                     case 'header':
-                        $text = "<header>{$text}</header>";
+                        $text = "<h1>{$text}</h1>";
                         break;
                 }
 
@@ -179,11 +198,31 @@ class SageDecoratorsPlain
                     return $text . $nl;
                 }
 
+                /*
+                 * Black       0;30     Dark Gray     1;30
+                 * Red         0;31     Light Red     1;31
+                 * Green       0;32     Light Green   1;32
+                 * Brown       0;33     Yellow        1;33
+                 * Blue        0;34     Light Blue    1;34
+                 * Purple      0;35     Light Purple  1;35
+                 * Cyan        0;36     Light Cyan    1;36
+                 * Light Gray  0;37     White         1;37
+                 *
+                 * Format:
+                 *   \x1b[[light];[color];[font]m
+                 *  light: 1/0
+                 *  color: 30-37
+                 *  font: 1 - bold, 3 - italic, 4 - underline, 7 - invert, 9 - strikethrough
+                 *
+                 * https://misc.flogisoft.com/bash/tip_colors_and_formatting
+                 */
+
                 $optionsMap = array(
-                    'key'   => "\x1b[33m",   // yellow
-                    'header' => "\x1b[36m",   // cyan
-                    'type'  => "\x1b[35;1m", // magenta bold
-                    'value' => "\x1b[32m",   // green
+                    'key'    => "\x1b[32m",
+                    'access' => "\x1b[3m",
+                    'header' => "\x1b[38;5;75m",
+                    'type'   => "\x1b[1m",
+                    'value'  => "\x1b[31m",
                 );
 
                 return $optionsMap[$type] . $text . "\x1b[0m" . $nl;
@@ -220,33 +259,33 @@ class SageDecoratorsPlain
 
     public static function wrapEnd($callee, $miniTrace, $prevCaller)
     {
-        $lastLine     = self::_colorize(str_repeat('═', 80), 'header');
-        $isHtml       = Sage::enabled() === Sage::MODE_PLAIN;
-        $lastChar     = $isHtml ? '</pre>' : '';
+        $lastLine     = str_repeat('═', 80);
+        $lastChar     = Sage::enabled() === Sage::MODE_PLAIN ? '</pre>' : '';
         $traceDisplay = '';
 
         if (! Sage::$displayCalledFrom) {
-            return $lastLine . $lastChar;
+            return self::_colorize($lastLine . $lastChar, 'header');
         }
 
         if (! empty($miniTrace)) {
-            $traceDisplay = $isHtml ? '<ol>' : PHP_EOL;
+            $traceDisplay = PHP_EOL;
             $i            = 0;
             foreach ($miniTrace as $step) {
-                $traceDisplay .= $isHtml ? '<li>' : '           ';
+                $traceDisplay .= '        ' . $i + 2 . '. ';
                 $traceDisplay .= SageHelper::ideLink($step['file'], $step['line']);
-                $traceDisplay .= $isHtml ? '' : PHP_EOL;
+                $traceDisplay .= PHP_EOL;
                 if ($i++ > 2) {
                     break;
                 }
             }
-            $traceDisplay .= $isHtml ? '</ol>' : '';
+            $traceDisplay .= '';
         }
 
-        return $lastLine
-            . self::_colorize(
-                'Call stack ' . SageHelper::ideLink($callee['file'], $callee['line']) . $traceDisplay,
-                'header'
+        return self::_colorize(
+                $lastLine . PHP_EOL
+                . 'Call stack ' . SageHelper::ideLink($callee['file'], $callee['line'])
+                . $traceDisplay,
+                'header',
             )
             . $lastChar;
     }
@@ -256,7 +295,7 @@ class SageDecoratorsPlain
         $output = '';
 
         if ($varData->access) {
-            $output .= ' ' . $varData->access;
+            $output .= ' ' . self::_colorize(SageHelper::esc($varData->access), 'access', false);
         }
 
         if ($varData->name !== null && $varData->name !== '') {
@@ -267,11 +306,12 @@ class SageDecoratorsPlain
             $output .= ' ' . $varData->operator;
         }
 
-        $output .= ' ' . self::_colorize($varData->type, 'type', false);
-
+        $type = $varData->type;
         if ($varData->size !== null) {
-            $output .= ' (' . $varData->size . ')';
+            $type .= ' (' . $varData->size . ')';
         }
+
+        $output .= ' ' . self::_colorize($type, 'type', false);
 
         if ($varData->value !== null && $varData->value !== '') {
             $output .= ' ' . self::_colorize($varData->value, 'value', false);
@@ -303,7 +343,11 @@ class SageDecoratorsPlain
         }
 
         return <<<'HTML'
-<style>._sage_plain i{color:#d00;font-style:normal}._sage_plain header{font-weight:bold;display:inline} ._sage_plain ol{padding-left:6em;margin:0}</style>
+<style>._sage_plain{text-shadow: #eee 0 0 7px;}._sage_plain *{display: inline;margin: 0;font-size: 1em}._sage_plain h1{color:#5aF}._sage_plain var{color:#d11}._sage_plain dfn{color:#3d3}._sage_plain a{color: inherit;filter: brightness(0.85);}</style>
+HTML
+            . <<<HTML
+<script>window.onload=function(){document.querySelectorAll('._sage_plain a').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();let X=new XMLHttpRequest;X.open('GET',e.target.href);X.send()}))}</script>
+
 HTML;
     }
 }

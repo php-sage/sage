@@ -233,6 +233,8 @@ class SageDecoratorsRich
             $calleeInfo = '<nav></nav>' . $calleeInfo;
         }
 
+        $callingFunction .= ' @ ' . date('Y-m-d H:i:s');
+
         return '<footer>'
             . '<span class="_sage-popup-trigger" title="Open in new window">&rarr;</span> '
             . "{$calleeInfo}{$callingFunction}{$traceDisplay}"

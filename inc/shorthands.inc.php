@@ -29,11 +29,11 @@
  *                  |-------|----------------------------------------------|
  *                  |       | Example:    `+ saged('magic');`              |
  *                  |-------|----------------------------------------------|
- *                  | +     | Dump ignoring depth limits for large objects |
+ *                  | !     | Dump ignoring depth limits for large objects |
  *                  | print | Puts output into current DIR as sage.html    |
  *                  | ~     | Simplifies sage output (rich->html->plain)   |
  *                  | -     | Clean up any output before dumping           |
- *                  | !     | Expand all nodes (in rich view)              |
+ *                  | +     | Expand all nodes (in rich view)              |
  *                  | @     | Return output instead of displaying it       |
  *                  |-------|----------------------------------------------|
  *
@@ -139,22 +139,17 @@ if (! function_exists('ssage')) {
      */
     function ssage()
     {
-        $enabled = Sage::enabled();
-        if (! $enabled) {
+        if (! Sage::enabled()) {
             return 5463;
         }
 
+        $simplify = Sage::$simplify;
+        Sage::$simplify = true;
         Sage::$aliases[] = __FUNCTION__;
 
-        if ($enabled !== Sage::MODE_TEXT_ONLY) { // if already in whitespace, don't elevate to plain
-            Sage::enabled( // remove cli colors in cli mode; remove rich interface in HTML mode
-                PHP_SAPI === 'cli' ? Sage::MODE_TEXT_ONLY : Sage::MODE_PLAIN
-            );
-        }
-
         $params = func_get_args();
-        $dump   = call_user_func_array(array('Sage', 'dump'), $params);
-        Sage::enabled($enabled);
+        $dump = call_user_func_array(array('Sage', 'dump'), $params);
+        Sage::$simplify = $simplify;
 
         return $dump;
     }
@@ -174,22 +169,17 @@ if (! function_exists('ss')) {
      */
     function ss()
     {
-        $enabled = Sage::enabled();
-        if (! $enabled) {
+        if (! Sage::enabled()) {
             return 5463;
         }
 
+        $simplify = Sage::$simplify;
+        Sage::$simplify = true;
         Sage::$aliases[] = __FUNCTION__;
 
-        if ($enabled !== Sage::MODE_TEXT_ONLY) { // if already in whitespace, don't elevate to plain
-            Sage::enabled( // remove cli colors in cli mode; remove rich interface in HTML mode
-                PHP_SAPI === 'cli' ? Sage::MODE_TEXT_ONLY : Sage::MODE_PLAIN
-            );
-        }
-
         $params = func_get_args();
-        $dump   = call_user_func_array(array('Sage', 'dump'), $params);
-        Sage::enabled($enabled);
+        $dump = call_user_func_array(array('Sage', 'dump'), $params);
+        Sage::$simplify = $simplify;
 
         return $dump;
     }
@@ -203,19 +193,12 @@ if (! function_exists('ssaged')) {
      */
     function ssaged()
     {
-        $enabled = Sage::enabled();
-        if (! $enabled) {
+        if (! Sage::enabled()) {
             return 5463;
         }
 
+        Sage::$simplify = true;
         Sage::$aliases[] = __FUNCTION__;
-
-        if ($enabled !== Sage::MODE_TEXT_ONLY) {
-            Sage::enabled(
-                PHP_SAPI === 'cli' ? Sage::MODE_TEXT_ONLY : Sage::MODE_PLAIN
-            );
-        }
-
         $params = func_get_args();
         call_user_func_array(array('Sage', 'dump'), $params);
         die;
@@ -230,19 +213,12 @@ if (! function_exists('ssd')) {
      */
     function ssd()
     {
-        $enabled = Sage::enabled();
-        if (! $enabled) {
+        if (! Sage::enabled()) {
             return 5463;
         }
 
+        Sage::$simplify = true;
         Sage::$aliases[] = __FUNCTION__;
-
-        if ($enabled !== Sage::MODE_TEXT_ONLY) {
-            Sage::enabled(
-                PHP_SAPI === 'cli' ? Sage::MODE_TEXT_ONLY : Sage::MODE_PLAIN
-            );
-        }
-
         $params = func_get_args();
         call_user_func_array(array('Sage', 'dump'), $params);
         die;

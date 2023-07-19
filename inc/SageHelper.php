@@ -15,7 +15,7 @@ class SageHelper
         'emacs'                  => 'emacs://open?url=file://%file&line=%line',
         'macvim'                 => 'mvim://open/?url=file://%file&line=%line',
         'phpstorm'               => 'phpstorm://open?file=%file&line=%line',
-        'phpstorm-plugin'        => 'http://localhost:63342/api/file/%file:%line',
+        'phpstorm-remote'        => 'http://localhost:63342/api/file/%file:%line',
         'idea'                   => 'idea://open?file=%file&line=%line',
         'vscode'                 => 'vscode://file/%file:%line',
         'vscode-insiders'        => 'vscode-insiders://file/%file:%line',
@@ -120,7 +120,7 @@ class SageHelper
                 if ($alias[0] === strtolower($step['class']) && $alias[1] === strtolower($step['function'])) {
                     return true;
                 }
-            }
+            } 
 
             return false;
         }
@@ -227,7 +227,7 @@ class SageHelper
         // MODE_PLAIN
         if (strpos($ideLink, 'http://') === 0) {
             return <<<HTML
-<a href="{$ideLink}"onclick="X=new XMLHttpRequest;X.open('GET',this.href);X.send();return!1">{$linkText}</a>
+<a href="{$ideLink}">{$linkText}</a>
 HTML;
         }
 

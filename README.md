@@ -27,7 +27,6 @@ require 'sage.phar';
 sage('Hello, 🌎!');
 ```
 
-
 ## Usage
 
 ```php
@@ -45,7 +44,7 @@ sage(1); // shortcut for dumping trace
 | `ssage`     | `ss`      | Simple dump                                      |
 | `ssaged`    | `ssd`     | Simple dump & die                                |
 | `sagetrace` | `s(1)`    | Debug backtrace  (same as `\Sage::trace()`)      |
-|  ---        | `s(2)`    | Backtrace without the arguments - just the paths |
+| ---         | `s(2)`    | Backtrace without the arguments - just the paths |
 
 ### Simple dump:
 
@@ -57,7 +56,7 @@ sage(1); // shortcut for dumping trace
 
 ### More cool stuff 🤯
 
-Sage determines the **passed variable name** and as a side effect can detect all sort of prefixes to the call. Use it 
+Sage determines the **passed variable name** and as a side effect can detect all sort of prefixes to the call. Use it
 for some common on-the-fly adjustments to the dump output.
 
 Examples:
@@ -65,8 +64,9 @@ Examples:
 ```php
 ~ss($var); // outputs plain text
 $output = @ss($var); // returns output instead of displaying it
+! sage($var); // ignores depth limit for large objects
 print sd($var); // saves output into "sage.html" in the current directory
-+sage($var); // ignores depth limit for large objects
+print ! sd($var); // saves output into "sage.html" while also ignoring the output depth limit!
 ```
 
 See [Advanced section](#-advanced-tips--tricks) below for more tricks.
@@ -132,9 +132,8 @@ Sage::$theme = Sage::THEME_LIGHT;
 
    Add this entry to the `autoload.files` configuration key in `composer.json`:
 
-```json
+```js
 "autoload": {
-  /* ... */
   "files": [
   "config/sage.php" /* <--------------- this line */
   ]
@@ -182,7 +181,7 @@ Make visible source file paths clickable to open your editor. Available options 
 * `'emacs'`
 * `'macvim'`
 * `'phpstorm'`
-* `'phpstorm-plugin'` - default,
+* `'phpstorm-remote'` - default,
   requires [IDE Remote Control](https://plugins.jetbrains.com/plugin/19991-ide-remote-control) plugin.
 * `'idea'`
 * `'vscode'`
@@ -296,6 +295,9 @@ Sage::dump($GLOBALS, $_SERVER);
 
 // ss() will display a more basic, javascript-free display (but with colors)
 ss($GLOBALS, $_SERVER);
+// to recap: s() or sage() - dumps. Add "d" to die afterwards: sd(), saged()
+// preppend "s" to simplify output: ss(), ssage().
+// works in combination, too: ssd() and ssagedd() will dump in "simple mode" and die!
 
 // prepending a tilde will make the output *even more basic* (rich->basic and basic->plain text)
 ~d($GLOBALS, $_SERVER); // more on modifiers below
@@ -316,7 +318,8 @@ Sage::enabled(false);
 sd('Get off my lawn!'); // no effect
 ```
 
-* Sage supports keyboard shortcuts! Just press <kbd>d</kbd> when viewing output and the rest is self-explanatory (p.s.
+* Sage supports keyboard shortcuts! Just press <kbd>d</kbd> when viewing output and the rest is self-explanatory, try it
+  out! (p.s.
   vim-style `hjkl` works as well);
 * Call `Sage::enabled(Sage::MODE_PLAIN);` to switch to a simpler, js-free output.
 * Call `Sage::enabled(Sage::MODE_TEXT_ONLY);` for pure-plain text output which you can save or pass around by first
@@ -341,17 +344,17 @@ sd('Get off my lawn!'); // no effect
   | Prefix |                                              | Example      |
   |--------|----------------------------------------------|--------------|
   | print  | Puts output into current DIR as sage.html    | print sage() |
-  | +      | Dump ignoring depth limits for large objects | + sage()     |
+  | !      | Dump ignoring depth limits for large objects | ! sage()     |
   | ~      | Simplifies sage output (rich->html->plain)   | ~ sage()     |
   | -      | Clean up any output before dumping           | - sage()     |
-  | !      | Expand all nodes (in rich view)              | ! sage()     |
+  | +      | Expand all nodes (in rich view)              | + sage()     |
   | @      | Return output instead of displaying it       | @ sage()     |
 
 * Sage also includes a naïve profiler you may find handy. It's for determining relatively which code blocks take longer
   than others:
 
 ```php
-Sage::dump( microtime() ); // just pass microtime()
+Sage::dump( microtime() ); // just pass microtime() - also works if you pass NOTHING: s();
 sleep( 1 );
 Sage::dump( microtime(), 'after sleep(1)' );
 sleep( 2 );
@@ -395,10 +398,10 @@ sd( microtime(), 'final call, after sleep(2)' );
 ### 💬 Why does Sage look so much like Kint? A.K.A. Why does this have so few stars?
 
 Because it <b>is</b> Kint, and I am its author, however the project was [**forcibly taken over
-**](https://github.com/kint-php/kint/commit/1ea81f3add81b586756515673f8364f60feb86a3) from me by a malicious
+**](https://github.com/kint-php/kint/commit/1ea81f3add81b586756515673f8364f60feb86a3) by a malicious
 contributor!
 
-Instead of fighting DMCA windmills, I chose to fork and rename the last **good** version and continue under a new name!
+Instead of fighting DMCA windmills, I chose to fork and rename the last good version and continue under a new name!
 
 You can use Sage as a drop-in replacement for Kint. Simple.
 

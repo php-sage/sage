@@ -44,14 +44,12 @@ if (typeof _sageInitialized === 'undefined') {
         next: function (element) {
             do {
                 element = element.nextElementSibling;
-            } while (element.nodeName.toLowerCase() !== 'dd');
+            } while (element && element.tagName !== 'DD');
 
             return element;
         },
 
         toggle: function (element, hide) {
-            let parent = _sage.next(element);
-
             if (typeof hide === 'undefined') {
                 hide = _sage.hasClass(element);
             }
@@ -62,7 +60,9 @@ if (typeof _sageInitialized === 'undefined') {
                 _sage.addClass(element);
             }
 
-            if (parent.childNodes.length === 1) {
+            // also open up child element if there's only one
+            let parent = _sage.next(element);
+            if (parent && parent.childNodes.length === 1) {
                 parent = parent.childNodes[0].childNodes[0]; // reuse variable cause I can
 
                 // parent is checked in case of empty <pre> when array("\n") is dumped
@@ -187,7 +187,6 @@ if (typeof _sageInitialized === 'undefined') {
                     const el = _sage.visiblePluses[i];
                     _sage.addClass(el, focusedClass);
 
-
                     const offsetTop = function (el) {
                         return el.offsetTop + (el.offsetParent ? offsetTop(el.offsetParent) : 0);
                     };
@@ -219,18 +218,18 @@ if (typeof _sageInitialized === 'undefined') {
 
     window.addEventListener("click", function (e) {
         let target = e.target
-            , nodeName = target.nodeName.toLowerCase();
+            , tagName = target.tagName;
 
         if (!_sage.isSibling(target)) return;
 
         // auto-select name of variable
-        if (nodeName === 'dfn') {
+        if (tagName === 'DFN') {
             _sage.selectText(target);
             target = target.parentNode;
-        } else if (nodeName === 'var') { // stupid workaround for misc elements
+        } else if (tagName === 'VAR') { // stupid workaround for misc elements
             target = target.parentNode;    // to not stop event from further propagating
-            nodeName = target.nodeName.toLowerCase()
-        } else if (nodeName === 'th') {
+            tagName = target.tagName;
+        } else if (tagName === 'TH') {
             if (!e.ctrlKey) {
                 _sage.sortTable(target.parentNode.parentNode.parentNode, target.cellIndex, target)
             }
@@ -238,7 +237,7 @@ if (typeof _sageInitialized === 'undefined') {
         }
 
         // switch tabs
-        if (nodeName === 'li' && target.parentNode.className === '_sage-tabs') {
+        if (tagName === 'LI' && target.parentNode.className === '_sage-tabs') {
             if (target.className !== '_sage-active-tab') {
                 _sage.switchTab(target);
                 if (_sage.currentPlus !== -1) _sage.fetchVisiblePluses();
@@ -247,15 +246,11 @@ if (typeof _sageInitialized === 'undefined') {
         }
 
         // handle clicks on the navigation caret
-        if (nodeName === 'nav') {
+        if (tagName === 'NAV') {
             // special case for nav in footer
-            if (target.parentNode.nodeName.toLowerCase() === 'footer') {
+            if (target.parentNode.tagName === 'FOOTER') {
                 target = target.parentNode;
-                if (_sage.hasClass(target)) {
-                    _sage.removeClass(target)
-                } else {
-                    _sage.addClass(target)
-                }
+                _sage.toggle(target)
             } else {
                 // ensure doubleclick has different behaviour, see below
                 setTimeout(function () {
@@ -282,7 +277,7 @@ if (typeof _sageInitialized === 'undefined') {
             ajax.send();
         } else if (_sage.hasClass(target, '_sage-popup-trigger')) {
             let _sageContainer = target.parentNode;
-            if (_sageContainer.nodeName.toLowerCase() === 'footer') {
+            if (_sageContainer.tagName === 'FOOTER') {
                 _sageContainer = _sageContainer.previousSibling;
             } else {
                 while (_sageContainer && !_sage.hasClass(_sageContainer, '_sage-parent')) {
@@ -291,7 +286,7 @@ if (typeof _sageInitialized === 'undefined') {
             }
 
             _sage.openInNewWindow(_sageContainer);
-        } else if (nodeName === 'pre' && e.detail === 3) { // triple click pre to select it all
+        } else if (tagName === 'PRE' && e.detail === 3) { // triple click pre to select it all
             _sage.selectText(target);
         }
     }, false);
@@ -300,7 +295,7 @@ if (typeof _sageInitialized === 'undefined') {
         const target = e.target;
         if (!_sage.isSibling(target)) return;
 
-        if (target.nodeName.toLowerCase() === 'nav') {
+        if (target.tagName === 'NAV') {
             target._sageTimer = 2;
             _sage.toggleAll(target);
             if (_sage.currentPlus !== -1) _sage.fetchVisiblePluses();
@@ -312,7 +307,7 @@ if (typeof _sageInitialized === 'undefined') {
     window.onkeydown = function (e) { // direct assignment is used to have priority over ex FAYT
 
         // do nothing if alt/ctrl key is pressed or if we're actually typing somewhere
-        if (e.target !== document.body || e.altKey || e.ctrlKey) return;
+        if (["INPUT", "TEXTAREA"].includes(e.target.tagName) || e.altKey || e.ctrlKey) return;
 
         // todo use e.key https://www.toptal.com/developers/keycode
         const keyCode = e.keyCode
@@ -320,7 +315,12 @@ if (typeof _sageInitialized === 'undefined') {
         let i = _sage.currentPlus;
 
 
-        if (keyCode === 68) { // 'd' : toggles navigation on/off
+        if (keyCode === 9) { // TAB jumps out of navigation
+            _sage.keyCallBacks.cleanup(-1);
+
+            return;
+            // todo 's' too
+        } else if (keyCode === 68) { // 'd' : toggles navigation on/off
             if (i === -1) {
                 _sage.fetchVisiblePluses();
                 return _sage.keyCallBacks.moveCursor(false, i);
@@ -331,9 +331,7 @@ if (typeof _sageInitialized === 'undefined') {
         } else {
             if (i === -1) return;
 
-            if (keyCode === 9) { // TAB : moves up/down depending on shift key
-                return _sage.keyCallBacks.moveCursor(shiftKey, i);
-            } else if (keyCode === 38) { // ARROW UP : moves up
+            if (keyCode === 38) { // ARROW UP : moves up
                 return _sage.keyCallBacks.moveCursor(true, i);
             } else if (keyCode === 40) { // ARROW DOWN : down
                 return _sage.keyCallBacks.moveCursor(false, i);
@@ -341,10 +339,10 @@ if (typeof _sageInitialized === 'undefined') {
         }
 
 
-        let _sageNode = _sage.visiblePluses[i];
-        if (_sageNode.nodeName.toLowerCase() === 'li') { // we're on a trace tab
+        let currentNav = _sage.visiblePluses[i];
+        if (currentNav.tagName === 'LI') { // we're on a trace tab
             if (keyCode === 32 || keyCode === 13) { // SPACE/ENTER
-                _sage.switchTab(_sageNode);
+                _sage.switchTab(currentNav);
                 _sage.fetchVisiblePluses();
                 return _sage.keyCallBacks.moveCursor(true, i);
             } else if (keyCode === 39) { // arrows
@@ -354,37 +352,48 @@ if (typeof _sageInitialized === 'undefined') {
             }
         }
 
-        _sageNode = _sageNode.parentNode; // simple dump
+        // we are on a regular/footer [+]
+
+        currentNav = currentNav.parentNode; // simple dump
+
+        if (currentNav.tagName === 'FOOTER') {
+            if (keyCode === 32 || keyCode === 13) { // SPACE/ENTER : toggles
+                _sage.toggle(currentNav);
+
+                return false;
+            }
+        }
+
         if (keyCode === 32 || keyCode === 13) { // SPACE/ENTER : toggles
-            _sage.toggle(_sageNode);
+            _sage.toggle(currentNav);
             _sage.fetchVisiblePluses();
             return false;
         } else if (keyCode === 39 || keyCode === 37) { // ARROW LEFT/RIGHT : respectively hides/shows and traverses
-            const visible = _sage.hasClass(_sageNode);
+            const visible = _sage.hasClass(currentNav);
             const hide = keyCode === 37;
 
             if (visible) {
-                _sage.toggleChildren(_sageNode, hide); // expand/collapse all children if immediate ones are showing
+                _sage.toggleChildren(currentNav, hide); // expand/collapse all children if immediate ones are showing
             } else {
                 if (hide) { // LEFT
                     // traverse to parent and THEN hide
                     do {
-                        _sageNode = _sageNode.parentNode
-                    } while (_sageNode && _sageNode.nodeName.toLowerCase() !== 'dd');
+                        currentNav = currentNav.parentNode
+                    } while (currentNav && currentNav.tagName !== 'DD');
 
-                    if (_sageNode) {
-                        _sageNode = _sageNode.previousElementSibling;
+                    if (currentNav) {
+                        currentNav = currentNav.previousElementSibling;
 
                         i = -1;
-                        const parentPlus = _sageNode.querySelector('nav');
+                        const parentPlus = currentNav.querySelector('nav');
                         while (parentPlus !== _sage.visiblePluses[++i]) {
                         }
                         _sage.keyCallBacks.cleanup(i)
                     } else { // we are at root
-                        _sageNode = _sage.visiblePluses[i].parentNode;
+                        currentNav = _sage.visiblePluses[i].parentNode;
                     }
                 }
-                _sage.toggle(_sageNode, hide);
+                _sage.toggle(currentNav, hide);
             }
             _sage.fetchVisiblePluses();
             return false;

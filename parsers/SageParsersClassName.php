@@ -19,7 +19,7 @@ class SageParsersClassName extends SageParser
             return false;
         }
 
-        if (SageHelper::isHtmlMode()) {
+        if (SageHelper::isRichMode()) {
             $varData->addTabToView(
                 $variable,
                 'Existing class',
@@ -30,8 +30,19 @@ class SageParsersClassName extends SageParser
                 )
             );
         } else {
-            $varData->extendedValue =
-                'Existing class: ' . $reflector->getFileName() . ':' . $reflector->getStartLine();
+            if (SageHelper::isHtmlMode()) {
+                $varData->extendedValue =
+                    array(
+                        'Existing class' => SageHelper::ideLink(
+                            $reflector->getFileName(),
+                            $reflector->getStartLine(),
+                            $reflector->getShortName()
+                        )
+                    );
+            } else {
+                $varData->extendedValue =
+                    array('Existing class' => $reflector->getFileName() . ':' . $reflector->getStartLine());
+            }
         }
     }
 }

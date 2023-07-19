@@ -82,37 +82,49 @@ class SageParsersSplFileInfo extends SageParser
             $flags[] = (($perms & 0x0002) ? 'w' : '-');
             $flags[] = (($perms & 0x0001) ? (($perms & 0x0200) ? 't' : 'x') : (($perms & 0x0200) ? 'T' : '-'));
 
-            if ($type === 'Directory') {
-                $name = 'Existing Directory';
-            } else {
-                $size = self::humanFilesize($fileInfo->getSize());
-                $name = "Existing {$type} [$size]";
-            }
-
-            $extra = array(
-                'realPath' => $fileInfo->getRealPath(),
-                'flags'    => implode($flags),
-            );
-
-            if ($fileInfo->getGroup() || $fileInfo->getOwner()) {
-                $extra['group&owner'] = $fileInfo->getGroup() . ':' . $fileInfo->getOwner();
-            }
-
-            $extra['created']  = date('Y-m-d H:i:s', $fileInfo->getCTime());
-            $extra['modified'] = date('Y-m-d H:i:s', $fileInfo->getMTime());
-            $extra['accessed'] = date('Y-m-d H:i:s', $fileInfo->getATime());
-
-            if ($fileInfo->isLink()) {
-                $extra['link']       = 'true';
-                $extra['linkTarget'] = $fileInfo->getLinkTarget();
-            }
-
             $varData->type = get_class($fileInfo);
 
-            if (SageHelper::isRichMode()) {
-                $varData->addTabToView($variable, $name, $extra);
+            if ($type === 'Directory') {
+                $name = 'Existing Directory';
+                $size = iterator_count(
+                        new FilesystemIterator($fileInfo->getRealPath(), FilesystemIterator::SKIP_DOTS)
+                    ) . ' item(s)';
             } else {
-                $varData->extendedValue = [$name => ''] + $extra;
+                $name = "Existing {$type}";
+                $size = self::humanFilesize($fileInfo->getSize());
+            }
+
+            $extra = array();
+
+            if ($fileInfo->getRealPath() !== $fileInfo->getPathname()) {
+                $extra['realPath'] = $fileInfo->getRealPath();
+            }
+
+            if (SageHelper::isRichMode()) {
+                $extra['flags'] = implode($flags);
+
+                if ($fileInfo->getGroup() || $fileInfo->getOwner()) {
+                    $extra['group&owner'] = $fileInfo->getGroup() . ':' . $fileInfo->getOwner();
+                }
+
+                $extra['created']  = date('Y-m-d H:i:s', $fileInfo->getCTime());
+                $extra['modified'] = date('Y-m-d H:i:s', $fileInfo->getMTime());
+                $extra['accessed'] = date('Y-m-d H:i:s', $fileInfo->getATime());
+
+                if ($fileInfo->isLink()) {
+                    $extra['link']       = 'true';
+                    $extra['linkTarget'] = $fileInfo->getLinkTarget();
+                }
+
+                $varData->addTabToView($variable, $name . " [{$size}]", $extra);
+            } else {
+                if ($type === 'Directory') {
+                    $extended = array('Existing Directory' => $fileInfo->getFilename());
+                } else {
+                    $extended = array("Existing {$type}" => self::humanFilesize($fileInfo->getSize()));
+                }
+
+                $varData->extendedValue = array($name => $size) + $extra;
             }
         } catch (Exception $e) {
             return false;

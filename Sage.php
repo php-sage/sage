@@ -67,7 +67,7 @@ class Sage
      *   'emacs'                  => 'emacs://open?url=file://%file&line=%line',
      *   'macvim'                 => 'mvim://open/?url=file://%file&line=%line',
      *   'phpstorm'               => 'phpstorm://open?file=%file&line=%line',
-     *   'phpstorm-plugin'        => 'http://localhost:63342/api/file/%file:%line',
+     *   'phpstorm-remote'        => 'http://localhost:63342/api/file/%file:%line',
      *   'idea'                   => 'idea://open?file=%file&line=%line',
      *   'vscode'                 => 'vscode://file/%file:%line',
      *   'vscode-insiders'        => 'vscode-insiders://file/%file:%line',
@@ -84,13 +84,13 @@ class Sage
      *
      * Example:
      *             // works with for PHPStorm and IDE Remote Control Plugin
-     *             Sage::$editor = 'phpstorm-plugin';
+     *             Sage::$editor = 'phpstorm-remote';
      * Example:
      *             // same result as above, but explicitly defined
      *             Sage::$editor = 'http://localhost:63342/api/file/f:%line';
      *
      * Default:
-     *             ini_get('xdebug.file_link_format') ?: 'phpstorm-plugin'
+     *             ini_get('xdebug.file_link_format') ?: 'phpstorm-remote'
      *
      */
     public static $editor;
@@ -214,6 +214,9 @@ class Sage
      */
     public static $aliases = [];
 
+    /** @var bool @internal */
+    public static $simplify = false;
+
     /*
      *     ██████╗ ██████╗ ███╗   ██╗███████╗████████╗ █████╗ ███╗   ██╗████████╗███████╗
      *    ██╔════╝██╔═══██╗████╗  ██║██╔════╝╚══██╔══╝██╔══██╗████╗  ██║╚══██╔══╝██╔════╝
@@ -311,11 +314,11 @@ class Sage
      *           |-------|----------------------------------------------|
      *           |       | Example:    `+ saged('magic');`              |
      *           |-------|----------------------------------------------|
-     *           | +     | Dump ignoring depth limits for large objects |
+     *           | !     | Dump ignoring depth limits for large objects |
      *           | print | Puts output into current DIR as sage.html    |
      *           | ~     | Simplifies sage output (rich->html->plain)   |
      *           | -     | Clean up any output before dumping           |
-     *           | !     | Expand all nodes (in rich view)              |
+     *           | +     | Expand all nodes (in rich view)              |
      *           | @     | Return output instead of displaying it       |
      *           |-------|----------------------------------------------|
      * ```
@@ -341,32 +344,53 @@ class Sage
      */
     public static function dump($data = null)
     {
-        $enabledMode = self::enabled();
-        if (! $enabledMode) {
+        $enabledModeOriginal = self::enabled();
+
+        if (! $enabledModeOriginal) {
             return 5463;
         }
 
         self::_init();
 
-        list($names, $modifiers, $callee, $previousCaller, $miniTrace) = self::_getCalleeInfo(
+        [$names, $modifiers, $callee, $previousCaller, $miniTrace] = self::_getCalleeInfo(
             defined('DEBUG_BACKTRACE_IGNORE_ARGS')
                 ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)
                 : debug_backtrace()
         );
 
         // auto-detect mode if not explicitly set
-        if (! in_array($enabledMode, array(
-            self::MODE_RICH,
-            self::MODE_TEXT_ONLY,
-            self::MODE_CLI,
-            self::MODE_PLAIN
-        ), true)) {
-            if (self::$outputFile && substr(self::$outputFile, -5) === '.html') {
+        if ($enabledModeOriginal === true) {
+            if (! empty($modifiers) && strpos($modifiers, 'print') !== false && isset($callee['file'])) {
+                $newMode = self::MODE_RICH;
+            } elseif (self::$outputFile && substr(self::$outputFile, -5) === '.html') {
                 $newMode = self::MODE_RICH;
             } else {
-                $newMode = (PHP_SAPI === 'cli' && self::$cliDetection === true)
+                $newMode = PHP_SAPI === 'cli' && self::$cliDetection === true
                     ? self::MODE_CLI
                     : self::MODE_RICH;
+            }
+
+            if (self::$simplify) {
+                switch ($newMode) {
+                    case self::MODE_RICH:
+                        $newMode = self::MODE_PLAIN;
+                        break;
+                    case self::MODE_CLI:
+                        $newMode = self::MODE_TEXT_ONLY;
+                        break;
+                }
+            }
+
+            if (! empty($modifiers) && strpos($modifiers, '~') !== false) {
+                switch ($newMode) {
+                    case self::MODE_RICH:
+                        $newMode = self::MODE_PLAIN;
+                        break;
+                    case self::MODE_PLAIN:
+                    case self::MODE_CLI:
+                        $newMode = self::MODE_TEXT_ONLY;
+                        break;
+                }
             }
 
             self::enabled($newMode);
@@ -386,45 +410,28 @@ class Sage
                 ob_end_clean();
             }
         }
-        if (! empty($modifiers) && strpos($modifiers, '!') !== false) {
+        if (! empty($modifiers) && strpos($modifiers, '+') !== false) {
             $expandedByDefaultOldValue = self::$expandedByDefault;
             self::$expandedByDefault   = true;
         }
-        if (! empty($modifiers) && strpos($modifiers, '+') !== false) {
+
+        if (! empty($modifiers) && strpos($modifiers, '!') !== false) {
             $maxLevelsOldValue = self::$maxLevels;
             self::$maxLevels   = false;
         }
+
         if (! empty($modifiers) && strpos($modifiers, '@') !== false) {
             $returnOldValue     = self::$returnOutput;
             self::$returnOutput = true;
         }
+
         if (self::$returnOutput) {
             $decorator::$firstRun = true;
         }
-        if (! empty($modifiers) && strpos($modifiers, '~') !== false) {
-            // restore values for whatever decorator was set previously
-            $decorator::$firstRun = $firstRunOldValue;
-
-            // simplify mode
-            $decorator        = 'SageDecoratorsPlain';
-            $firstRunOldValue = $decorator::$firstRun;
-            if ($enabledMode !== self::MODE_TEXT_ONLY) { // if not already in plainest mode...
-                self::enabled( // remove cli colors in cli mode; remove rich interface in HTML mode
-                    $enabledMode === self::MODE_PLAIN ? self::MODE_TEXT_ONLY : self::MODE_PLAIN
-                );
-            }
-
-            // process modifier combinations
-            if (strpos($modifiers, '-') !== false) {
-                $decorator::$firstRun = true;
-            }
-        }
 
         if (! empty($modifiers) && strpos($modifiers, 'print') !== false && isset($callee['file'])) {
-            self::enabled(Sage::MODE_RICH);
             $outputFileOldValue = self::$outputFile;
             self::$outputFile   = dirname($callee['file']) . '/sage.html';
-            $decorator          = 'SageDecoratorsRich';
         }
 
         if (self::$outputFile && ! isset(self::$_openedFile[self::$outputFile])) {
@@ -489,7 +496,7 @@ class Sage
                     // displayed names might be wrong, at least don't throw an error
                     $output .= call_user_func(
                         array($decorator, 'decorate'),
-                        SageParser::process($argument, isset($names[$k]) ? $names[$k] : '')
+                        SageParser::process($argument, empty($names[$k]) ? '???' : $names[$k]),
                     );
                 }
             }
@@ -508,7 +515,7 @@ class Sage
             fwrite(self::$_openedFile[self::$outputFile], $output);
         }
 
-        self::enabled($enabledMode);
+        self::enabled($enabledModeOriginal);
 
         $decorator::$firstRun = false;
         if (! empty($modifiers)) {
@@ -516,12 +523,23 @@ class Sage
                 $decorator::$firstRun = $firstRunOldValue;
             }
 
-            if (strpos($modifiers, '!') !== false) {
+            if (strpos($modifiers, '+') !== false) {
                 self::$expandedByDefault = $expandedByDefaultOldValue;
             }
 
-            if (strpos($modifiers, '+') !== false) {
+            if (strpos($modifiers, '!') !== false) {
                 self::$maxLevels = $maxLevelsOldValue;
+            }
+
+            if (! empty($modifiers) && strpos($modifiers, 'print') !== false && isset($callee['file'])) {
+                $tmp              = self::$outputFile;
+                self::$outputFile = $outputFileOldValue;
+
+                if (strpos($modifiers, '@') === false) {
+                    echo 'Sage -> ' . $tmp . PHP_EOL;
+                }
+
+                return 5463;
             }
 
             if (strpos($modifiers, '@') !== false) {
@@ -529,12 +547,6 @@ class Sage
                 $decorator::$firstRun = $firstRunOldValue;
 
                 return $output;
-            }
-            if (! empty($modifiers) && strpos($modifiers, 'print') !== false && isset($callee['file'])) {
-                $tmp              = self::$outputFile;
-                self::$outputFile = $outputFileOldValue;
-
-                return 'Sage -> ' . $tmp . PHP_EOL;
             }
         }
 
@@ -655,6 +667,15 @@ class Sage
         }
 
         // open the file and read it up to the position where the function call expression ended
+        // TODO since PHP 8.2 backtrace reports the lineno of the function/method name!
+        // https://github.com/php/php-src/pull/8818
+        //        $file = new SplFileObject($callee['file']);
+        //        do {
+        //            $file->seek($callee['line']);
+        //            $contents = $file->current(); // $contents would hold the data from line x
+        //
+        //        } while (! $file->eof());
+
         $file   = fopen($callee['file'], 'r');
         $line   = 0;
         $source = '';
@@ -681,7 +702,7 @@ class Sage
             [\x07{(]
 
             # search for modifiers (group 1)
-            ([-+!@~]|print*)?
+            ([print\x07-+!@~]*)?
 
             # spaces
             \x07*
@@ -716,7 +737,7 @@ class Sage
             return array(array(), $modifiers, $callee, $previousCaller, $miniTrace);
         }
 
-        $modifiers    = $modifiers[0];
+        $modifiers    = str_replace("\x07", '', $modifiers[0]);
         $paramsString = preg_replace("[\x07+]", ' ', substr($source, $bracket[1] + 1));
         // we now have a string like this:
         // <parameters passed>); <the rest of the last read line>
@@ -773,24 +794,14 @@ class Sage
         }
 
         // by now we have an un-nested arguments list, lets make it to an array for processing further
-        $arguments = explode(',', preg_replace("[\x07+]", "\x07", $paramsString));
+        $arguments = explode(',', preg_replace("[\x07+]", '...', $paramsString));
 
         // test each argument whether it was passed literary or was it an expression or a variable name
-        $parameters = array();
-        $blacklist  = array('null', 'true', 'false', "array(\x07)", 'array()', "\"\x07\"", '[\x07]', 'b\"\x07\"',);
-        foreach ($arguments as $argument) {
+        foreach ($arguments as &$argument) {
             $argument = trim($argument);
-
-            if (is_numeric($argument)
-                || in_array(str_replace("'", '"', strtolower($argument)), $blacklist, true)
-            ) {
-                $parameters[] = null;
-            } else {
-                $parameters[] = $argument;
-            }
         }
 
-        return array($parameters, $modifiers, $callee, $previousCaller, $miniTrace);
+        return array($arguments, $modifiers, $callee, $previousCaller, $miniTrace);
     }
 
     /**
@@ -999,7 +1010,7 @@ class Sage
         // 4. Load default from Sage
         self::_initSetting(
             'editor',
-            ini_get('xdebug.file_link_format') ? ini_get('xdebug.file_link_format') : 'phpstorm-plugin'
+            ini_get('xdebug.file_link_format') ? ini_get('xdebug.file_link_format') : 'phpstorm-remote'
         );
         self::_initSetting('fileLinkServerPath', null);
         self::_initSetting('fileLinkLocalPath', null);

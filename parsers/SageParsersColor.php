@@ -5,7 +5,7 @@
  */
 class SageParsersColor extends SageParser
 {
-    private static $_css3Named = array(
+    private static $colorNames = array(
         'aliceblue'            => '#f0f8ff',
         'antiquewhite'         => '#faebd7',
         'aqua'                 => '#00ffff',
@@ -166,11 +166,13 @@ class SageParsersColor extends SageParser
 
         $variants = self::_convert($variable);
         $value    = <<<HTML
-<div style="background:{$variable}" class="_sage-color-preview">{$variable}</div>
-<strong>hex :</strong> {$variants['hex']}
-<strong>rgb :</strong> {$variants['rgb']}
-<strong>hsl :</strong> {$variants['hsl']}
+<div style="background:{$variable}" class="_sage-color-preview">{$variable}</div><strong>hex:</strong> {$variants['hex']}
+<strong>rgb:</strong> {$variants['rgb']}
+<strong>hsl:</strong> {$variants['hsl']}
 HTML;
+        if (array_key_exists('name', $variants)) {
+            $value .= PHP_EOL . "<strong>css:</strong> {$variants['name']}";
+        }
 
         $varData->addTabToView($variable, 'CSS color', $value);
     }
@@ -191,7 +193,7 @@ HTML;
 
         $var = strtolower(trim($variable));
 
-        return isset(self::$_css3Named[$var])
+        return isset(self::$colorNames[$var])
             || preg_match(
                 '/^(?:#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|(?:rgb|hsl)a?\s*\((?:\s*[0-9.%]+\s*,?){3,4}\))$/',
                 $var
@@ -209,9 +211,9 @@ HTML;
             'hsl'  => null,
         );
 
-        if (isset(self::$_css3Named[$color])) {
+        if (isset(self::$colorNames[$color])) {
             $variants['name'] = $color;
-            $color            = self::$_css3Named[$color];
+            $color            = self::$colorNames[$color];
         }
 
         if ($color[0] === '#') {
@@ -298,7 +300,7 @@ HTML;
                     break;
                 case 'name':
                     // [!] name in initial variants array must go after hex
-                    if (($key = array_search($variants['hex'], self::$_css3Named, true)) !== false) {
+                    if (($key = array_search($variants['hex'], self::$colorNames, true)) !== false) {
                         $variant = $key;
                     } else {
                         unset($variants[$type]);
