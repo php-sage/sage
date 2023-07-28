@@ -5,8 +5,6 @@
  */
 class SageParsersClassStatics extends SageParser
 {
-    private static $constsCache = array();
-
     protected static function parse(&$variable, $varData)
     {
         if (! SageHelper::isRichMode() || ! SageHelper::php53orLater() || ! is_object($variable)) {
@@ -43,43 +41,6 @@ class SageParsersClassStatics extends SageParser
             $output->operator = '::';
             $statics[]        = $output;
         }
-
-        if (! isset(self::$constsCache[$class])) {
-            $constants = [];
-
-            if (method_exists($reflection, 'getReflectionConstants')) {
-                foreach ($reflection->getReflectionConstants() as $constant) {
-                    $val            = $constant->getValue();
-                    $output         = SageParser::process($val, $constant->getName());
-                    $output->access = '';
-                    if (method_exists($constant, 'isFinal') && $constant->isFinal()) {
-                        $output->access .= 'final ';
-                    }
-                    if ($constant->isPrivate()) {
-                        $output->access .= 'private ';
-                    }
-                    if ($constant->isPrivate()) {
-                        $output->access .= 'protected ';
-                    }
-                    $output->access   .= 'const';
-                    $output->operator = '::';
-
-                    $constants[] = $output;
-                }
-            } else {
-                foreach ($reflection->getConstants() as $name => $val) {
-                    $output           = SageParser::process($val, $name);
-                    $output->access   = 'const';
-                    $output->operator = '::';
-
-                    $constants[] = $output;
-                }
-            }
-
-            self::$constsCache[$class] = $constants;
-        }
-
-        $statics = array_merge($statics, self::$constsCache[$class]);
 
         if (empty($statics)) {
             return false;
