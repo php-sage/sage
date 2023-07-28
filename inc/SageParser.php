@@ -9,14 +9,14 @@ class SageParser
     public static $replacesAllOtherParsers = false;
 
     private static $_level = 0;
-    /** @var SageParser[] $parser */
+    /** @var string[]|SageParser[] $parser */
     private static $_parsers = array();
     /** @var array<string, true> */
     private static $_objects;
     /** @var string */
     private static $_marker;
 
-    private static $parsingAlternative = false;
+    private static $parsingAlternative = [];
 
     private static $_placeFullStringInValue = false;
 
@@ -103,23 +103,22 @@ class SageParser
         }
 
         // first go through alternative parsers (eg.: json detection)
-        if (! self::$parsingAlternative) {
-            self::$parsingAlternative = true;
-
-            foreach (self::$_parsers as $parser) {
-                $parseResult = $parser::parse($variable, $varData);
-
-                // if var was parsed by "can only be one"-parser - return here
-                if ($parseResult !== false && $parser::$replacesAllOtherParsers === true) {
-                    self::$parsingAlternative = false;
-                    self::$_level             = $revert['level'];
-                    self::$_objects           = $revert['objects'];
-
-                    return $varData;
-                }
+        foreach (self::$_parsers as $parser) {
+            if (array_key_exists($parser, self::$parsingAlternative)) {
+                continue;
             }
+            self::$parsingAlternative[$parser] = true;
+            $parseResult                       = $parser::parse($variable, $varData);
 
-            self::$parsingAlternative = false;
+            // if var was parsed by "can only be one"-parser - return here
+            if ($parseResult !== false && $parser::$replacesAllOtherParsers === true) {
+                unset(self::$parsingAlternative[$parser]);
+                self::$_level   = $revert['level'];
+                self::$_objects = $revert['objects'];
+
+                return $varData;
+            }
+            unset(self::$parsingAlternative[$parser]);
         }
 
         // todo still run internal types and blacklist - what to do with eg smarty
@@ -513,7 +512,7 @@ class SageParser
         }
 
         if (method_exists($reflector, 'isEnum') && $reflector->isEnum()) {
-            $variableData->size = 'enum';
+            $variableData->size  = 'enum';
             $variableData->value = '"' . $variable->name . '"';
         }
 
@@ -649,16 +648,11 @@ class SageParser
             $originalVar[self::$_marker] = true;
         }
 
-        // don't stop sub-values from being parsed as normal (example: Eloquent model with Carbon column)
-        self::$parsingAlternative = false;
-
         if (is_array($alternativesArray)) {
             self::_parse_array($alternativesArray, $varData);
         } else {
             self::_parse_object($alternativesArray, $varData);
         }
-
-        self::$parsingAlternative = true;
 
         return $varData->extendedValue;
     }
