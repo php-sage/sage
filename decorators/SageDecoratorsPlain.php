@@ -67,7 +67,7 @@ class SageDecoratorsPlain
 
     public static function decorateTrace($traceData, $pathsOnly = false)
     {
-        // if we're dealing with a framework stack, lets verbosely display last few steps only, and not hang the browser
+        // if we're dealing with a framework stack, lets verbosely display final few steps only, and not hang the browser
         $optimizeOutput = count($traceData) >= 10 && Sage::$maxLevels !== false;
         $maxLevels      = Sage::$maxLevels;
 

@@ -400,22 +400,21 @@ if (typeof _sageInitialized === 'undefined') {
         }
     };
 
-    window.addEventListener("load", function (e) { // colorize microtime results relative to others
+    window.addEventListener("load", function () { // colorize microtime results relative to others
         const elements = Array.prototype.slice.call(document.querySelectorAll('._sage-microtime'), 0);
+        let min = Infinity
+            , max = -Infinity;
+
         elements.forEach(function (el) {
-            const value = parseFloat(el.innerHTML)
-            let min = Infinity
-                , max = -Infinity
-                , ratio;
+            const val = parseFloat(el.innerHTML);
 
-            elements.forEach(function (el) {
-                const val = parseFloat(el.innerHTML);
+            if (min > val) min = val;
+            if (max < val) max = val;
+        });
 
-                if (min > val) min = val;
-                if (max < val) max = val;
-            });
-
-            ratio = 1 - (value - min) / (max - min);
+        elements.forEach(function (el) {
+            const val = parseFloat(el.innerHTML);
+            const ratio = 1 - (val - min) / (max - min);
 
             el.style.background = 'hsl(' + Math.round(ratio * 120) + ',60%,70%)';
         });
