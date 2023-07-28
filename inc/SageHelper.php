@@ -120,7 +120,7 @@ class SageHelper
                 if ($alias[0] === strtolower($step['class']) && $alias[1] === strtolower($step['function'])) {
                     return true;
                 }
-            } 
+            }
 
             return false;
         }
@@ -199,13 +199,23 @@ class SageHelper
         $enabledMode = Sage::enabled();
         $file        = self::shortenPath($file);
 
+        $fileLine = $file;
+        // in some cases (like called from inside template) we don't know the $line
+        // it's then passed here as null, in that case don't display it in the link text, but keep :0 in the
+        // url so that the IDE protocols don't break.
+        if ($line) {
+            $fileLine .= ':' . $line;
+        } else {
+            $line = 0;
+        }
+
         if (! self::isHtmlMode()) {
-            return $file . ':' . $line;
+            return $fileLine;
         }
 
         $linkText = $linkText
             ? $linkText
-            : $file . ':' . $line;
+            : $fileLine;
         $linkText = self::esc($linkText);
 
         if (! Sage::$editor) {

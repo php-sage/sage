@@ -214,7 +214,6 @@ class Sage
      */
     public static $aliases = [];
 
-    /** @var bool @internal */
     public static $simplify = false;
 
     /*
@@ -352,11 +351,7 @@ class Sage
 
         self::_init();
 
-        [$names, $modifiers, $callee, $previousCaller, $miniTrace] = self::_getCalleeInfo(
-            defined('DEBUG_BACKTRACE_IGNORE_ARGS')
-                ? debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)
-                : debug_backtrace()
-        );
+        [$names, $modifiers, $callee, $previousCaller, $miniTrace] = self::_getCalleeInfo();
 
         // auto-detect mode if not explicitly set
         if ($enabledModeOriginal === true) {
@@ -414,17 +409,14 @@ class Sage
             $expandedByDefaultOldValue = self::$expandedByDefault;
             self::$expandedByDefault   = true;
         }
-
         if (! empty($modifiers) && strpos($modifiers, '!') !== false) {
             $maxLevelsOldValue = self::$maxLevels;
             self::$maxLevels   = false;
         }
-
         if (! empty($modifiers) && strpos($modifiers, '@') !== false) {
             $returnOldValue     = self::$returnOutput;
             self::$returnOutput = true;
         }
-
         if (self::$returnOutput) {
             $decorator::$firstRun = true;
         }
@@ -636,21 +628,29 @@ class Sage
      * returns parameter names that the function was passed, as well as any predefined symbols before function
      * call (modifiers)
      *
-     * @param array $trace
-     *
      * @return array( $parameters, $modifier, $callee, $previousCaller )
      */
-    private static function _getCalleeInfo($trace)
+    private static function _getCalleeInfo()
     {
-        $previousCaller = array();
-        $miniTrace      = array();
-        $prevStep       = array();
+        $trace                  = debug_backtrace();
+        $previousCaller         = array();
+        $miniTrace              = array();
+        $prevStep               = array();
+        $insideTemplateDetected = null;
 
-        // go from back of trace to find first occurrence of call to Sage or its wrappers
+        // go from back of trace forward to find first occurrence of call to Sage or its wrappers
         while ($step = array_pop($trace)) {
             if (SageHelper::stepIsInternal($step)) {
                 $previousCaller = $prevStep;
                 break;
+            }
+
+            if (
+                isset($step['args'][0])
+                && is_string($step['args'][0])
+                && substr($step['args'][0], -10) === '.blade.php'
+            ) {
+                $insideTemplateDetected = $step['args'][0];
             }
 
             if (isset($step['file'], $step['line'])) {
@@ -743,7 +743,7 @@ class Sage
         // <parameters passed>); <the rest of the last read line>
 
         // remove everything in brackets and quotes, we don't need nested statements nor literal strings which would
-        // only complicate separating individual arguments
+        // complicate separating individual arguments
         $c              = strlen($paramsString);
         $inString       = $escaped = $openedBracket = $closingBracket = false;
         $i              = 0;
@@ -793,12 +793,11 @@ class Sage
             $i++;
         }
 
-        // by now we have an un-nested arguments list, lets make it to an array for processing further
         $arguments = explode(',', preg_replace("[\x07+]", '...', $paramsString));
 
-        // test each argument whether it was passed literary or was it an expression or a variable name
-        foreach ($arguments as &$argument) {
-            $argument = trim($argument);
+        if ($insideTemplateDetected) {
+            $callee['file'] = $insideTemplateDetected;
+            $callee['line'] = null;
         }
 
         return array($arguments, $modifiers, $callee, $previousCaller, $miniTrace);
