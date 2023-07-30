@@ -5,3 +5,4 @@
 composer.lock
 package-lock.json
 *.map
+playground.php
