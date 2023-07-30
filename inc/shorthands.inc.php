@@ -57,7 +57,7 @@ if (! function_exists('sage')) {
 
         $params = func_get_args();
 
-        return call_user_func_array(['Sage', 'dump'], $params);
+        return call_user_func_array(array('Sage', 'dump'), $params);
     }
 }
 

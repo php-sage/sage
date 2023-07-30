@@ -212,7 +212,7 @@ class Sage
      * Default:
      *            array()
      */
-    public static $aliases = [];
+    public static $aliases = array();
 
     public static $simplify = false;
 
@@ -351,7 +351,7 @@ class Sage
 
         self::_init();
 
-        [$names, $modifiers, $callee, $previousCaller, $miniTrace] = self::_getCalleeInfo();
+        list($names, $modifiers, $callee, $previousCaller, $miniTrace) = self::_getCalleeInfo();
 
         // auto-detect mode if not explicitly set
         if ($enabledModeOriginal === true) {

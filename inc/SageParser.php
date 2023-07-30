@@ -16,7 +16,7 @@ class SageParser
     /** @var string */
     private static $_marker;
 
-    private static $parsingAlternative = [];
+    private static $parsingAlternative = array();
 
     private static $_placeFullStringInValue = false;
 
@@ -420,7 +420,7 @@ class SageParser
         $variableData->size = 0;
 
         $extendedValue = array();
-        static $publicProperties = [];
+        static $publicProperties = array();
         if (! isset($publicProperties[$className])) {
             $reflectionClass = new ReflectionClass($className);
             foreach ($reflectionClass->getProperties(ReflectionProperty::IS_PUBLIC) as $prop) {
