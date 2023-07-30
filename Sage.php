@@ -31,7 +31,6 @@
 if (defined('SAGE_DIR')) {
     return;
 }
-
 define('SAGE_DIR', __DIR__ . '/');
 
 require SAGE_DIR . 'inc/SageVariableData.php';
@@ -488,7 +487,7 @@ class Sage
                     // displayed names might be wrong, at least don't throw an error
                     $output .= call_user_func(
                         array($decorator, 'decorate'),
-                        SageParser::process($argument, empty($names[$k]) ? '???' : $names[$k]),
+                        SageParser::process($argument, empty($names[$k]) ? '???' : $names[$k])
                     );
                 }
             }

@@ -79,7 +79,7 @@ class SageHelper
             }
         }
 
-        if (strpos($file, self::$projectRootDir) === 0) {
+        if (self::$projectRootDir && strpos($file, self::$projectRootDir) === 0) {
             return substr($file, strlen(self::$projectRootDir));
         }
 

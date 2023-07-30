@@ -8,7 +8,7 @@ class SageDecoratorsPlain
 {
     public static $firstRun = true;
     private static $_enableColors;
-    private static $levelColors = [];
+    private static $levelColors = array();
 
     public static function decorate(SageVariableData $varData, $level = 0)
     {
@@ -285,7 +285,7 @@ class SageDecoratorsPlain
                 $lastLine . PHP_EOL
                 . 'Call stack ' . SageHelper::ideLink($callee['file'], $callee['line'])
                 . $traceDisplay,
-                'header',
+                'header'
             )
             . $lastChar;
     }
