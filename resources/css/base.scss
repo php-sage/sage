@@ -162,6 +162,7 @@ $border: 1px solid $border-color;
   footer {
     padding: 0 3px 3px;
     font-size: 9px;
+    color: #999;
 
     > ._sage-popup-trigger {
       font-size: 12px;
@@ -180,6 +181,10 @@ $border: 1px solid $border-color;
     > ol {
       display: none;
       margin-left: 32px;
+    }
+
+    li {
+      color: #999;
     }
 
     &._sage-show {
@@ -409,9 +414,4 @@ $border: 1px solid $border-color;
   text-shadow: -1px 0 #839496, 0 1px #839496, 1px 0 #839496, 0 -1px #839496;
   width: 230px;
   color: #fdf6e3;
-}
-
-// mini trace
-._sage footer li {
-  color: #ddd;
 }
