@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageParsersColor extends SageParser
+class SageParsersColor implements SageParserInterface
 {
     private static $colorNames = array(
         'aliceblue'            => '#f0f8ff',
@@ -155,16 +155,21 @@ class SageParsersColor extends SageParser
         'yellowgreen'          => '#9acd32'
     );
 
-    protected static function parse(&$variable, $varData)
+    public function replacesAllOtherParsers()
     {
-        if (! self::_fits($variable)) {
+        return false;
+    }
+
+    public function parse(&$variable, $varData)
+    {
+        if (! $this->_fits($variable)) {
             return false;
         }
 
         // todo after we migrate from less:
         // $originalVarData->name .= "<div style=\"background:{$variable}\" class=\"_sage-color-preview\">{$variable}</div>";
 
-        $variants = self::_convert($variable);
+        $variants = $this->_convert($variable);
         $value    = <<<HTML
 <div style="background:{$variable}" class="_sage-color-preview">{$variable}</div><strong>hex:</strong> {$variants['hex']}
 <strong>rgb:</strong> {$variants['rgb']}
@@ -177,7 +182,7 @@ HTML;
         $varData->addTabToView($variable, 'CSS color', $value);
     }
 
-    private static function _fits($variable)
+    private function _fits($variable)
     {
         if (! SageHelper::isRichMode()) {
             return false;
@@ -200,7 +205,7 @@ HTML;
             );
     }
 
-    private static function _convert($color)
+    private function _convert($color)
     {
         $color         = strtolower($color);
         $decimalColors = array();
@@ -248,7 +253,7 @@ HTML;
             $colors[1] = str_replace('%', '', $colors[1]) / 100;
             $colors[2] = str_replace('%', '', $colors[2]) / 100;
 
-            $decimalColors = self::_HSLtoRGB($colors);
+            $decimalColors = $this->_HSLtoRGB($colors);
             if (isset($colors[3])) {
                 $decimalColors[] = $colors[3];
             }
@@ -284,7 +289,7 @@ HTML;
                     $variant = "rgb{$a}( " . implode(', ', $rgb) . ' )';
                     break;
                 case 'hsl':
-                    $rgb = self::_RGBtoHSL($decimalColors);
+                    $rgb = $this->_RGBtoHSL($decimalColors);
                     if ($rgb === null) {
                         unset($variants[$type]);
                         break;
@@ -312,23 +317,23 @@ HTML;
         return $variants;
     }
 
-    private static function _HSLtoRGB(array $hsl)
+    private function _HSLtoRGB(array $hsl)
     {
         list($h, $s, $l) = $hsl;
         $m2 = ($l <= 0.5) ? $l * ($s + 1) : $l + $s - $l * $s;
         $m1 = $l * 2 - $m2;
 
         return array(
-            round(self::_hue2rgb($m1, $m2, $h + 0.33333) * 255),
-            round(self::_hue2rgb($m1, $m2, $h) * 255),
-            round(self::_hue2rgb($m1, $m2, $h - 0.33333) * 255),
+            round($this->_hue2rgb($m1, $m2, $h + 0.33333) * 255),
+            round($this->_hue2rgb($m1, $m2, $h) * 255),
+            round($this->_hue2rgb($m1, $m2, $h - 0.33333) * 255),
         );
     }
 
     /**
      * Helper function for _color_hsl2rgb().
      */
-    private static function _hue2rgb($m1, $m2, $h)
+    private function _hue2rgb($m1, $m2, $h)
     {
         $h = ($h < 0) ? $h + 1 : (($h > 1) ? $h - 1 : $h);
         if ($h * 6 < 1) {
@@ -344,7 +349,7 @@ HTML;
         return $m1;
     }
 
-    private static function _RGBtoHSL(array $rgb)
+    private function _RGBtoHSL(array $rgb)
     {
         list($clrR, $clrG, $clrB) = $rgb;
 
@@ -387,156 +392,3 @@ HTML;
         );
     }
 }
-
-/* *************
- * TEST DATA
- *
-dd(array(
-'hsl(0,  100%,50%)',
-'hsl(30, 100%,50%)',
-'hsl(60, 100%,50%)',
-'hsl(90, 100%,50%)',
-'hsl(120,100%,50%)',
-'hsl(150,100%,50%)',
-'hsl(180,100%,50%)',
-'hsl(210,100%,50%)',
-'hsl(240,100%,50%)',
-'hsl(270,100%,50%)',
-'hsl(300,100%,50%)',
-'hsl(330,100%,50%)',
-'hsl(360,100%,50%)',
-'hsl(120,100%,25%)',
-'hsl(120,100%,50%)',
-'hsl(120,100%,75%)',
-'hsl(120,100%,50%)',
-'hsl(120, 67%,50%)',
-'hsl(120, 33%,50%)',
-'hsl(120,  0%,50%)',
-'hsl(120, 60%,70%)',
-'#f03',
-'#F03',
-'#ff0033',
-'#FF0033',
-'rgb(255,0,51)',
-'rgb(255, 0, 51)',
-'rgb(100%,0%,20%)',
-'rgb(100%, 0%, 20%)',
-'hsla(240,100%,50%,0.05)',
-'hsla(240,100%,50%, 0.4)',
-'hsla(240,100%,50%, 0.7)',
-'hsla(240,100%,50%,   1)',
-'rgba(255,0,0,0.1)',
-'rgba(255,0,0,0.4)',
-'rgba(255,0,0,0.7)',
-'rgba(255,0,0,  1)',
-'black',
-'silver',
-'gray',
-'white',
-'maroon',
-'red',
-'purple',
-'fuchsia',
-'green',
-'lime',
-'olive',
-'yellow',
-'navy',
-'blue',
-'teal',
-'aqua',
-'orange',
-'aliceblue',
-'antiquewhite',
-'aquamarine',
-'azure',
-'beige',
-'bisque',
-'blanchedalmond',
-'blueviolet',
-'brown',
-'burlywood',
-'cadetblue',
-'chartreuse',
-'chocolate',
-'coral',
-'cornflowerblue',
-'cornsilk',
-'crimson',
-'darkblue',
-'darkcyan',
-'darkgoldenrod',
-'darkgray',
-'darkgreen',
-'darkgrey',
-'darkkhaki',
-'darkmagenta',
-'darkolivegreen',
-'darkorange',
-'darkorchid',
-'darkred',
-'darksalmon',
-'darkseagreen',
-'darkslateblue',
-'darkslategray',
-'darkslategrey',
-'darkturquoise',
-'darkviolet',
-'deeppink',
-'deepskyblue',
-'dimgray',
-'dimgrey',
-'dodgerblue',
-'firebrick',
-'floralwhite',
-'forestgreen',
-'gainsboro',
-'ghostwhite',
-'gold',
-'goldenrod',
-'greenyellow',
-'grey',
-'honeydew',
-'hotpink',
-'indianred',
-'indigo',
-'ivory',
-'khaki',
-'lavender',
-'lavenderblush',
-'lawngreen',
-'lemonchiffon',
-'lightblue',
-'lightcoral',
-'lightcyan',
-'lightgoldenrodyellow',
-'lightgray',
-'lightgreen',
-'lightgrey',
-'lightpink',
-'lightsalmon',
-'lightseagreen',
-'lightskyblue',
-'lightslategray',
-'lightslategrey',
-'lightsteelblue',
-'lightyellow',
-'limegreen',
-'linen',
-'mediumaquamarine',
-'mediumblue',
-'mediumorchid',
-'mediumpurple',
-'mediumseagreen',
-'mediumslateblue',
-'mediumspringgreen',
-'mediumturquoise',
-'mediumvioletred',
-'midnightblue',
-'mintcream',
-'mistyrose',
-'moccasin',
-'navajowhite',
-'oldlace',
-'olivedrab',
-));*/

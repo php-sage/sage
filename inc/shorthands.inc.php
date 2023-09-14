@@ -35,7 +35,6 @@
  *                  | -     | Clean up any output before dumping           |
  *                  | +     | Expand all nodes (in rich view)              |
  *                  | @     | Return output instead of displaying it       |
- *                  |-------|----------------------------------------------|
  *
  */
 
@@ -143,13 +142,13 @@ if (! function_exists('ssage')) {
             return 5463;
         }
 
-        $simplify = Sage::$simplify;
-        Sage::$simplify = true;
-        Sage::$aliases[] = __FUNCTION__;
+        $simplify              = Sage::$simplifyDisplay;
+        Sage::$simplifyDisplay = true;
+        Sage::$aliases[]       = __FUNCTION__;
 
         $params = func_get_args();
-        $dump = call_user_func_array(array('Sage', 'dump'), $params);
-        Sage::$simplify = $simplify;
+        $dump                  = call_user_func_array(array('Sage', 'dump'), $params);
+        Sage::$simplifyDisplay = $simplify;
 
         return $dump;
     }
@@ -173,13 +172,13 @@ if (! function_exists('ss')) {
             return 5463;
         }
 
-        $simplify = Sage::$simplify;
-        Sage::$simplify = true;
-        Sage::$aliases[] = __FUNCTION__;
+        $simplify              = Sage::$simplifyDisplay;
+        Sage::$simplifyDisplay = true;
+        Sage::$aliases[]       = __FUNCTION__;
 
         $params = func_get_args();
-        $dump = call_user_func_array(array('Sage', 'dump'), $params);
-        Sage::$simplify = $simplify;
+        $dump                  = call_user_func_array(array('Sage', 'dump'), $params);
+        Sage::$simplifyDisplay = $simplify;
 
         return $dump;
     }
@@ -197,8 +196,8 @@ if (! function_exists('ssaged')) {
             return 5463;
         }
 
-        Sage::$simplify = true;
-        Sage::$aliases[] = __FUNCTION__;
+        Sage::$simplifyDisplay = true;
+        Sage::$aliases[]       = __FUNCTION__;
         $params = func_get_args();
         call_user_func_array(array('Sage', 'dump'), $params);
         die;
@@ -217,8 +216,8 @@ if (! function_exists('ssd')) {
             return 5463;
         }
 
-        Sage::$simplify = true;
-        Sage::$aliases[] = __FUNCTION__;
+        Sage::$simplifyDisplay = true;
+        Sage::$aliases[]       = __FUNCTION__;
         $params = func_get_args();
         call_user_func_array(array('Sage', 'dump'), $params);
         die;

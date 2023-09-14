@@ -3,13 +3,15 @@
 /**
  * @internal
  */
-require_once __DIR__ . '/SageParsersSplFileInfo.php';
 
-class SageParsersFilePath extends SageParsersSplFileInfo
+class SageParsersFilePath extends SageParsersSplFileInfo implements SageParserInterface
 {
-    public static $replacesAllOtherParsers = false;
+    public function replacesAllOtherParsers()
+    {
+        return false;
+    }
 
-    protected static function parse(&$variable, $varData)
+    public function parse(&$variable, $varData)
     {
         if (! SageHelper::php53orLater()
             || ! is_string($variable)
@@ -22,6 +24,6 @@ class SageParsersFilePath extends SageParsersSplFileInfo
             return false;
         }
 
-        return self::run($variable, $varData, new SplFileInfo($variable));
+        return $this->run($variable, $varData, new SplFileInfo($variable));
     }
 }

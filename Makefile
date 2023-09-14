@@ -15,13 +15,24 @@ build:
 	make test
 
 
+compile-resources:
+	@# Help: One part of build process if you're only working with sass/js
+	$(DOCKER) run php npm run build
+
+
 test:
 	$(DOCKER) run php pest
+
 
 php53:
 	make build
 	docker run -it --rm --name my-running-script -v "$$PWD":/usr/src/myapp -w /usr/src/myapp \
-	orsolin/docker-php-5.3-apache php /usr/src/myapp//tests/temp_tests/php53test.php
+	orsolin/docker-php-5.3-apache php /usr/src/myapp/tests/temp_tests/php53test.php
+
+
+php51:
+	docker run -it --rm --name my-running-script2 -v "$$PWD":/usr/src/myapp -w /usr/src/myapp \
+	horitaku1124/php51_centos7 php /usr/src/myapp/tests/temp_tests/php53test.php
 
 
 update-test-snapshots:

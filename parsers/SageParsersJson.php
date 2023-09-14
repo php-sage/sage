@@ -3,9 +3,14 @@
 /**
  * @internal
  */
-class SageParsersJson extends SageParser
+class SageParsersJson implements SageParserInterface
 {
-    protected static function parse(&$variable, $varData)
+    public function replacesAllOtherParsers()
+    {
+        return false;
+    }
+
+    public function parse(&$variable, $varData)
     {
         if (! SageHelper::isRichMode()
             || ! SageHelper::php53orLater()

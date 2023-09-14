@@ -3,11 +3,14 @@
 /**
  * @internal
  */
-class SageParsersDateTime extends SageParser
+class SageParsersDateTime implements SageParserInterface
 {
-    public static $replacesAllOtherParsers = true;
+    public function replacesAllOtherParsers()
+    {
+        return true;
+    }
 
-    protected static function parse(&$variable, $varData)
+    public function parse(&$variable, $varData)
     {
         if (! $variable instanceof DateTimeInterface) {
             return false;

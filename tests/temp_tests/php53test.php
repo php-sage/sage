@@ -1,17 +1,17 @@
 <?php
 
-// THIS FILE IS NOT PART OF SAGE, IT IS ONLY USED FOR TEMPORARY TESTING
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-/* ****
-php -S localhost:9876 playground.php
-*** */
+require_once dirname(__FILE__) . '/../../Sage.php';
 
-//require 'vendor/autoload.php';
-require_once __DIR__ . '/../../sage.phar';
+$file             = dirname(__FILE__) . "/../../sage.html";
+Sage::$outputFile = $file;
 
-Sage::$outputFile = __DIR__ . '/../../sage.html';
+require dirname(__FILE__) . '/overview.php';
 
+Sage::$outputFile = null;
 
-require __DIR__ . '/../../.github/examples/overview.php';
-
-
+Sage::trace();
+Sage::dump(PHP_VERSION . ' PHP version verified working! Open following file to view output:', $file);

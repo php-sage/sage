@@ -381,14 +381,26 @@ $border: 1px solid $border-color;
     }
   }
 
-  ._sage-parent {
-    > b {
-      min-width: 18px;
-      display: inline-block;
-      text-align: right;
-      color: $variable-name-color;
-    }
+  b { // line number
+    min-width: 18px;
+    display: inline-block;
+    text-align: right;
+    margin-right: 6px;
+    color: $variable-name-color;
+  }
 
+  ._sage-blacklisted,
+  ._sage-childless {
+    > b { // line number
+      margin-right: 22px;
+    }
+  }
+
+  ._sage-blacklisted {
+    filter: brightness(120%);
+  }
+
+  ._sage-parent {
     > var {
       > a {
         color: $variable-type-color;

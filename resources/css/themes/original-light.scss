@@ -1,0 +1,57 @@
+$main-background: #f1f5f7;
+$secondary-background: #e3ecf0;
+
+$text-color: #1d1e1e;
+$variable-name-color: #1d1e1e;
+$variable-type-color: #0092db;
+$variable-type-color-hover: #5cb730;
+
+$border-color: #b6cedb;
+$border-color-hover: #0092db;
+
+$caret-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAA8CAMAAACO5hB7AAAACVBMVEX///82b4tctzBls0NMAAAAQklEQVR42rWRIQ4AAAgCwf8/2qgER2BeuwJsgAqIzekMfMryPL9XQSkobE6vwKcsz/N7FfPvh09lnPf/b+7673+f0uHuAZ/EdkNQAAAAAElFTkSuQmCC");
+
+
+@mixin keyboard-caret() {
+  box-shadow: 0 0 3px 2px #5cb730;
+}
+
+@import "../base";
+
+._sage {
+  > dl > dt,
+  ul._sage-tabs {
+    background: linear-gradient(to bottom, #fff 0, $main-background 100%);
+  }
+
+  dl:not(:last-of-type) dt:not(._sage-show) {
+    border-bottom: 0;
+  }
+
+  //._sage dl._sage-trace dd ul._sage-tabs li._sage-active-tab
+  & ul._sage-tabs li {
+    background: $secondary-background;
+  }
+
+  & > dl._sage-trace {
+    > dt {
+      background: linear-gradient(to bottom, $main-background 0, #fff 100%);
+    }
+
+    dt:not(:last-of-type):not(._sage-show) {
+      border-bottom: 0;
+    }
+
+    > dd > ul._sage-tabs > li._sage-active-tab {
+      background: #fff;
+    }
+  }
+
+  ._sage-source ._sage-highlight {
+    background: #f0eb96;
+  }
+
+  ._sage-source > div {
+    margin-top: -1px;
+  }
+}

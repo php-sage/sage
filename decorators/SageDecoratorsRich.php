@@ -2,16 +2,22 @@
 
 /**
  * @internal
- * @noinspection AutoloadingIssuesInspection
  */
-
-class SageDecoratorsRich
+class SageDecoratorsRich implements SageDecoratorsInterface
 {
-    public static $firstRun = true;
-    // make calls to Sage::dump() from different places in source coloured differently.
-    private static $_usedColors = array();
+    protected static $needsAssets = true;
 
-    public static function decorate(SageVariableData $varData)
+    public function areAssetsNeeded()
+    {
+        return self::$needsAssets;
+    }
+
+    public function setAssetsNeeded($added)
+    {
+        self::$needsAssets = $added;
+    }
+
+    public function decorate(SageVariableData $varData)
     {
         $output = '<dl>';
 
@@ -29,22 +35,18 @@ class SageDecoratorsRich
         }
 
         if ($extendedPresent) {
-            $output .= '<span class="_sage-popup-trigger" title="Open in new window">&rarr;</span><nav></nav>';
+            $output .= '<span class="_sage-popup-trigger">&rarr;</span><nav></nav>';
         }
 
-        $output .= self::_drawHeader($varData) . $varData->value . '</dt>';
+        $output .= $this->_drawHeader($varData) . $varData->value . "</dt>";
 
         if ($extendedPresent) {
             $output .= '<dd>';
         }
 
-        // hm, this data structure sucks, but I can't come up with a better one:
-        // the $varData->extendedValue holds organic representation of the inbuilt type.
-        // the $varData->alternativeRepresentations are custom views into the data as prepared by various parsers.
-        // We don't want to show the tab 'Contents' if $varData->extendedValue is the only tab
         if (count($allRepresentations) === 1 && ! empty($varData->extendedValue)) {
             $extendedValue = reset($allRepresentations);
-            $output        .= self::decorateAlternativeView($extendedValue);
+            $output        .= $this->decorateAlternativeView($extendedValue);
         } elseif ($extendedPresent) {
             $output .= "<ul class=\"_sage-tabs\">";
 
@@ -59,7 +61,7 @@ class SageDecoratorsRich
 
             foreach ($allRepresentations as $alternative) {
                 $output .= '<li>';
-                $output .= self::decorateAlternativeView($alternative);
+                $output .= $this->decorateAlternativeView($alternative);
                 $output .= '</li>';
             }
 
@@ -69,98 +71,114 @@ class SageDecoratorsRich
             $output .= '</dd>';
         }
 
+        $output .= "</dl>\n";
+
+        return $output;
+    }
+
+    /** @param SageTraceStep[] $traceData */
+    public function decorateTrace(array $traceData, $pathsOnly = false)
+    {
+        $output = '<dl class="_sage-trace">';
+
+        $blacklistedStepsInARow = 0;
+        foreach ($traceData as $i => $step) {
+            if ($step->isBlackListed) {
+                $blacklistedStepsInARow++;
+                continue;
+            }
+
+            if ($blacklistedStepsInARow) {
+                if ($blacklistedStepsInARow <= 5) {
+                    for ($j = $blacklistedStepsInARow; $j > 0; $j--) {
+                        $output .= $this->drawTraceStep($i - $j, $traceData[$i - $j], $pathsOnly);
+                    }
+                } else {
+                    $output .= "<dt><b></b>[{$blacklistedStepsInARow} steps skipped]</dt>";
+                }
+
+                $blacklistedStepsInARow = 0;
+            }
+
+            $output .= $this->drawTraceStep($i, $step, $pathsOnly);
+        }
+
+        if ($blacklistedStepsInARow > 1) {
+            $output .= "<dt><b></b>[{$blacklistedStepsInARow} steps skipped]</dt>";
+        }
+
         $output .= '</dl>';
 
         return $output;
     }
 
-    public static function decorateTrace($traceData, $namesOnly = false)
+    private function drawTraceStep($i, $step, $pathsOnly)
     {
-        // if we're dealing with a framework stack, lets verbosely display last few steps only, and not hang the browser
-        $optimizeOutput = count($traceData) >= 10 && Sage::$maxLevels !== false;
-        $maxLevels      = Sage::$maxLevels;
+        $isChildless = ! $step->sourceSnippet && ! $step->arguments && ! $step->object;
 
-        $output = '<dl class="_sage-trace">';
+        $class = '';
 
-        foreach ($traceData as $i => $step) {
-            if ($optimizeOutput && $i > 2) {
-                Sage::$maxLevels = 3;
-            }
+        if ($step->isBlackListed) {
+            $class .= ' _sage-blacklisted';
+        } elseif ($isChildless) {
+            $class .= ' _sage-childless';
+        } else {
+            $class .= '_sage-parent';
 
-            $class = '_sage-parent';
             if (Sage::$expandedByDefault) {
                 $class .= ' _sage-show';
             }
-
-            if (empty($step['source']) && empty($step['args']) && empty($step['object'])) {
-                $class .= ' _sage-childless';
-            }
-
-            $output .= '<dt class="' . $class . '">'
-                . '<b>' . ($i + 1) . '</b> '
-                . '<nav></nav>'
-                . '<var>';
-
-            if (isset($step['file'])) {
-                $output .= SageHelper::ideLink($step['file'], $step['line']);
-            } else {
-                $output .= 'PHP internal call';
-            }
-
-            $output .= '</var> ';
-
-            $output .= $step['function'];
-
-            if (isset($step['args'])) {
-                $output .= '(' . implode(', ', array_keys($step['args'])) . ')';
-            }
-            $output   .= '</dt><dd>';
-            $firstTab = ' class="_sage-active-tab"';
-            $output   .= '<ul class="_sage-tabs">';
-
-            if (! empty($step['source'])) {
-                $output   .= "<li{$firstTab}>Source</li>";
-                $firstTab = '';
-            }
-
-            if (! $namesOnly && ! empty($step['args'])) {
-                $output   .= "<li{$firstTab}>Arguments</li>";
-                $firstTab = '';
-            }
-
-            if (! $namesOnly && ! empty($step['object'])) {
-                SageParser::reset();
-
-                $calleeDump = SageParser::process($step['object']);
-
-                $output .= "<li{$firstTab}>Callee object [{$calleeDump->type}]</li>";
-            }
-
-            $output .= '</ul><ul>';
-
-            if (! empty($step['source'])) {
-                $output .= "<li><pre class=\"_sage-source\">{$step['source']}</pre></li>";
-            }
-
-            if (! $namesOnly && ! empty($step['args'])) {
-                $output .= '<li>';
-                foreach ($step['args'] as $k => $arg) {
-                    SageParser::reset();
-                    $output .= self::decorate(SageParser::process($arg, $k));
-                }
-                $output .= '</li>';
-            }
-
-            if (! $namesOnly && ! empty($step['object'])) {
-                $output .= '<li>' . self::decorate($calleeDump) . '</li>';
-            }
-
-            $output .= '</ul></dd>';
         }
 
-        $output .= '</dl>';
+        $output = '<dt class="' . $class . '">';
+        $output .= '<b>' . ($i + 1) . '</b>';
+        if (! $isChildless) {
+            $output .= '<nav></nav>';
+        }
+        $output .= '<var>' . $step->fileLine . '</var> ';
+        $output .= $step->functionName;
+        $output .= '</dt>';
 
-        Sage::$maxLevels = $maxLevels;
+        if ($isChildless) {
+            return $output;
+        }
+
+        $output        .= '<dd><ul class="_sage-tabs">';
+        $firstTabClass = ' class="_sage-active-tab"';
+
+        if ($step->sourceSnippet) {
+            $output        .= "<li{$firstTabClass}>Source</li>";
+            $firstTabClass = '';
+        }
+
+        if (! $pathsOnly && $step->arguments) {
+            $output        .= "<li{$firstTabClass}>Arguments</li>";
+            $firstTabClass = '';
+        }
+
+        if (! $pathsOnly && $step->object) {
+            $output .= "<li{$firstTabClass}>Callee object [{$step->object->type}]</li>";
+        }
+
+        $output .= '</ul><ul>';
+
+        if ($step->sourceSnippet) {
+            $output .= "<li><pre class=\"_sage-source\">{$step->sourceSnippet}</pre></li>";
+        }
+
+        if (! $pathsOnly && $step->arguments) {
+            $output .= '<li>';
+            foreach ($step->arguments as $argument) {
+                $output .= $this->decorate($argument);
+            }
+            $output .= '</li>';
+        }
+
+        if (! $pathsOnly && $step->object) {
+            $output .= '<li>' . $this->decorate($step->object) . '</li>';
+        }
+
+        $output .= '</ul></dd>';
 
         return $output;
     }
@@ -170,7 +188,7 @@ class SageDecoratorsRich
      *
      * @return string
      */
-    public static function wrapStart()
+    public function wrapStart()
     {
         return "<div class=\"_sage\">";
     }
@@ -184,7 +202,7 @@ class SageDecoratorsRich
      *
      * @return string
      */
-    public static function wrapEnd($callee, $miniTrace, $prevCaller)
+    public function wrapEnd($callee, $miniTrace, $prevCaller)
     {
         if (! Sage::$displayCalledFrom) {
             return '</div>';
@@ -241,7 +259,7 @@ class SageDecoratorsRich
             . '</footer></div>';
     }
 
-    private static function _drawHeader(SageVariableData $varData)
+    private function _drawHeader(SageVariableData $varData)
     {
         $output = '';
         if ($varData->access !== null) {
@@ -274,7 +292,7 @@ class SageDecoratorsRich
      *
      * @return string
      */
-    public static function init()
+    public function init()
     {
         $baseDir = SAGE_DIR . 'resources/compiled/';
 
@@ -287,7 +305,7 @@ class SageDecoratorsRich
             . '<style class="_sage-css">' . file_get_contents($cssFile) . "</style>\n";
     }
 
-    private static function decorateAlternativeView($alternative)
+    private function decorateAlternativeView($alternative)
     {
         if (empty($alternative)) {
             return '';
@@ -301,7 +319,7 @@ class SageDecoratorsRich
                 : SageParser::process($alternative)->extendedValue; // convert into SageVariableData[]
 
             foreach ($parse as $v) {
-                $output .= self::decorate($v);
+                $output .= $this->decorate($v);
             }
         } elseif (is_string($alternative)) {
             // the browser does not render leading new line in <pre>
@@ -309,10 +327,9 @@ class SageDecoratorsRich
                 $alternative = "\n" . $alternative;
             }
             $output .= "<pre>{$alternative}</pre>";
-        } elseif (isset($alternative)) {
-            // error in custom parser, but don't let the user know
         }
 
         return $output;
     }
+
 }

@@ -4,11 +4,14 @@
  * @internal
  * @noinspection AutoloadingIssuesInspection
  */
-class SageParsersClosure extends SageParser
+class SageParsersClosure implements SageParserInterface
 {
-    public static $replacesAllOtherParsers = true;
+    public function replacesAllOtherParsers()
+    {
+        return true;
+    }
 
-    protected static function parse(&$variable, $varData)
+    public function parse(&$variable, $varData)
     {
         if (! $variable instanceof Closure) {
             return false;
@@ -22,7 +25,7 @@ class SageParsersClosure extends SageParser
             $parameters = $parameter->name;
         }
         if (! empty($parameters)) {
-            $varData->addTabToView($variable, 'Parameters', $parameters);
+            $varData->addTabToView($variable, 'Closure Parameters', $parameters);
         }
 
         $uses = array();
@@ -30,10 +33,10 @@ class SageParsersClosure extends SageParser
             $uses = $val;
         }
         if (method_exists($reflection, 'getClousureThis') && $val = $reflection->getClosureThis()) {
-            $uses[] = SageParser::process($val, '$this');
+            $uses[] = SageParser::process($val, 'Closure $this');
         }
         if (! empty($uses)) {
-            $varData->addTabToView($variable, 'Parameters', $uses);
+            $varData->addTabToView($variable, 'Closure Parameters', $uses);
         }
 
         if ($reflection->getFileName()) {

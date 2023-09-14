@@ -3,9 +3,14 @@
 /**
  * @internal
  */
-class SageParsersSplObjectStorage extends SageParser
+class SageParsersSplObjectStorage implements SageParserInterface
 {
-    protected static function parse(&$variable, $varData)
+    public function replacesAllOtherParsers()
+    {
+        return false;
+    }
+
+    public function parse(&$variable, $varData)
     {
         if (! SageHelper::isRichMode() || ! is_object($variable) || ! $variable instanceof SplObjectStorage) {
             return false;

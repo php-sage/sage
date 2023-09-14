@@ -3,11 +3,14 @@
 /**
  * @internal
  */
-class SageParsersSmarty extends SageParser
+class SageParsersSmarty implements SageParserInterface
 {
-    public static $replacesAllOtherParsers = true;
+    public function replacesAllOtherParsers()
+    {
+        return true;
+    }
 
-    protected static function parse(&$variable, $varData)
+    public function parse(&$variable, $varData)
     {
         if (! $variable instanceof Smarty
             || ! defined('Smarty::SMARTY_VERSION') // lower than 3.x

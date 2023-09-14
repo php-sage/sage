@@ -8,9 +8,7 @@ class SageParser
     /** @var bool set to true in inheriting custom parser to only show that one parser in output */
     public static $replacesAllOtherParsers = false;
 
-    private static $_level = 0;
-    /** @var string[]|SageParser[] $parser */
-    private static $_parsers = array();
+    public static $_level = 0;
     /** @var array<string, true> */
     private static $_objects;
     /** @var string */
@@ -20,67 +18,14 @@ class SageParser
 
     private static $_placeFullStringInValue = false;
 
-    private static function _init()
-    {
-        $special = array(
-            'SageParsersBlacklist', // this always goes first to stop needless processing
-            'SageParsersInbuiltTypes', // this always goes last if no other parser ceased parsing
-        );
-
-        $fh = opendir(SAGE_DIR . 'parsers');
-        while ($fileName = readdir($fh)) {
-            $fileInfo = explode('.', $fileName);
-            if (count($fileInfo) < 2 || $fileInfo[1] !== 'php') {
-                continue;
-            }
-
-            require_once SAGE_DIR . 'parsers/' . $fileName;
-            $className = $fileInfo[0];
-
-            // process the "there can be only one" parsers first, if they execute, all others will be skipped
-            if ($className::$replacesAllOtherParsers) {
-                array_unshift(self::$_parsers, $className);
-            } else {
-                self::$_parsers[] = $className;
-            }
-        }
-    }
-
     public static function reset()
     {
         self::$_level   = 0;
         self::$_objects = self::$_marker = null;
     }
 
-    /**
-     * main and usually single method a custom parser must implement
-     *
-     * @param mixed            $variable
-     * @param SageVariableData $varData
-     *
-     * @return bool|void false is returned if the variable is not of current type
-     */
-    protected static function parse(&$variable, $varData)
-    {
-        throw new RuntimeException('Each parser must override this method!');
-    }
-
-    /**
-     * the only public entry point to return a parsed representation of a variable
-     *
-     * @static
-     *
-     * @param      $variable
-     * @param null $name
-     *
-     * @return SageVariableData
-     */
     final public static function process(&$variable, $name = null)
     {
-        if (! self::$_parsers) {
-            self::_init();
-        }
-
         // save internal data to revert after dumping to properly handle recursions etc
         $revert = array(
             'level'   => self::$_level,
@@ -103,25 +48,24 @@ class SageParser
         }
 
         // first go through alternative parsers (eg.: json detection)
-        foreach (self::$_parsers as $parser) {
-            if (array_key_exists($parser, self::$parsingAlternative)) {
+        foreach (Sage::$enabledParsers as $parserClass => $enabled) {
+            if (! $enabled || array_key_exists($parserClass, self::$parsingAlternative)) {
                 continue;
             }
-            self::$parsingAlternative[$parser] = true;
-            $parseResult                       = $parser::parse($variable, $varData);
+            self::$parsingAlternative[$parserClass] = true;
+            $parser                                 = new $parserClass();
+            $parseResult                            = $parser->parse($variable, $varData);
 
             // if var was parsed by "can only be one"-parser - return here
-            if ($parseResult !== false && $parser::$replacesAllOtherParsers === true) {
-                unset(self::$parsingAlternative[$parser]);
+            if ($parseResult !== false && $parser->replacesAllOtherParsers()) {
+                unset(self::$parsingAlternative[$parserClass]);
                 self::$_level   = $revert['level'];
                 self::$_objects = $revert['objects'];
 
                 return $varData;
             }
-            unset(self::$parsingAlternative[$parser]);
+            unset(self::$parsingAlternative[$parserClass]);
         }
-
-        // todo still run internal types and blacklist - what to do with eg smarty
 
         // parse the variable based on its type
         $varType = gettype($variable);
@@ -150,6 +94,9 @@ class SageParser
         return Sage::$maxLevels && self::$_level >= Sage::$maxLevels;
     }
 
+    /**
+     * @return array|false return ALL keys from all rows if array is tabular, false otherwise
+     */
     private static function _isArrayTabular(array $variable)
     {
         if (Sage::enabled() !== Sage::MODE_RICH) {
@@ -309,6 +256,11 @@ class SageParser
                         $extendedValue .= '<th>' . SageHelper::esc($key) . '</th>';
                     }
 
+                    if (in_array($key, Sage::$arrayKeysBlacklist, true)) {
+                        $output .= '<td class="_sage-empty"><u>*REDACTED*</u></td>';
+                        continue;
+                    }
+
                     if (! array_key_exists($key, $row)) {
                         $output .= '<td class="_sage-empty"></td>';
                         continue;
@@ -344,6 +296,10 @@ class SageParser
             foreach ($variable as $key => & $val) {
                 if ($key === self::$_marker) {
                     continue;
+                }
+
+                if (in_array($key, Sage::$arrayKeysBlacklist, true)) {
+                    $val = '*REDACTED*';
                 }
 
                 $output = self::process($val);

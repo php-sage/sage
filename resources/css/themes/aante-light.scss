@@ -24,10 +24,7 @@ $caret-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAA8CAYAAAC
 ._sage {
   dt {
     font-weight: normal;
-
-    &._sage-parent {
-      margin-top: 4px;
-    }
+    margin-top: 4px;
   }
 
   > dl {
@@ -114,6 +111,10 @@ $caret-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAA8CAYAAAC
 
   ._sage-source ._sage-highlight {
     background: #cfc;
+  }
+
+  ._sage-source span {
+    border-right: 3px inset #268bd2;
   }
 }
 

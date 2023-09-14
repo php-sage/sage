@@ -3,13 +3,16 @@
 /**
  * @internal
  */
-class SageParsersEloquent extends SageParser
+class SageParsersEloquent implements SageParserInterface
 {
-    public static $replacesAllOtherParsers = true;
-
-    protected static function parse(&$variable, $varData)
+    public function replacesAllOtherParsers()
     {
-        if (! SageHelper::php53orLater() || ! $variable instanceof Illuminate\Database\Eloquent\Model) {
+        return true;
+    }
+
+    public function parse(&$variable, $varData)
+    {
+        if (! SageHelper::php53orLater() || ! is_a($variable, '\Illuminate\Database\Eloquent\Model')) {
             return false;
         }
 

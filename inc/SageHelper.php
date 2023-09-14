@@ -89,10 +89,12 @@ class SageHelper
     public static function buildAliases()
     {
         self::$aliasesRaw = array(
-            'methods' => array(
+            'methods'   => array(
                 array('sage', 'dump'),
+                array('sage', 'doDump'),
                 array('sage', 'trace')
-            )
+            ),
+            'functions' => array()
         );
 
         foreach (Sage::$aliases as $alias) {

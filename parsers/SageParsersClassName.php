@@ -3,14 +3,32 @@
 /**
  * @internal
  */
-class SageParsersClassName extends SageParser
+class SageParsersClassName implements SageParserInterface
 {
-    protected static function parse(&$variable, $varData)
+    public function replacesAllOtherParsers()
     {
-        if (empty($variable)
+        return false;
+    }
+
+    public function parse(&$variable, $varData)
+    {
+        if (
+            Sage::enabled() === Sage::MODE_TEXT_ONLY
+            || ! SageHelper::php53orLater()
+            || empty($variable)
             || ! is_string($variable)
             || strlen($variable) < 3
-            || ! class_exists($variable)) {
+        ) {
+            return false;
+        }
+
+        try {
+            if (! @class_exists($variable)) {
+                return false;
+            }
+        } catch (Throwable $t) {
+            return false;
+        } catch (Exception $e) {
             return false;
         }
 

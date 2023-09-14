@@ -3,9 +3,14 @@
 /**
  * @internal
  */
-class SageParsersClassStatics extends SageParser
+class SageParsersClassStatics implements SageParserInterface
 {
-    protected static function parse(&$variable, $varData)
+    public function replacesAllOtherParsers()
+    {
+        return false;
+    }
+
+    public function parse(&$variable, $varData)
     {
         if (! SageHelper::isRichMode() || ! SageHelper::php53orLater() || ! is_object($variable)) {
             return false;
@@ -35,7 +40,7 @@ class SageParsersClassStatics extends SageParser
             }
 
             $name   = '$' . $property->getName();
-            $output = self::process($value, SageHelper::esc($name));
+            $output = SageParser::process($value, SageHelper::esc($name));
 
             $output->access   = $access;
             $output->operator = '::';

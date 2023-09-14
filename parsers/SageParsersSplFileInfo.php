@@ -3,11 +3,14 @@
 /**
  * @internal
  */
-class SageParsersSplFileInfo extends SageParser
+class SageParsersSplFileInfo implements SageParserInterface
 {
-    public static $replacesAllOtherParsers = true;
+    public function replacesAllOtherParsers()
+    {
+        return true;
+    }
 
-    protected static function parse(&$variable, $varData)
+    public function parse(&$variable, $varData)
     {
         if (! SageHelper::php53orLater()
             || ! $variable instanceof SplFileInfo
@@ -16,7 +19,7 @@ class SageParsersSplFileInfo extends SageParser
             return false;
         }
 
-        return self::run($variable, $varData, $variable);
+        return $this->run($variable, $varData, $variable);
     }
 
     /**
@@ -26,7 +29,7 @@ class SageParsersSplFileInfo extends SageParser
      *
      * @return bool
      */
-    protected static function run(&$variable, $varData, $fileInfo)
+    protected function run(&$variable, $varData, $fileInfo)
     {
         $varData->value = '"' . SageHelper::esc($fileInfo->getPathname()) . '"';
         $varData->type  = get_class($fileInfo);
@@ -91,7 +94,7 @@ class SageParsersSplFileInfo extends SageParser
                     ) . ' item(s)';
             } else {
                 $name = "Existing {$type}";
-                $size = self::humanFilesize($fileInfo->getSize());
+                $size = $this->humanFilesize($fileInfo->getSize());
             }
 
             $extra = array();
@@ -121,7 +124,7 @@ class SageParsersSplFileInfo extends SageParser
                 if ($type === 'Directory') {
                     $extended = array('Existing Directory' => $fileInfo->getFilename());
                 } else {
-                    $extended = array("Existing {$type}" => self::humanFilesize($fileInfo->getSize()));
+                    $extended = array("Existing {$type}" => $this->humanFilesize($fileInfo->getSize()));
                 }
 
                 $varData->extendedValue = array($name => $size) + $extra;
@@ -133,7 +136,7 @@ class SageParsersSplFileInfo extends SageParser
         return true;
     }
 
-    private static function humanFilesize($bytes)
+    private function humanFilesize($bytes)
     {
         $sizeInBytes = $bytes;
         if ($bytes < 10240) {

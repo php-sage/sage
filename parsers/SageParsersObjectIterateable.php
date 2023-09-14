@@ -2,11 +2,15 @@
 
 /**
  * @internal
- * @noinspection AutoloadingIssuesInspection
  */
-class SageParsersObjectIterateable extends SageParser
+class SageParsersObjectIterateable implements SageParserInterface
 {
-    protected static function parse(&$variable, $varData)
+    public function replacesAllOtherParsers()
+    {
+        return false;
+    }
+
+    public function parse(&$variable, $varData)
     {
         if (! SageHelper::isRichMode()
             || ! SageHelper::php53orLater()

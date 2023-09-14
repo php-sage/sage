@@ -2,13 +2,17 @@
 
 /**
  * @internal
- * @noinspection AutoloadingIssuesInspection
  */
-class SageParsersTimestamp extends SageParser
+class SageParsersTimestamp implements SageParserInterface
 {
-    protected static function parse(&$variable, $varData)
+    public function replacesAllOtherParsers()
     {
-        if (! self::_fits($variable)) {
+        return false;
+    }
+
+    public function parse(&$variable, $varData)
+    {
+        if (! $this->_fits($variable)) {
             return false;
         }
 
@@ -18,7 +22,7 @@ class SageParsersTimestamp extends SageParser
         $varData->addTabToView($variable, 'Timestamp', @date('Y-m-d H:i:s', $var));
     }
 
-    private static function _fits($variable)
+    private function _fits($variable)
     {
         if (! SageHelper::isRichMode()) {
             return false;

@@ -3,12 +3,17 @@
 /**
  * @internal
  */
-class SageParsersMicrotime extends SageParser
+class SageParsersMicrotime implements SageParserInterface
 {
     private static $times = array();
     private static $laps = array();
 
-    protected static function parse(&$variable, $varData)
+    public function replacesAllOtherParsers()
+    {
+        return false;
+    }
+
+    public function parse(&$variable, $varData)
     {
         if (! is_string($variable)
             || ! preg_match('/^0\.[\d]{8} [\d]{10}$/', $variable)) {

@@ -2,12 +2,17 @@
 
 /**
  * @internal
- * @noinspection AutoloadingIssuesInspection
  */
-class SageParsersXml extends SageParser
+class SageParsersXml implements SageParserInterface
 {
-    protected static function parse(&$variable, $varData)
+    public function replacesAllOtherParsers()
     {
+        return false;
+    }
+
+    public function parse(&$variable, $varData)
+    {
+        return false; // this is an unsolved problem at humanity level
         if (! SageHelper::isRichMode()) {
             return false;
         }
