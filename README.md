@@ -27,6 +27,14 @@ require 'sage.phar';
 sage('Hello, 🌎!');
 ```
 
+#### Or if your PHP version does not support either, [download the latest source code](https://github.com/php-sage/sage/archive/refs/heads/main.zip) and include `Sage.php`
+
+```php
+require 'sage-main/Sage.php';
+
+sage('Hello, 🌎!');
+```
+
 ## Usage
 
 ```php
@@ -133,11 +141,16 @@ Sage::$theme = Sage::THEME_LIGHT;
    Add this entry to the `autoload.files` configuration key in `composer.json`:
 
 ```js
-"autoload": {
-  "files": [
-  "config/sage.php" /* <--------------- this line */
-  ]
-},
+"autoload"
+:
+{
+    "files"
+:
+    [
+        "config/sage.php" /* <--------------- this line */
+    ]
+}
+,
 ```
 
 2. Put settings inside of `php.ini`:
@@ -342,7 +355,7 @@ sd('Get off my lawn!'); // no effect
 * There are several real-time prefix modifiers you can use (combinations possible):
 
   | Prefix |                                              | Example      |
-  |--------|----------------------------------------------|--------------|
+    |--------|----------------------------------------------|--------------|
   | print  | Puts output into current DIR as sage.html    | print sage() |
   | !      | Dump ignoring depth limits for large objects | ! sage()     |
   | ~      | Simplifies sage output (rich->html->plain)   | ~ sage()     |
