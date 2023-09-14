@@ -5,9 +5,6 @@
  */
 class SageParser
 {
-    /** @var bool set to true in inheriting custom parser to only show that one parser in output */
-    public static $replacesAllOtherParsers = false;
-
     public static $_level = 0;
     /** @var array<string, true> */
     private static $_objects;

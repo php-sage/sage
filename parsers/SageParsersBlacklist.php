@@ -7,7 +7,7 @@ class SageParsersBlacklist implements SageParserInterface
 {
     public function replacesAllOtherParsers()
     {
-        return false;
+        return true;
     }
 
     public function parse(&$variable, $varData)
