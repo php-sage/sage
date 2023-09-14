@@ -52,7 +52,7 @@ sage(1); // shortcut for dumping trace
 | `ssage`     | `ss`      | Simple dump                                      |
 | `ssaged`    | `ssd`     | Simple dump & die                                |
 | `sagetrace` | `s(1)`    | Debug backtrace  (same as `\Sage::trace()`)      |
-| ---         | `s(2)`    | Backtrace without the arguments - just the paths |
+
 
 ### Simple dump:
 
@@ -62,22 +62,44 @@ sage(1); // shortcut for dumping trace
 
 ![Trace view](.github/img/trace.png)
 
-### More cool stuff 🤯
+## Guarantees ✅
 
-Sage determines the **passed variable name** and as a side effect can detect all sort of prefixes to the call. Use it
-for some common on-the-fly adjustments to the dump output.
+1. Sage **just works** and it displays ALL available information (or in cases when something is truncated - that is
+   clear too).
 
-Examples:
+2. Each release is vigorously tested. Use the bleeding edge `dev-main` at your own risk.
+
+3. Semver versioning ensures there's no accidental compatibility breaks if you use it in your production (eg.
+   reporting).
+
+4. Sage has gotten lots of love and improvements for the last >10 years. It is used by a lot of real people in a lot of
+   real-world scenarios, it is battle tested and has a lot of advanced features no other tool has.
+
+## More cool stuff
+
+Sage displays the passed variable name and supports prefixes to the dump function call. Use it for some common
+on-the-fly adjustments to the dump output.
 
 ```php
 ~ss($var); // outputs plain text
 $output = @ss($var); // returns output instead of displaying it
 ! sage($var); // ignores depth limit for large objects
++ sage($var); // auto-expands the view
 print sd($var); // saves output into "sage.html" in the current directory
 print ! sd($var); // saves output into "sage.html" while also ignoring the output depth limit!
 ```
 
-See [Advanced section](#-advanced-tips--tricks) below for more tricks.
+Sage tokenizes & introspects the calling code to get all this information. All that can be done with prefixes can also
+be achieved with standard, verbose syntax:
+
+```php
+~ss($var); 
+// is equivalent to:
+Sage::enabled(Sage::MODE_TEXT_ONLY);
+Sage::dump($var);
+```
+
+See [Advanced section](#-advanced-tips--tricks) below if you want more tips & tricks.
 
 ### Verbose versions
 
@@ -91,66 +113,44 @@ Sage::dump('this looks way less hacky (yeah right:)');
 // equivalent to sage(1);
 Sage::trace(); 
 
-// equivalent to ssage():
-Sage::enabled(Sage::MODE_TEXT_ONLY);
-Sage::dump();
-
 // a real-life test helper:
-function getVarDump(mixed $providedContext): string
-{
-    if (! $providedContext) {
-        return '';
-    }
-
-    Sage::enabled(Sage::MODE_TEXT_ONLY);
-    Sage::$aliases[]         = __CLASS__ . '::' . __FUNCTION__;
-    Sage::$returnOutput      = true;
-    Sage::$displayCalledFrom = false;
-    $debugOutput             = Sage::dump($providedContext);
-    // now reset settings to presumed defaults
-    Sage::enabled(true);
-    Sage::$displayCalledFrom = true;
-    Sage::$returnOutput      = false;
-
-    return PHP_EOL . $debugOutput;
+class TestHelper{
+  public function getVarDump(mixed $providedContext): string
+  {
+      if (! $providedContext) {
+          return '';
+      }
+  
+      $state = Sage::saveState();
+      Sage::enabled(Sage::MODE_TEXT_ONLY);
+      Sage::$aliases[]         = __CLASS__ . '::' . __FUNCTION__;
+      Sage::$returnOutput      = true;
+      Sage::$displayCalledFrom = false;
+      $debugOutput             = Sage::dump($providedContext);
+      
+      Sage::saveState($state); // now reset settings to presumed defaults
+  
+      return PHP_EOL . $debugOutput;
+  }
 }
 ```
-
-However, Sage is only a debug helper and is made with no guarantees it won't burn your house :)
 
 ----
 
-# Customization options
+# Customization
 
-Sage is designed with the utmost care to be as usable and useful out of the box, however there are several customization
-options available for advanced users.
+The main goal of Sage is to be **zero-setup**. There are also several customization options for advanced uses.
 
-### Where to store customization?
+### Where to store the configuration?
 
-#### If you use the `phar` version it does not get simpler:
-
-```php
-require 'sage.phar';
-Sage::$theme = Sage::THEME_LIGHT;
-```
-
-#### If using `composer` you have several options:
-
-1. Create a separate PHP config file and ask composer to autoload it for you:
-
-   Add this entry to the `autoload.files` configuration key in `composer.json`:
+1. Add this entry to the `autoload.files` configuration in `composer.json`:
 
 ```js
-"autoload"
-:
-{
-    "files"
-:
-    [
-        "config/sage.php" /* <--------------- this line */
+"autoload": {
+    "files": [
+        "config/sage.php" /* <--------------- create this file with your settings! */
     ]
-}
-,
+}, ...
 ```
 
 2. Put settings inside of `php.ini`:
@@ -168,7 +168,13 @@ sage.enabled = 0
 
 3. Include the desired settings in your bootstrap process anywhere™.
 
-# All available customization options
+```php
+require 'sage.phar';
+Sage::$theme = Sage::THEME_LIGHT;
+```
+
+
+# All available options
 
 ```php
 Sage::$theme = Sage::THEME_ORIGINAL;
@@ -189,23 +195,7 @@ Sage::$editor = ini_get('xdebug.file_link_format');
 
 Make visible source file paths clickable to open your editor. Available options are:
 
-* `'sublime'`
-* `'textmate'`
-* `'emacs'`
-* `'macvim'`
-* `'phpstorm'`
-* `'phpstorm-remote'` - default,
-  requires [IDE Remote Control](https://plugins.jetbrains.com/plugin/19991-ide-remote-control) plugin.
-* `'idea'`
-* `'vscode'`
-* `'vscode-insiders'`
-* `'vscode-remote'`
-* `'vscode-insiders-remote'`
-* `'vscodium'`
-* `'atom'`
-* `'nova'`
-* `'netbeans'`
-* `'xdebug'`
+> `'phpstorm-remote'` - default (requires [IDE Remote Control](https://plugins.jetbrains.com/plugin/19991-ide-remote-control) plugin), `'sublime'`, `'textmate'`, `'emacs'`, `'macvim'`, `'phpstorm'`, `'idea'`, `'vscode'`, `'vscode-insiders'`, `'vscode-remote'`, `'vscode-insiders-remote'`, `'vscodium'`, `'atom'`, `'nova'`, `'netbeans'`, `'xdebug'`
 
 Or pass a custom string where %file should be replaced with full file path, %line with line number to create a custom
 link. Set to null to disable linking.
@@ -254,11 +244,7 @@ opened as plain text, the color information is visible as gibberish.
 ---
 
 ```php
-Sage::$charEncodings =  [
-    'UTF-8',
-    'Windows-1252', # Western; includes iso-8859-1, replace this with windows-1251 if you have Russian code
-    'euc-jp',       # Japanese
-]
+Sage::$charEncodings =  [ 'UTF-8', 'Windows-1252', 'euc-jp' ]
 ```
 
 Possible alternative char encodings in order of probability.
@@ -279,17 +265,6 @@ Sage::$aliases;
 
 Add new custom Sage wrapper names. Optional, but needed for backtraces, variable name detection and modifiers to work
 properly. Accepts array or comma separated string. Use notation `Class::method` for methods.
-
-```php
-// example, returns text-only output
-function MY_dump($args)
-{
-    Sage::enabled(Sage::MODE_TEXT_ONLY);
-    Sage::$returnOutput = true; // this configuration will persist for ALL subsequent dumps BTW!
-    return d(...func_get_args());
-}
-Sage::$aliases[] = 'my_dump'; // let Sage know about it. In lowercase please.
-```
 
 ---
 
@@ -355,7 +330,7 @@ sd('Get off my lawn!'); // no effect
 * There are several real-time prefix modifiers you can use (combinations possible):
 
   | Prefix |                                              | Example      |
-    |--------|----------------------------------------------|--------------|
+  |--------|----------------------------------------------|--------------|
   | print  | Puts output into current DIR as sage.html    | print sage() |
   | !      | Dump ignoring depth limits for large objects | ! sage()     |
   | ~      | Simplifies sage output (rich->html->plain)   | ~ sage()     |
@@ -388,13 +363,13 @@ sd( microtime(), 'final call, after sleep(2)' );
 * **Debug backtraces** with full insight of arguments, callee objects and more.
 * Custom display for a lot of recognized types:
   ![custom types](.github/img/alternative-view.png)
-* Has text-only, plain and rich views, has several visual themes - actually created by a pro designer.
-* A huge amount of small usability enhancements - like the (clickable) **call trace** in the footer of each output.
+* Has text-only, plain and rich views, has several visual themes - created by a professional designer.
+* A huge number of usability enhancements - like the (clickable) **call trace** in the footer of each output.
 * Supports convenience modifiers, for example `@sage($var);` will return instead of outputting, `-sage($var);`
   will `ob_clean` all output to be the only thing on page (see advanced section above for more).
 * Compatibility! Fully works on **PHP 5.1 - 8.1+**!
 * Code is way less complex - to read and contribute to.
-* Sage came first - developed
+* Sage came **first** - developed
   since [pre-2012](https://github.com/php-sage/sage/commit/3c49968cb912fb627c6650c4bfd4673bb1b44277). It inspired the
   now
   ubiquitous [dd](https://github.com/php-sage/sage/commit/fa6c8074ea1870bb5c6a080e94f7130e9a0f2fda#diff-2cdf3c423d47e373c75638c910674ec68c5aa434e11d4074037c91a543d9cb58R549)
@@ -408,13 +383,12 @@ sd( microtime(), 'final call, after sleep(2)' );
 * [PHP Debug Bar](https://github.com/maximebf/php-debugbar)
 * [Kint](https://kint-php.github.io/kint/) - sage supersedes Kint.
 
-### 💬 Why does Sage look so much like Kint? A.K.A. Why does this have so few stars?
+### 💬 Why does Sage look so much like Kint? A.K.A. Why does this repo have so few stars?
 
-Because it <b>is</b> Kint, and I am its author, however the project was [**forcibly taken over
-**](https://github.com/kint-php/kint/commit/1ea81f3add81b586756515673f8364f60feb86a3) by a malicious
+Because it <b>is</b> Kint, and I am its author, however the project was [**forcibly taken over**](https://github.com/kint-php/kint/commit/1ea81f3add81b586756515673f8364f60feb86a3) by a malicious
 contributor!
 
-Instead of fighting DMCA windmills, I chose to fork and rename the last good version and continue under a new name!
+Instead of fighting windmills I chose to fork and rename the last good version and continue under a new name!
 
 You can use Sage as a drop-in replacement for Kint. Simple.
 
@@ -445,7 +419,7 @@ Do your changes but before committing run
 
 ```bash
  docker compose run php composer build
- # or (see Makefile):
+ # OR (see Makefile):
  make build
 ```
 
