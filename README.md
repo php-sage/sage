@@ -1,6 +1,6 @@
 # Sage - Insightful PHP debugging assistant ☯
 
-At first glance **Sage** is just an effortless, pretty replacement
+At first glance **Sage** is just a drop-in replacement
 for **[var_dump()](http://php.net/manual/en/function.var-dump.php)**
 and **[debug_backtrace()](http://php.net/manual/en/function.debug-backtrace.php)**.
 
