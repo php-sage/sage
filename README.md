@@ -67,11 +67,12 @@ sage(1); // shortcut for dumping trace
 1. Sage **just works** and it displays ALL available information (or in cases when something is truncated - that is
    clear too).
 
-2. Each release is vigorously tested. You can also choose to use the bleeding edge `dev-main` at your own risk.
+2. Each [release](https://github.com/php-sage/sage/releases/) is vigorously tested. Or - use the bleeding edge `dev-main`
+   version at your own risk.
 
-3. Semver versioning ensures there's no compatibility breaks if you use it in your production (eg. reporting).
+4. Semver versioning ensures there's no compatibility breaks if you use it in your production (eg. reporting).
 
-4. Sage has gotten lots of love and improvements in the last >10 years. It is used by a lot of real people in a lot of
+5. Sage has gotten lots of love and improvements in the last >10 years. It is used by a lot of real people in a lot of
    real-world scenarios, it is battle tested and has a lot of advanced features no other tool has.
 
 ## More cool stuff
