@@ -340,6 +340,7 @@ sd('Get off my lawn!'); // no effect
 
 * Sage also includes a naïve profiler you may find handy. It's for determining relatively which code blocks take longer
   than others:
+* Sage runs perfectly fine on PHP 5.1 (couldn't find a way to test it on 5.0).
 
 ```php
 Sage::dump( microtime() ); // just pass microtime() - also works if you pass NOTHING: s();
