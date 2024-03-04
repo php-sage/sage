@@ -253,7 +253,7 @@ class SageParser
                         $extendedValue .= '<th>' . SageHelper::esc($key) . '</th>';
                     }
 
-                    if (in_array($key, Sage::$arrayKeysBlacklist, true)) {
+                    if (SageHelper::isKeyBlacklisted($key)) {
                         $output .= '<td class="_sage-empty"><u>*REDACTED*</u></td>';
                         continue;
                     }
@@ -360,13 +360,13 @@ class SageParser
         }
 
         self::$_objects[$hash] = true;
-        $reflector             = new ReflectionObject($variable);
+        $variableReflection    = new ReflectionObject($variable);
 
         // add link to definition of userland objects
-        if (SageHelper::isHtmlMode() && $reflector->isUserDefined()) {
+        if (SageHelper::isHtmlMode() && $variableReflection->isUserDefined()) {
             $variableData->type = SageHelper::ideLink(
-                $reflector->getFileName(),
-                $reflector->getStartLine(),
+                $variableReflection->getFileName(),
+                $variableReflection->getStartLine(),
                 $variableData->type
             );
         }
@@ -383,8 +383,6 @@ class SageParser
 
         // copy the object as an array as it provides more info than Reflection (depends)
         foreach ($castedArray as $key => $value) {
-            $output = self::process($value);
-
             /* casting object to array:
              * integer properties are inaccessible;
              * private variables have the class name prepended to the variable name;
@@ -405,6 +403,11 @@ class SageParser
                 }
             }
 
+            if (SageHelper::isKeyBlacklisted($key)) {
+                $value = '*REDACTED*';
+            }
+
+            $output           = self::process($value);
             $output->name     = SageHelper::esc($key);
             $output->access   = $access;
             $output->operator = '->';
@@ -420,7 +423,7 @@ class SageParser
             return $castedArray;
         }
 
-        foreach ($reflector->getProperties() as $property) {
+        foreach ($variableReflection->getProperties() as $property) {
             if ($property->isStatic()) {
                 continue;
             }
@@ -464,7 +467,7 @@ class SageParser
             $variable->setFlags($arrayObjectFlags);
         }
 
-        if (method_exists($reflector, 'isEnum') && $reflector->isEnum()) {
+        if (method_exists($variableReflection, 'isEnum') && $variableReflection->isEnum()) {
             $variableData->size  = 'enum';
             $variableData->value = '"' . $variable->name . '"';
         }

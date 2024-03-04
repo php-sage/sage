@@ -179,7 +179,11 @@ class SageTraceStep
     {
         $result = array();
         foreach ($this->getRawArguments($step) as $k => $variable) {
-            $name             = isset($argumentNames[$k]) ? $argumentNames[$k] : '';
+            $name = isset($argumentNames[$k]) ? $argumentNames[$k] : '';
+            if (SageHelper::isKeyBlacklisted($name)) {
+                $variable = '*REDACTED*';
+            }
+
             $parsed           = SageParser::process($variable, $argumentNames[$k]);
             $parsed->operator = substr($name, 0, 1) === '$' ? '=' : ':';
             $result[]         = $parsed;

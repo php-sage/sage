@@ -64,21 +64,6 @@ class SageHelper
     {
         $file = str_replace('\\', '/', $file);
 
-        // Find common path with Sage dir
-        if (! isset(self::$projectRootDir)) {
-            self::$projectRootDir = '';
-
-            $sagePathParts = explode('/', str_replace('\\', '/', SAGE_DIR));
-            $filePathParts = explode('/', $file);
-            foreach ($filePathParts as $i => $filePart) {
-                if (! isset($sagePathParts[$i]) || $sagePathParts[$i] !== $filePart) {
-                    break;
-                }
-
-                self::$projectRootDir .= $filePart . '/';
-            }
-        }
-
         if (self::$projectRootDir && strpos($file, self::$projectRootDir) === 0) {
             return substr($file, strlen(self::$projectRootDir));
         }
@@ -108,6 +93,22 @@ class SageHelper
         }
     }
 
+    public static function detectProjectRoot($calledFromFile)
+    {
+        // Find common path with Sage dir
+        self::$projectRootDir = '';
+
+        $sagePathParts = explode('/', str_replace('\\', '/', SAGE_DIR));
+        $filePathParts = explode('/', $calledFromFile);
+        foreach ($filePathParts as $i => $filePart) {
+            if (! isset($sagePathParts[$i]) || $sagePathParts[$i] !== $filePart) {
+                break;
+            }
+
+            self::$projectRootDir .= $filePart . '/';
+        }
+    }
+
     /**
      * returns whether current trace step belongs to Sage or its wrappers
      *
@@ -128,6 +129,11 @@ class SageHelper
         }
 
         return in_array(strtolower($step['function']), self::$aliasesRaw['functions'], true);
+    }
+
+    public static function isKeyBlacklisted($key)
+    {
+        return in_array(preg_replace('/\W/', '', $key), Sage::$keysBlacklist, true);
     }
 
     public static function substr($string, $start, $end, $encoding = null)

@@ -9,6 +9,10 @@ sh:
 	make console
 
 
+release:
+	make build
+
+
 build:
 	$(DOCKER) up -d
 	$(DOCKER) run php composer build # see composer.json -> "scripts" section

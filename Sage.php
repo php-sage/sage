@@ -239,7 +239,7 @@ class Sage
         // 'symfony'    => '/^Symfony/'
     );
 
-    public static $arrayKeysBlacklist = array();
+    public static $keysBlacklist = array();
 
     public static $minimumTraceStepsToShowFull = 1;
 
@@ -634,12 +634,22 @@ class Sage
         // now restore all on-the-fly settings and return
 
         if (self::$outputFile) {
-            if (! isset(self::$_openedOutput[self::$outputFile])) {
-                self::$_openedOutput[self::$outputFile] = fopen(self::$outputFile, 'w');
-                $decorator->setAssetsNeeded($firstRunOldValue);
-            }
+            try {
+                if (! isset(self::$_openedOutput[self::$outputFile])) {
+                    self::$_openedOutput[self::$outputFile] = fopen(self::$outputFile, 'w');
+                    $decorator->setAssetsNeeded($firstRunOldValue);
+                }
 
-            fwrite(self::$_openedOutput[self::$outputFile], $output);
+                fwrite(self::$_openedOutput[self::$outputFile], $output);
+
+                echo 'Sage -> ' . self::$outputFile . PHP_EOL;
+            } catch (Throwable $e) {
+                self::$outputFile = null;
+                $output           .= "Error: Sage can't write file to " . self::$outputFile;
+            } catch (Exception $e) {
+                self::$outputFile = null;
+                $output           .= "Error: Sage can't write file to " . self::$outputFile;
+            }
         }
 
         self::enabled($enabledMode);
@@ -660,12 +670,7 @@ class Sage
             }
 
             if (! empty($modifiers) && strpos($modifiers, 'print') !== false && isset($callee['file'])) {
-                $tmp              = self::$outputFile;
                 self::$outputFile = $outputFileOldValue;
-
-                if (strpos($modifiers, '@') === false) {
-                    echo 'Sage -> ' . $tmp . PHP_EOL;
-                }
 
                 return 5463;
             }
@@ -743,6 +748,8 @@ class Sage
         if (! isset($callee['file']) || ! is_readable($callee['file'])) {
             return array(null, null, $callee, $previousCaller, $miniTrace);
         }
+        
+        SageHelper::detectProjectRoot($callee['file']);
 
         // open the file and read it up to the position where the function call expression ended
         // TODO since PHP 8.2 backtrace reports the lineno of the function/method name!

@@ -271,10 +271,8 @@ if (typeof _sageInitialized === 'undefined') {
             if (_sage.currentPlus !== -1) _sage.fetchVisiblePluses();
             return false;
         } else if (_sage.hasClass(target, '_sage-ide-link')) {
-            e.preventDefault();
-            const ajax = new XMLHttpRequest(); // add ajax call to contact editor but prevent link default action
-            ajax.open('get', target.href);
-            ajax.send();
+            fetch(target.href);
+            return false;
         } else if (_sage.hasClass(target, '_sage-popup-trigger')) {
             let _sageContainer = target.parentNode;
             if (_sageContainer.tagName === 'FOOTER') {

@@ -386,8 +386,9 @@ sd( microtime(), 'final call, after sleep(2)' );
 
 ### 💬 Why does Sage look so much like Kint? A.K.A. Why does this repo have so few stars?
 
-Because it <b>is</b> Kint, and I am its author, however the project was [**forcibly taken over**](https://github.com/kint-php/kint/commit/1ea81f3add81b586756515673f8364f60feb86a3) by a malicious
-contributor!
+Because it <b>is</b> Kint, and I am its author, however the project was
+[**forcibly taken over**](https://github.com/kint-php/kint/commit/1ea81f3add81b586756515673f8364f60feb86a3) by a
+malicious contributor!
 
 Instead of fighting windmills I chose to fork and rename the last good version and continue under a new name!
 
@@ -403,6 +404,11 @@ You can use Sage as a drop-in replacement for Kint. Simple.
    the values are still there...
 
 I use xdebug almost daily, by the way. Side by side with Sage.
+
+### Known issues
+
+1. Since PHP 8.2 variable name detection for *multiline* Sage calls is broken. Simple matter of Backtrace format
+   changing the reported line, fix is comming.
 
 ---
 
