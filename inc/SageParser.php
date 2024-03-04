@@ -295,7 +295,7 @@ class SageParser
                     continue;
                 }
 
-                if (in_array($key, Sage::$arrayKeysBlacklist, true)) {
+                if (in_array($key, Sage::$keysBlacklist, true)) {
                     $val = '*REDACTED*';
                 }
 
