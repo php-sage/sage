@@ -6,6 +6,8 @@ and **[debug_backtrace()](http://php.net/manual/en/function.debug-backtrace.php)
 
 However, it's much, *much* more.
 
+---
+
 Sage is designed to exceed expectations, it intelligently handles everything that you throw at it and displays in the best possible way. 
 
 If you can think of how it can be better, please create an issue!
