@@ -277,6 +277,7 @@ if (typeof _sageInitialized === 'undefined') {
             }
             return false;
         } else if (_sage.hasClass(target, '_sage-ide-link')) {
+            e.preventDefault()
             fetch(target.href);
             return false;
         } else if (_sage.hasClass(target, '_sage-popup-trigger')) {
