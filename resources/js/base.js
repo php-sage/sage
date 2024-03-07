@@ -17,26 +17,19 @@ if (typeof _sageInitialized === 'undefined') {
             Array.prototype.slice.call(document.querySelectorAll(selector), 0).forEach(callback)
         },
 
-        hasClass: function (target, className) {
-            if (!target.classList) return false;
-
-            if (typeof className === 'undefined') {
-                className = '_sage-show';
+        hasClass: function (target, className = '_sage-show') {
+            if (!target.classList) {
+                return false;
             }
+
             return target.classList.contains(className);
         },
 
-        addClass: function (target, className) {
-            if (typeof className === 'undefined') {
-                className = '_sage-show';
-            }
+        addClass: function (target, className = '_sage-show') {
             target.classList.add(className);
         },
 
-        removeClass: function (target, className) {
-            if (typeof className === 'undefined') {
-                className = '_sage-show';
-            }
+        removeClass: function (target, className = '_sage-show') {
             target.classList.remove(className);
             return target;
         },
@@ -87,13 +80,16 @@ if (typeof _sageInitialized === 'undefined') {
             _sage.toggle(element, hide);
         },
 
-        toggleAll: function (caret) {
+        toggleAll: function (show) {
             const elements = document.getElementsByClassName('_sage-parent')
             let i = elements.length
-            const visible = _sage.hasClass(caret.parentNode);
 
             while (i--) {
-                _sage.toggle(elements[i], visible);
+                if (show) {
+                    _sage.addClass(elements[i]);
+                } else {
+                    _sage.removeClass(elements[i]);
+                }
             }
         },
 
@@ -115,7 +111,9 @@ if (typeof _sageInitialized === 'undefined') {
         isSibling: function (el) {
             for (; ;) {
                 el = el.parentNode;
-                if (!el || _sage.hasClass(el, '_sage')) break;
+                if (!el || _sage.hasClass(el, '_sage')) {
+                    break;
+                }
             }
 
             return !!el;
@@ -216,11 +214,13 @@ if (typeof _sageInitialized === 'undefined') {
         }
     };
 
-    window.addEventListener("click", function (e) {
+    window.addEventListener('click', function (e) {
         let target = e.target
             , tagName = target.tagName;
 
-        if (!_sage.isSibling(target)) return;
+        if (!_sage.isSibling(target)) {
+            return;
+        }
 
         // auto-select name of variable
         if (tagName === 'DFN') {
@@ -240,7 +240,9 @@ if (typeof _sageInitialized === 'undefined') {
         if (tagName === 'LI' && target.parentNode.className === '_sage-tabs') {
             if (target.className !== '_sage-active-tab') {
                 _sage.switchTab(target);
-                if (_sage.currentPlus !== -1) _sage.fetchVisiblePluses();
+                if (_sage.currentPlus !== -1) {
+                    _sage.fetchVisiblePluses();
+                }
             }
             return false;
         }
@@ -259,7 +261,9 @@ if (typeof _sageInitialized === 'undefined') {
                         target._sageTimer--;
                     } else {
                         _sage.toggleChildren(target.parentNode); // <dt>
-                        if (_sage.currentPlus !== -1) _sage.fetchVisiblePluses();
+                        if (_sage.currentPlus !== -1) {
+                            _sage.fetchVisiblePluses();
+                        }
                     }
                 }, 300);
             }
@@ -268,7 +272,9 @@ if (typeof _sageInitialized === 'undefined') {
             return false;
         } else if (_sage.hasClass(target, '_sage-parent')) {
             _sage.toggle(target);
-            if (_sage.currentPlus !== -1) _sage.fetchVisiblePluses();
+            if (_sage.currentPlus !== -1) {
+                _sage.fetchVisiblePluses();
+            }
             return false;
         } else if (_sage.hasClass(target, '_sage-ide-link')) {
             fetch(target.href);
@@ -289,29 +295,38 @@ if (typeof _sageInitialized === 'undefined') {
         }
     }, false);
 
-    window.addEventListener("dblclick", function (e) {
+    window.addEventListener('dblclick', function (e) {
         const target = e.target;
-        if (!_sage.isSibling(target)) return;
+        if (!_sage.isSibling(target)) {
+            return;
+        }
 
         if (target.tagName === 'NAV') {
             target._sageTimer = 2;
-            _sage.toggleAll(target);
-            if (_sage.currentPlus !== -1) _sage.fetchVisiblePluses();
+            _sage.toggleAll(_sage.hasClass(target));
+            if (_sage.currentPlus !== -1) {
+                _sage.fetchVisiblePluses();
+            }
             e.stopPropagation();
         }
     }, false);
 
     // keyboard navigation
     window.onkeydown = function (e) { // direct assignment is used to have priority over ex FAYT
-
-        // do nothing if alt/ctrl key is pressed or if we're actually typing somewhere
-        if (["INPUT", "TEXTAREA"].includes(e.target.tagName) || e.altKey || e.ctrlKey) return;
-
         // todo use e.key https://www.toptal.com/developers/keycode
-        const keyCode = e.keyCode
-            , shiftKey = e.shiftKey
+        const keyCode = e.keyCode;
         let i = _sage.currentPlus;
 
+        // user pressed ctrl+f
+        if (keyCode === 70 && e.ctrlKey) {
+            _sage.toggleAll(true);
+            return;
+        }
+
+        // do nothing if alt/ctrl key is pressed or if we're actually typing somewhere
+        if (['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.altKey || e.ctrlKey) {
+            return;
+        }
 
         if (keyCode === 9) { // TAB jumps out of navigation
             _sage.keyCallBacks.cleanup(-1);
@@ -327,7 +342,9 @@ if (typeof _sageInitialized === 'undefined') {
                 return false;
             }
         } else {
-            if (i === -1) return;
+            if (i === -1) {
+                return;
+            }
 
             if (keyCode === 38) { // ARROW UP : moves up
                 return _sage.keyCallBacks.moveCursor(true, i);
@@ -398,7 +415,7 @@ if (typeof _sageInitialized === 'undefined') {
         }
     };
 
-    window.addEventListener("load", function () { // colorize microtime results relative to others
+    window.addEventListener('load', function () { // colorize microtime results relative to others
         const elements = Array.prototype.slice.call(document.querySelectorAll('._sage-microtime'), 0);
         let min = Infinity
             , max = -Infinity;
@@ -406,8 +423,12 @@ if (typeof _sageInitialized === 'undefined') {
         elements.forEach(function (el) {
             const val = parseFloat(el.innerHTML);
 
-            if (min > val) min = val;
-            if (max < val) max = val;
+            if (min > val) {
+                min = val;
+            }
+            if (max < val) {
+                max = val;
+            }
         });
 
         elements.forEach(function (el) {
@@ -421,7 +442,9 @@ if (typeof _sageInitialized === 'undefined') {
 
 // debug purposes only, removed in minified source
 function clg(i) {
-    if (!window.console) return;
+    if (!window.console) {
+        return;
+    }
     const l = arguments.length;
     let o = 0;
     while (o < l) console.log(arguments[o++])
