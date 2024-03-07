@@ -133,7 +133,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             }
         }
 
-        $output = '<dt class="' . $class . '">';
+        $output = $class ? '<dt class="' . $class . '">' : '<dt>';
         $output .= '<b>' . ($i + 1) . '</b>';
         if (! $isChildless) {
             $output .= '<nav></nav>';

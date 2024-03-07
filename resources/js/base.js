@@ -93,14 +93,28 @@ if (typeof _sageInitialized === 'undefined') {
             }
         },
 
+        switchAllToNextTraceTab: function () {
+            document.querySelectorAll('._sage-trace>dd>._sage-tabs>._sage-active-tab').forEach(function (element) {
+                const nextTab = element.nextSibling;
+                if (nextTab) {
+                    _sage.switchTab(nextTab);
+                }
+            })
+        },
+
         switchTab: function (target) {
             let lis, el = target, index = 0;
 
-            _sage.removeClass(target.parentNode.getElementsByClassName('_sage-active-tab')[0], '_sage-active-tab');
-            target.className = '_sage-active-tab';
+            _sage.removeClass(
+                target.parentNode.getElementsByClassName('_sage-active-tab')[0],
+                '_sage-active-tab'
+            );
+            _sage.addClass(target, '_sage-active-tab');
 
             // take the index of clicked title tab and make the same n-th content tab visible
-            while (el = el.previousSibling) el.nodeType === 1 && index++;
+            while (el = el.previousSibling) {
+                el.nodeType === 1 && index++;
+            }
 
             lis = target.parentNode.nextSibling.childNodes;
             for (let i = 0; i < lis.length; i++) {
@@ -237,8 +251,8 @@ if (typeof _sageInitialized === 'undefined') {
         }
 
         // switch tabs
-        if (tagName === 'LI' && target.parentNode.className === '_sage-tabs') {
-            if (target.className !== '_sage-active-tab') {
+        if (tagName === 'LI' && _sage.hasClass(target.parentNode, '_sage-tabs')) {
+            if (!_sage.hasClass(target, '_sage-active-tab')) {
                 _sage.switchTab(target);
                 if (_sage.currentPlus !== -1) {
                     _sage.fetchVisiblePluses();
@@ -321,6 +335,8 @@ if (typeof _sageInitialized === 'undefined') {
         // user pressed ctrl+f
         if (keyCode === 70 && e.ctrlKey) {
             _sage.toggleAll(true);
+            // we are probably more interested in the Arguments, or Callee object tab in traces, whichever exists
+            _sage.switchAllToNextTraceTab(true);
             return;
         }
 
