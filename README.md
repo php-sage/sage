@@ -8,13 +8,11 @@ However, it's much, *much* more.
 
 ---
 
+![](.github/img/main-screenshot.png)
+
 Sage is designed to exceed expectations, it intelligently handles everything that you throw at it and displays in the best possible way. 
 
 If you can think of how it can be better, please create an issue!
-
----
-
-![](.github/img/main-screenshot.png)
 
 For an overview of Sage's outstanding features jump to the [F.A.Q.](#faq)
 
