@@ -82,8 +82,11 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         $output = '<dl class="_sage-trace">';
 
         $blacklistedStepsInARow = 0;
-        foreach ($traceData as $i => $step) {
-            if ($step->isBlackListed) {
+        foreach ($traceData as $stepNumber => $step) {
+            if (
+                $stepNumber >= Sage::$minimumTraceStepsToShowFull
+                && $step->isBlackListed
+            ) {
                 $blacklistedStepsInARow++;
                 continue;
             }
@@ -91,7 +94,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             if ($blacklistedStepsInARow) {
                 if ($blacklistedStepsInARow <= 5) {
                     for ($j = $blacklistedStepsInARow; $j > 0; $j--) {
-                        $output .= $this->drawTraceStep($i - $j, $traceData[$i - $j], $pathsOnly);
+                        $output .= $this->drawTraceStep($stepNumber - $j, $traceData[$stepNumber - $j], $pathsOnly);
                     }
                 } else {
                     $output .= "<dt><b></b>[{$blacklistedStepsInARow} steps skipped]</dt>";
@@ -100,7 +103,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
                 $blacklistedStepsInARow = 0;
             }
 
-            $output .= $this->drawTraceStep($i, $step, $pathsOnly);
+            $output .= $this->drawTraceStep($stepNumber, $step, $pathsOnly);
         }
 
         if ($blacklistedStepsInARow > 1) {

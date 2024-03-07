@@ -80,49 +80,39 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
     public function decorateTrace(array $traceData, $pathsOnly = false)
     {
         $lastStepNumber = count($traceData);
-        $stepNumber     = 1;
         $output         = $this->title($pathsOnly ? 'QUICK TRACE' : 'TRACE');
 
-        // ASCII art 🎨
-        $_________________ = '────────────────────────────────────────────────────────────────────────────────';
-        $____Arguments____ = '    ┌────────────────────────── Arguments ─────────────────────────────────┐';
-        $__Callee_Object__ = '    ┌───────────────────────── Callee Object ──────────────────────────────┐';
-        $L________________ = '    └──────────────────────────────────────────────────────────────────────┘';
-        $_________________ = $this->colorize($_________________, 'header');
-        $____Arguments____ = $this->colorize($____Arguments____, 'header');
-        $__Callee_Object__ = $this->colorize($__Callee_Object__, 'header');
-        $L________________ = $this->colorize($L________________, 'header');
-
-        foreach ($traceData as $step) {
-            $output .= str_pad($stepNumber++ . ': ', 4, ' ');
-            $output .= $this->colorize($step->fileLine, 'header');
-
-            if ($step->functionName) {
-                $output .= '    ' . $step->functionName;
-                $output .= PHP_EOL;
+        $blacklistedStepsInARow = 0;
+        foreach ($traceData as $stepNumber => $step) {
+            if (
+                $stepNumber >= Sage::$minimumTraceStepsToShowFull
+                && $step->isBlackListed
+            ) {
+                $blacklistedStepsInARow++;
+                continue;
             }
 
-            if (! $pathsOnly && $step->arguments) {
-                $output .= $____Arguments____;
-
-                foreach ($step->arguments as $argument) {
-                    $output .= $this->decorate($argument, 2);
+            if ($blacklistedStepsInARow) {
+                if ($blacklistedStepsInARow <= 5) {
+                    for ($j = $blacklistedStepsInARow; $j > 0; $j--) {
+                        $output .= $this->drawTraceStep(
+                            $stepNumber - $j,
+                            $traceData[$stepNumber - $j],
+                            $pathsOnly,
+                            $lastStepNumber
+                        );
+                    }
+                } else {
+                    $output .= "...\n[{$blacklistedStepsInARow} steps skipped]\n...\n";
                 }
 
-                $output .= $L________________;
+                $blacklistedStepsInARow = 0;
             }
+            $output .= $this->drawTraceStep($stepNumber, $step, $pathsOnly, $lastStepNumber);
+        }
 
-            if (! $pathsOnly && $step->object) {
-                $output .= $__Callee_Object__;
-
-                $output .= $this->decorate($step->object, 2);
-
-                $output .= $L________________;
-            }
-
-            if ($stepNumber !== $lastStepNumber) {
-                $output .= $_________________;
-            }
+        if ($blacklistedStepsInARow > 1) {
+            $output .= "...\n[{$blacklistedStepsInARow} steps skipped]\n";
         }
 
         return $output;
@@ -306,5 +296,52 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
         return '<style>._sage_plain{text-shadow: #eee 0 0 7px;}._sage_plain *{display: inline;margin: 0;font-size: 1em}._sage_plain h1{color:#5aF}._sage_plain var{color:#d11}._sage_plain dfn{color:#3d3}._sage_plain a{color: inherit;filter: brightness(0.85);}</style>'
             . '<script>window.onload=function(){document.querySelectorAll("._sage_plain a").forEach(el=>el.addEventListener("click",e=>{e.preventDefault();let X=new XMLHttpRequest;X.open("GET",e.target.href);X.send()}))}</script>';
+    }
+
+    private function drawTraceStep($stepNumber, $step, $pathsOnly, $lastStepNumber)
+    {
+        $output = '';
+
+        // ASCII art 🎨
+        $_________________ = '────────────────────────────────────────────────────────────────────────────────';
+        $____Arguments____ = '    ┌────────────────────────── Arguments ─────────────────────────────────┐';
+        $__Callee_Object__ = '    ┌───────────────────────── Callee Object ──────────────────────────────┐';
+        $L________________ = '    └──────────────────────────────────────────────────────────────────────┘';
+        $_________________ = $this->colorize($_________________, 'header');
+        $____Arguments____ = $this->colorize($____Arguments____, 'header');
+        $__Callee_Object__ = $this->colorize($__Callee_Object__, 'header');
+        $L________________ = $this->colorize($L________________, 'header');
+
+        $output .= str_pad($stepNumber++ . ': ', 4, ' ');
+        $output .= $this->colorize($step->fileLine, 'header');
+
+        if ($step->functionName) {
+            $output .= '    ' . $step->functionName;
+            $output .= PHP_EOL;
+        }
+
+        if (! $pathsOnly && $step->arguments) {
+            $output .= $____Arguments____;
+
+            foreach ($step->arguments as $argument) {
+                $output .= $this->decorate($argument, 2);
+            }
+
+            $output .= $L________________;
+        }
+
+        if (! $pathsOnly && $step->object) {
+            $output .= $__Callee_Object__;
+
+            $output .= $this->decorate($step->object, 2);
+
+            $output .= $L________________;
+        }
+
+        if ($stepNumber !== $lastStepNumber) {
+            $output .= $_________________;
+        }
+
+        return $output;
     }
 }

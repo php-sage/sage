@@ -227,7 +227,7 @@ class Sage
      *     ╚══╝╚══╝ ╚═╝╚═╝
      */
     /**
-     * @var string[] keys don't matter, but you can use them to unset a particular entry.
+     * @var string[] Patterns of filename paths. Keys don't matter, but you can use them to unset a particular entry.
      */
     public static $traceBlacklist = array(
         'vendor'     => '#\/vendor\/#',
@@ -748,7 +748,7 @@ class Sage
         if (! isset($callee['file']) || ! is_readable($callee['file'])) {
             return array(null, null, $callee, $previousCaller, $miniTrace);
         }
-        
+
         SageHelper::detectProjectRoot($callee['file']);
 
         // open the file and read it up to the position where the function call expression ended

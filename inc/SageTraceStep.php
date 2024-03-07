@@ -42,10 +42,6 @@ class SageTraceStep
             return false;
         }
 
-        if ($stepNumber < Sage::$minimumTraceStepsToShowFull) {
-            return false;
-        }
-
         foreach (Sage::$traceBlacklist as $blacklistedPath) {
             if (preg_match($blacklistedPath, $step['file'])) {
                 return true;
