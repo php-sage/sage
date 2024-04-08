@@ -71,6 +71,7 @@ class User extends BaseUser
      */
     public function ensure()
     {
+        ss(debug_backtrace());
         Sage::trace();
     }
 }
@@ -158,4 +159,3 @@ s($nestedArray);
 ss($user);
 ~ss('PHP VERSION ' . PHP_VERSION);
 $userManager->ensureUser($userManager);
-echo 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';

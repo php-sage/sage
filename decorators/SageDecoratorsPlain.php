@@ -223,7 +223,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             $traceDisplay = PHP_EOL;
             $i            = 0;
             foreach ($miniTrace as $step) {
-                $traceDisplay .= '        ' . $i + 2 . '. ';
+                $traceDisplay .= '        ' . ($i + 2) . '. ';
                 $traceDisplay .= SageHelper::ideLink($step['file'], $step['line']);
                 $traceDisplay .= PHP_EOL;
                 if ($i++ > 2) {

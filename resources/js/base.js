@@ -3,6 +3,100 @@ if (typeof _sageInitialized === 'undefined') {
     const _sage = {
         visiblePluses: [], // all visible toggle carets
         currentPlus: -1, // currently selected caret
+        pinnedParents: [], // fixed to top parents
+
+        debounce: (callback, wait = 100) => {
+            let timeoutId;
+            return (...args) => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => callback(...args), wait)
+            };
+        },
+
+        processScroll: function () {
+            let i = _sage.pinnedParents.length;
+            while (i--) {
+                let el = _sage.pinnedParents[i]
+                let pinnedClone = el.sageClone
+                if (window.scrollY <= pinnedClone.sageMinY || window.scrollY >= pinnedClone.sageMaxY) {
+                    _sage.pinnedParents.splice(i, 1)
+                    pinnedClone.remove()
+                    el.sageClone = null
+                }
+            }
+
+            let all = document.querySelectorAll('._sage')
+            i = all.length;
+            while (i--) {
+                const sage = all[i]
+
+                if (!_sage.isPinningNeeded(sage)) {
+                    return;
+                }
+
+                let totalPinnedHeight = 0
+                sage.querySelectorAll('._sage-clone').forEach(function (clone) {
+                    totalPinnedHeight += clone.offsetHeight
+                })
+                sage.querySelectorAll('dt._sage-parent._sage-show:not(._sage-clone)').forEach(function (parent) {
+                    if (_sage.pinnedParents.includes(parent)) {
+                        return;
+                    }
+
+                    const children = parent.nextElementSibling; // <dd>
+
+                    if (!_sage.isPinningNeeded(children)) {
+                        return;
+                    }
+
+                    // we create a pinned clone to float - for many technical reasons :)
+                    const clone = parent.cloneNode(true);
+                    const rect = children.getBoundingClientRect();
+
+                    clone.sageMinY = rect.top + window.scrollY;
+                    clone.sageMaxY = rect.bottom + window.scrollY;
+                    clone.style.width = rect.width + 'px'
+                    clone.style.top = totalPinnedHeight + 'px'
+                    clone.style.position = 'fixed'
+                    clone.style.opacity = 0.9
+                    clone.classList.add('_sage-clone')
+
+                    totalPinnedHeight += parent.offsetHeight
+                    parent.sageClone = clone
+                    _sage.pinnedParents.push(parent)
+                    parent.after(clone)
+                })
+
+                // my brain & time management restrictions do not support side by side sage outputs
+                break;
+            }
+        },
+
+        isPinningNeeded: function (el) {
+            const rect = el.getBoundingClientRect()
+
+            if (rect.height === 0) {
+                return false;
+            }
+
+
+            // if top is lower than the viewport
+            if (rect.top >= window.innerHeight) {
+                return false
+            }
+
+            // if top is visible we don't need to scroll it to view
+            if (rect.top > 0) {
+                return false
+            }
+
+            // if bottom is above view port, we scrolled passed it and it's invisible now
+            if (rect.bottom < 25) {
+                return false
+            }
+
+            return true
+        },
 
         selectText: function (element) {
             const selection = window.getSelection(),
@@ -55,8 +149,8 @@ if (typeof _sageInitialized === 'undefined') {
 
             // also open up child element if there's only one
             let parent = _sage.next(element);
-            if (parent && parent.childNodes.length === 1) {
-                parent = parent.childNodes[0].childNodes[0]; // reuse variable cause I can
+            if (parent && parent.childElementCount === 1) {
+                parent = parent.children[0]; // reuse variable cause I can
 
                 // parent is checked in case of empty <pre> when array("\n") is dumped
                 if (parent && _sage.hasClass(parent, '_sage-parent')) {
@@ -122,8 +216,18 @@ if (typeof _sageInitialized === 'undefined') {
             }
         },
 
-        isSibling: function (el) {
+        isInsideSage: function (el) {
             for (; ;) {
+                // if it's a pinned clone scroll to original element on click
+                if (_sage.hasClass(el, '_sage-clone')) {
+                    let scrollTo = el.offsetHeight;
+                    if (el.style.top !== '0px') {
+                        scrollTo *= 2;
+                    }
+                    window.scroll(0, el.sageMinY - scrollTo);
+                    return false;
+                }
+
                 el = el.parentNode;
                 if (!el || _sage.hasClass(el, '_sage')) {
                     break;
@@ -211,7 +315,6 @@ if (typeof _sageInitialized === 'undefined') {
             },
 
             moveCursor: function (up, i) {
-                // todo make the first VISIBLE plus active
                 if (up) {
                     if (--i < 0) {
                         i = _sage.visiblePluses.length - 1;
@@ -232,7 +335,7 @@ if (typeof _sageInitialized === 'undefined') {
         let target = e.target
             , tagName = target.tagName;
 
-        if (!_sage.isSibling(target)) {
+        if (!_sage.isInsideSage(target)) {
             return;
         }
 
@@ -312,7 +415,7 @@ if (typeof _sageInitialized === 'undefined') {
 
     window.addEventListener('dblclick', function (e) {
         const target = e.target;
-        if (!_sage.isSibling(target)) {
+        if (!_sage.isInsideSage(target)) {
             return;
         }
 
@@ -330,7 +433,7 @@ if (typeof _sageInitialized === 'undefined') {
     window.onkeydown = function (e) { // direct assignment is used to have priority over ex FAYT
         // todo use e.key https://www.toptal.com/developers/keycode
         const keyCode = e.keyCode;
-        let i = _sage.currentPlus;
+        let currentPlus = _sage.currentPlus;
 
         // user pressed ctrl+f
         if (keyCode === 70 && e.ctrlKey) {
@@ -351,36 +454,36 @@ if (typeof _sageInitialized === 'undefined') {
             return;
             // todo 's' too
         } else if (keyCode === 68) { // 'd' : toggles navigation on/off
-            if (i === -1) {
+            if (currentPlus === -1) {
                 _sage.fetchVisiblePluses();
-                return _sage.keyCallBacks.moveCursor(false, i);
+                return _sage.keyCallBacks.moveCursor(false, currentPlus);
             } else {
                 _sage.keyCallBacks.cleanup(-1);
                 return false;
             }
         } else {
-            if (i === -1) {
+            if (currentPlus === -1) {
                 return;
             }
 
             if (keyCode === 38) { // ARROW UP : moves up
-                return _sage.keyCallBacks.moveCursor(true, i);
+                return _sage.keyCallBacks.moveCursor(true, currentPlus);
             } else if (keyCode === 40) { // ARROW DOWN : down
-                return _sage.keyCallBacks.moveCursor(false, i);
+                return _sage.keyCallBacks.moveCursor(false, currentPlus);
             }
         }
 
 
-        let currentNav = _sage.visiblePluses[i];
+        let currentNav = _sage.visiblePluses[currentPlus];
         if (currentNav.tagName === 'LI') { // we're on a trace tab
             if (keyCode === 32 || keyCode === 13) { // SPACE/ENTER
                 _sage.switchTab(currentNav);
                 _sage.fetchVisiblePluses();
-                return _sage.keyCallBacks.moveCursor(true, i);
+                return _sage.keyCallBacks.moveCursor(true, currentPlus);
             } else if (keyCode === 39) { // arrows
-                return _sage.keyCallBacks.moveCursor(false, i);
+                return _sage.keyCallBacks.moveCursor(false, currentPlus);
             } else if (keyCode === 37) {
-                return _sage.keyCallBacks.moveCursor(true, i);
+                return _sage.keyCallBacks.moveCursor(true, currentPlus);
             }
         }
 
@@ -416,13 +519,13 @@ if (typeof _sageInitialized === 'undefined') {
                     if (currentNav) {
                         currentNav = currentNav.previousElementSibling;
 
-                        i = -1;
+                        currentPlus = -1;
                         const parentPlus = currentNav.querySelector('nav');
-                        while (parentPlus !== _sage.visiblePluses[++i]) {
+                        while (parentPlus !== _sage.visiblePluses[++currentPlus]) {
                         }
-                        _sage.keyCallBacks.cleanup(i)
+                        _sage.keyCallBacks.cleanup(currentPlus)
                     } else { // we are at root
-                        currentNav = _sage.visiblePluses[i].parentNode;
+                        currentNav = _sage.visiblePluses[currentPlus].parentNode;
                     }
                 }
                 _sage.toggle(currentNav, hide);
@@ -455,6 +558,8 @@ if (typeof _sageInitialized === 'undefined') {
             el.style.background = 'hsl(' + Math.round(ratio * 120) + ',60%,70%)';
         });
     });
+
+    window.addEventListener('scroll', _sage.debounce(_sage.processScroll));
 }
 
 // debug purposes only, removed in minified source
