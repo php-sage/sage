@@ -696,6 +696,15 @@ class Sage
         return 5463;
     }
 
+    public static function showEloquentQueries()
+    {
+        // maintain PHP5.1+ compatibility
+        if (SageHelper::php53orLater()) {
+            self::$aliases[] = __CLASS__ . '::' . __FUNCTION__;
+
+            require SAGE_DIR . 'inc/eloquentListener.inc.php';
+        }
+    }
 
     /*
      *    ██████╗ ██████╗ ██╗██╗   ██╗ █████╗ ████████╗███████╗
