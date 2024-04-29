@@ -42,21 +42,22 @@ if (! function_exists('sage')) {
     /**
      * Alias of Sage::dump()
      *
-     * @return string|int
+     * @return SageDynamicFacade
      *
      * @see Sage::dump()
      */
     function sage()
     {
-        if (! Sage::enabled()) {
-            return 5463;
-        }
-
         Sage::$aliases[] = __FUNCTION__;
 
+        $sage   = new SageDynamicFacade();
         $params = func_get_args();
 
-        return call_user_func_array(array('Sage', 'dump'), $params);
+        if ($params) {
+            return call_user_func_array(array($sage, 'dump'), $params);
+        }
+
+        return $sage;
     }
 }
 
@@ -71,7 +72,7 @@ if (! function_exists('s')) {
     function s()
     {
         if (! Sage::enabled()) {
-            return 5463;
+            return Sage::ERROR_STATUS;
         }
 
         Sage::$aliases[] = __FUNCTION__;
@@ -86,12 +87,12 @@ if (! function_exists('saged')) {
     /**
      * Alias of Sage::dump(); die;
      *
-     * @return never [!!!] IMPORTANT: execution will halt after call to this function
+     * @return int|never [!!!] IMPORTANT: execution will halt after call to this function
      */
     function saged()
     {
         if (! Sage::enabled()) {
-            return 5463;
+            return Sage::ERROR_STATUS;
         }
 
         Sage::$aliases[] = __FUNCTION__;
@@ -113,7 +114,7 @@ if (! function_exists('sd')) {
     function sd()
     {
         if (! Sage::enabled()) {
-            return 5463;
+            return Sage::ERROR_STATUS;
         }
 
         Sage::$aliases[] = __FUNCTION__;
@@ -139,14 +140,14 @@ if (! function_exists('ssage')) {
     function ssage()
     {
         if (! Sage::enabled()) {
-            return 5463;
+            return Sage::ERROR_STATUS;
         }
 
         $simplify              = Sage::$simplifyDisplay;
         Sage::$simplifyDisplay = true;
         Sage::$aliases[]       = __FUNCTION__;
 
-        $params = func_get_args();
+        $params                = func_get_args();
         $dump                  = call_user_func_array(array('Sage', 'dump'), $params);
         Sage::$simplifyDisplay = $simplify;
 
@@ -169,14 +170,14 @@ if (! function_exists('ss')) {
     function ss()
     {
         if (! Sage::enabled()) {
-            return 5463;
+            return Sage::ERROR_STATUS;
         }
 
         $simplify              = Sage::$simplifyDisplay;
         Sage::$simplifyDisplay = true;
         Sage::$aliases[]       = __FUNCTION__;
 
-        $params = func_get_args();
+        $params                = func_get_args();
         $dump                  = call_user_func_array(array('Sage', 'dump'), $params);
         Sage::$simplifyDisplay = $simplify;
 
@@ -193,12 +194,12 @@ if (! function_exists('ssaged')) {
     function ssaged()
     {
         if (! Sage::enabled()) {
-            return 5463;
+            return Sage::ERROR_STATUS;
         }
 
         Sage::$simplifyDisplay = true;
         Sage::$aliases[]       = __FUNCTION__;
-        $params = func_get_args();
+        $params                = func_get_args();
         call_user_func_array(array('Sage', 'dump'), $params);
         die;
     }
@@ -213,12 +214,12 @@ if (! function_exists('ssd')) {
     function ssd()
     {
         if (! Sage::enabled()) {
-            return 5463;
+            return Sage::ERROR_STATUS;
         }
 
         Sage::$simplifyDisplay = true;
         Sage::$aliases[]       = __FUNCTION__;
-        $params = func_get_args();
+        $params                = func_get_args();
         call_user_func_array(array('Sage', 'dump'), $params);
         die;
     }
@@ -235,7 +236,7 @@ if (! function_exists('d')) {
     function d()
     {
         if (! Sage::enabled()) {
-            return 5463;
+            return Sage::ERROR_STATUS;
         }
 
         Sage::$aliases[] = __FUNCTION__;
@@ -257,7 +258,7 @@ if (! function_exists('sagetrace')) {
     function sagetrace()
     {
         if (! Sage::enabled()) {
-            return 5463;
+            return Sage::ERROR_STATUS;
         }
 
         Sage::$aliases[] = __FUNCTION__;

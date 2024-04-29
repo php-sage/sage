@@ -17,10 +17,10 @@ $phar->setStub("<?php require 'phar://'.__FILE__.'/Sage.php'; __HALT_COMPILER();
 $phar->addFile(SAGE_DIR . 'Sage.php', 'Sage.php');
 
 $includeInPhar = array(
-    SAGE_DIR . '/decorators',
-    SAGE_DIR . '/inc',
-    SAGE_DIR . '/parsers',
-    SAGE_DIR . '/resources/compiled'
+    SAGE_DIR . 'src/decorators',
+    SAGE_DIR . 'src/inc',
+    SAGE_DIR . 'src/parsers',
+    SAGE_DIR . 'src/resources/compiled'
 );
 foreach (Finder::create()->files()->in($includeInPhar)->sortByName() as $file) {
     $local = substr($file, $rootPathLength);

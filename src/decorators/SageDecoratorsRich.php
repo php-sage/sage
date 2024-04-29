@@ -297,7 +297,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
      */
     public function init()
     {
-        $baseDir = SAGE_DIR . 'resources/compiled/';
+        $baseDir = SAGE_DIR . 'src/resources/compiled/';
 
         if (! is_readable($cssFile = $baseDir . Sage::$theme . '.css')) {
             $cssFile = $baseDir . 'original.css';

@@ -6,14 +6,14 @@
     "uglify-js": "^3"
   },
   "watch": {
-    "compile-js": "resources/base.js",
-    "compile-css": "resources/css/*.scss"
+    "compile-js": "src/resources/base.js",
+    "compile-css": "src/resources/css/*.scss"
   },
   "scripts": {
-    "sass-dev": "sass --watch --update --no-source-map --style=expanded resources/css/themes/:resources/compiled/",
-    "sass-dev-c": "sass --watch --update --no-source-map --style=compressed resources/css/themes/:resources/compiled/",
-    "compile-css": "sass --style=compressed --no-source-map resources/css/themes/:resources/compiled/",
-    "compile-js": "uglifyjs resources/js/base.js -cm --toplevel --mangle-props -o resources/compiled/sage.js",
+    "sass-dev": "sass --watch --update --no-source-map --style=expanded src/resources/css/themes/:src/resources/compiled/",
+    "sass-dev-c": "sass --watch --update --no-source-map --style=compressed src/resources/css/themes/:src/resources/compiled/",
+    "compile-css": "sass --style=compressed --no-source-map src/resources/css/themes/:src/resources/compiled/",
+    "compile-js": "uglifyjs src/resources/js/base.js -cm --toplevel --mangle-props -o src/resources/compiled/sage.js",
     "watch": "npm-watch",
     "build": "npm run compile-js; npm run compile-css"
   }

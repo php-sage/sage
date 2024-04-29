@@ -1,4 +1,5 @@
 /.idea
+/.phpunit.cache
 /config.php
 /node_modules
 /vendor

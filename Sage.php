@@ -28,20 +28,23 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+// Prevent repeat inclusion
 if (defined('SAGE_DIR')) {
     return;
 }
 define('SAGE_DIR', dirname(__FILE__) . '/');
 
-require SAGE_DIR . 'inc/SageVariableData.php';
-require SAGE_DIR . 'inc/SageTraceStep.php';
-require SAGE_DIR . 'inc/SageParser.php';
-require SAGE_DIR . 'inc/SageHelper.php';
-require SAGE_DIR . 'inc/shorthands.inc.php';
-require SAGE_DIR . 'decorators/SageDecoratorsInterface.php';
-require SAGE_DIR . 'decorators/SageDecoratorsRich.php';
-require SAGE_DIR . 'decorators/SageDecoratorsPlain.php';
-require SAGE_DIR . 'parsers/SageParserInterface.php';
+// With PHP 5.1++ compatibility in mind we don't use namespaces and do the autoloading manually
+require SAGE_DIR . 'src/inc/SageDynamicFacade.php';
+require SAGE_DIR . 'src/inc/SageVariableData.php';
+require SAGE_DIR . 'src/inc/SageTraceStep.php';
+require SAGE_DIR . 'src/inc/SageParser.php';
+require SAGE_DIR . 'src/inc/SageHelper.php';
+require SAGE_DIR . 'src/inc/shorthands.inc.php';
+require SAGE_DIR . 'src/decorators/SageDecoratorsInterface.php';
+require SAGE_DIR . 'src/decorators/SageDecoratorsRich.php';
+require SAGE_DIR . 'src/decorators/SageDecoratorsPlain.php';
+require SAGE_DIR . 'src/parsers/SageParserInterface.php';
 
 class Sage
 {
@@ -50,6 +53,7 @@ class Sage
     private static $_openedOutput;
 
     /*
+     *   SECTION: CONFIG
      *     ██████╗ ██████╗ ███╗   ██╗███████╗██╗ ██████╗ ██╗   ██╗██████╗  █████╗ ████████╗██╗ ██████╗ ███╗   ██╗
      *    ██╔════╝██╔═══██╗████╗  ██║██╔════╝██║██╔════╝ ██║   ██║██╔══██╗██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║
      *    ██║     ██║   ██║██╔██╗ ██║█████╗  ██║██║  ███╗██║   ██║██████╔╝███████║   ██║   ██║██║   ██║██╔██╗ ██║
@@ -57,7 +61,7 @@ class Sage
      *    ╚██████╗╚██████╔╝██║ ╚████║██║     ██║╚██████╔╝╚██████╔╝██║  ██║██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║
      *     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
      *
-     * ASCII ART: patorjk.com/software/taag/#p=display&h=1&v=2&c=c&f=ANSI Shadow&t=
+     * ASCII ART: http://patorjk.com/software/taag/#p=display&h=1&v=2&c=c&f=ANSI%20Shadow&t=
      */
 
     /**
@@ -81,7 +85,7 @@ class Sage
      *   'netbeans'               => 'netbeans://open/?f=%file:%line',
      *   'xdebug'                 => 'xdebug://%file@%line'
      *
-     * Or pass a custom string where %fileileileileileile should be replaced with full file path, %line with line number
+     * Or pass a custom string where %file should be replaced with full file path, %line with line number
      * to create a custom link. Set to null to disable linking.
      *
      * Example:
@@ -219,6 +223,7 @@ class Sage
     public static $aliases = array();
 
     /*
+     *    SECTION: WIP
      *    ██╗    ██╗██╗██████╗
      *    ██║    ██║██║██╔══██╗
      *    ██║ █╗ ██║██║██████╔╝
@@ -328,6 +333,7 @@ class Sage
     public static $simplifyDisplay = false;
 
     /*
+     *   SECTION: CONSTANTS
      *     ██████╗ ██████╗ ███╗   ██╗███████╗████████╗ █████╗ ███╗   ██╗████████╗███████╗
      *    ██╔════╝██╔═══██╗████╗  ██║██╔════╝╚══██╔══╝██╔══██╗████╗  ██║╚══██╔══╝██╔════╝
      *    ██║     ██║   ██║██╔██╗ ██║███████╗   ██║   ███████║██╔██╗ ██║   ██║   ███████╗
@@ -348,7 +354,22 @@ class Sage
     const THEME_SOLARIZED_DARK = 'solarized-dark';
     const THEME_SOLARIZED = 'solarized';
 
+    /**
+     * Returned when disabled or error occurred.
+     *
+     * "5463" is "SAGE" in l33tspeak :)
+     *
+     * The return value has to be an int otherwise modifiers throw typesafe warinings, eg if we return null:
+     *
+     *    ~d(); // TypeError: Cannot perform bitwise not on null
+     *
+     * It's not zero because it doesn't matter, and if you find this somewhere in your logs or something - you know who
+     * to blame :))
+     */
+    const ERROR_STATUS = 5463;
+
     /*
+     *    SECTION: ENABLE
      *    ███████╗███╗   ██╗ █████╗ ██████╗ ██╗     ███████╗██████╗
      *    ██╔════╝████╗  ██║██╔══██╗██╔══██╗██║     ██╔════╝██╔══██╗
      *    █████╗  ██╔██╗ ██║███████║██████╔╝██║     █████╗  ██║  ██║
@@ -387,6 +408,7 @@ class Sage
     }
 
     /*
+     *    SECTION: MAIN
      *    ████████╗██████╗  █████╗  ██████╗███████╗    ██╗██████╗ ██╗   ██╗███╗   ███╗██████╗
      *    ╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██╔════╝   ██╔╝██╔══██╗██║   ██║████╗ ████║██╔══██╗
      *       ██║   ██████╔╝███████║██║     █████╗    ██╔╝ ██║  ██║██║   ██║██╔████╔██║██████╔╝
@@ -417,17 +439,16 @@ class Sage
     /**
      * Dump information about variables, accepts any number of parameters, supports prefix-modifiers:
      *
-     * ```
-     *           |-------|----------------------------------------------|
-     *           |       | Example:    `+ saged('magic');`              |
-     *           |-------|----------------------------------------------|
-     *           | !     | Dump ignoring depth limits for large objects |
-     *           | print | Puts output into current DIR as sage.html    |
-     *           | ~     | Simplifies sage output (rich->html->plain)   |
-     *           | -     | Clean up any output before dumping           |
-     *           | +     | Expand all nodes (in rich view)              |
-     *           | @     | Return output instead of displaying it       |
-     *           |-------|----------------------------------------------|
+     * ```md
+     *           | Prefix |                                              | Example      |
+     *           |--------|----------------------------------------------|--------------|
+     *           | print  | Puts output into current DIR as sage.html    | print sage() |
+     *           | !      | Dump ignoring depth limits for large objects | ! sage()     |
+     *           | ~      | Simplifies sage output (rich->html->plain)   | ~ sage()     |
+     *           | -      | Clean up any output before dumping           | - sage()     |
+     *           | +      | Expand all nodes (in rich view)              | + sage()     |
+     *           | @      | Return output instead of displaying it       | @ sage()     |
+     *           |--------|----------------------------------------------|--------------|
      * ```
      *
      * Modifiers are supported by all dump wrapper functions, including Sage::trace(). Combinations possible.
@@ -439,29 +460,26 @@ class Sage
      *
      * @param mixed $data
      *
-     * @return string|int returns 5463 (Sage in l33tspeak) if disabled
+     * @return string|int returns 5463 if disabled/error
      *
-     * Explanation for the magic number in return:
-     *   The return value has to be an int otherwise modifiers throw typesafe warinings, eg if we return null:
-     *
-     *       ~d(); // TypeError: Cannot perform bitwise not on null
-     *
-     *   It's not zero because it doesn't matter and if you find this somewhere in your logs or something - you know who
-     *   to blame :))
+     * @see Sage::ERROR_STATUS for explanation for 5463
      */
     public static function dump($data = null)
     {
-        try {
+//        try {
             $params = func_get_args();
 
             return call_user_func_array(array('Sage', 'doDump'), $params);
-        } catch (Throwable $e) {
-        } catch (Exception $e) {
-        }
+//        } catch (Throwable $e) {
+//        } catch (Exception $e) {
+//        }
 
         return 5463;
     }
 
+    /**
+     * @internal use Sage::dump() instead
+     */
     public static function doDump($data = null)
     {
         $enabledMode = self::enabled();
@@ -578,7 +596,6 @@ class Sage
                 // Sage::dump(1) shorthand
                 $trace = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
             } elseif ($names === array('2') && $data === 2) {
-                // Sage::dump(2) shorthand todo: create Sage::traceWithoutArgs()
                 $lightTrace = true;
                 $trace      = debug_backtrace();
             } elseif (is_array($data)) {
@@ -696,17 +713,34 @@ class Sage
         return 5463;
     }
 
+    /*
+     *    SECTION: HELPERS
+     *    ███╗   ███╗██╗███████╗ ██████╗    ██╗  ██╗███████╗██╗     ██████╗ ███████╗██████╗ ███████╗
+     *    ████╗ ████║██║██╔════╝██╔════╝    ██║  ██║██╔════╝██║     ██╔══██╗██╔════╝██╔══██╗██╔════╝
+     *    ██╔████╔██║██║███████╗██║         ███████║█████╗  ██║     ██████╔╝█████╗  ██████╔╝███████╗
+     *    ██║╚██╔╝██║██║╚════██║██║         ██╔══██║██╔══╝  ██║     ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║
+     *    ██║ ╚═╝ ██║██║███████║╚██████╗    ██║  ██║███████╗███████╗██║     ███████╗██║  ██║███████║
+     *    ╚═╝     ╚═╝╚═╝╚══════╝ ╚═════╝    ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝
+     *
+     */
+
+    public static function traceWithoutArgs()
+    {
+        self::dump(2);
+    }
+
     public static function showEloquentQueries()
     {
         // maintain PHP5.1+ compatibility
         if (SageHelper::php53orLater()) {
             self::$aliases[] = __CLASS__ . '::' . __FUNCTION__;
 
-            require SAGE_DIR . 'inc/eloquentListener.inc.php';
+            require SAGE_DIR . 'src/inc/eloquentListener.inc.php';
         }
     }
 
     /*
+     *    SECTION: PRIVATE
      *    ██████╗ ██████╗ ██╗██╗   ██╗ █████╗ ████████╗███████╗
      *    ██╔══██╗██╔══██╗██║██║   ██║██╔══██╗╚══██╔══╝██╔════╝
      *    ██████╔╝██████╔╝██║██║   ██║███████║   ██║   █████╗
@@ -1045,7 +1079,7 @@ class Sage
         if (self::$loadedParsers !== $parsersCount) {
             self::$loadedParsers = $parsersCount;
             foreach (Sage::$enabledParsers as $className => $enabled) {
-                if ($enabled && file_exists($f = SAGE_DIR . 'parsers/' . $className . '.php')) {
+                if ($enabled && file_exists($f = SAGE_DIR . 'src/parsers/' . $className . '.php')) {
                     require_once $f;
                 }
             }

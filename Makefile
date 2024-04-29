@@ -61,3 +61,15 @@ down-for-good:
 	@# Help: Stop docker and delete its volumes
 	-$(DOCKER) rm --force --stop --volumes
 	-$(DOCKER) down --volumes
+
+
+composer-update:
+	@$(DOCKER) up -d php
+	$(DOCKER_EXEC) composer update
+
+
+cu:
+	@# Help: Alias for `composer-update`
+	make composer-update
+
+
