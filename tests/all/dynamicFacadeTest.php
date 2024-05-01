@@ -38,7 +38,7 @@ describe('expandAll test', function() {
     ;
 
     it('puts the dump in the variable', fn() => expect($var)->toBeString()->not()->toBeEmpty());
-    it('contains html', fn() => expect($var)->toContain('<script'));
+    it('contains html', fn() => expect($var)->toStartWith('<script class="_sage-js">'));
     it('contains expanded node', fn() => expect($var)->toContain(' _sage-show'));
 
     ob_start();
@@ -101,4 +101,3 @@ describe('settings tests', function() {
     $a = ob_get_clean();
     it('does not prevent future dumps from echoing', fn() => expect($a)->toContain('123'));
 });
-

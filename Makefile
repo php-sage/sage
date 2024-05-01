@@ -1,6 +1,11 @@
 # `cd .` is because it sometimes solves https://github.com/docker/compose/issues/7899
 DOCKER = cd . && DOCKER_UID=$(shell id -u) DOCKER_GID=$(shell id -g) docker compose
 
+# colors for help text
+ORANGE=\033[0;33m
+NOCOLOR=\033[0m
+
+
 console:
 	$(DOCKER) run php bash
 
@@ -24,8 +29,19 @@ compile-resources:
 	$(DOCKER) run php npm run build
 
 
+p?=
+repeat?=1
 test:
-	$(DOCKER) run php pest
+	@# Help: Run tests. Accepts `p` parameter as filter + repeat parameter: `make test p=fileapitest repeat=1`
+	@if [ -z "$(p)" ]; then \
+		$(DOCKER) run php pest; \
+	else \
+		for i in `seq 1 $(repeat)`; do \
+			echo "$(ORANGE)Repetition $$i of $(repeat)$(NOCOLOR)"; \
+			echo "$(DOCKER) run php pest --filter $(p)"; \
+			$(DOCKER) run php pest --filter $(p); \
+		done; \
+	fi
 
 
 php53:
