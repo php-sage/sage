@@ -6,6 +6,7 @@
 class SageHelper
 {
     private static $_php53;
+    private static $_php82;
 
     const MAX_STR_LENGTH = 80;
 
@@ -38,6 +39,15 @@ class SageHelper
         }
 
         return self::$_php53;
+    }
+
+    public static function php82orLater()
+    {
+        if (! isset(self::$_php82)) {
+            self::$_php82 = version_compare(PHP_VERSION, '8.2.0') > 0;
+        }
+
+        return self::$_php82;
     }
 
     public static function isRichMode()

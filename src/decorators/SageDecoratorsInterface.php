@@ -17,7 +17,14 @@ interface SageDecoratorsInterface
      */
     public function wrapStart();
 
-    public function wrapEnd($callee, $miniTrace, $prevCaller);
+    /**
+     * Closes wrapStart() and displays callee information
+     *
+     * @param SageCallee $calleeInfo caller information taken from debug backtrace
+     *
+     * @return string
+     */
+    public function wrapEnd($calleeInfo);
 
     public function init();
 }

@@ -196,44 +196,40 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         return "<div class=\"_sage\">";
     }
 
-    /**
-     * closes Sage::_wrapStart() started html tags and displays callee information
-     *
-     * @param array $callee     caller information taken from debug backtrace
-     * @param array $miniTrace  full path to Sage call
-     * @param array $prevCaller previous caller information taken from debug backtrace
-     *
-     * @return string
-     */
-    public function wrapEnd($callee, $miniTrace, $prevCaller)
+    public function wrapEnd($calleeInfo)
     {
         if (! Sage::$displayCalledFrom) {
             return '</div>';
         }
 
         $callingFunction = '';
-        $calleeInfo      = '';
+        $calledFrom      = '';
         $traceDisplay    = '';
-        if (isset($prevCaller['class'])) {
-            $callingFunction = $prevCaller['class'];
+        if (isset($calleeInfo->previousCaller['class'])) {
+            $callingFunction = $calleeInfo->previousCaller['class'];
         }
-        if (isset($prevCaller['type'])) {
-            $callingFunction .= $prevCaller['type'];
+        if (isset($calleeInfo->previousCaller['type'])) {
+            $callingFunction .= $calleeInfo->previousCaller['type'];
         }
-        if (isset($prevCaller['function'])
-            && ! in_array($prevCaller['function'], array('include', 'include_once', 'require', 'require_once'))
+        if (
+            isset($calleeInfo->previousCaller['function'])
+            && ! in_array(
+                $calleeInfo->previousCaller['function'],
+                array('include', 'include_once', 'require', 'require_once')
+            )
         ) {
-            $callingFunction .= $prevCaller['function'] . '()';
+            $callingFunction .= $calleeInfo->previousCaller['function'] . '()';
         }
         $callingFunction and $callingFunction = " [{$callingFunction}]";
 
-        if (isset($callee['file'])) {
-            $calleeInfo .= 'Called from ' . SageHelper::ideLink($callee['file'], $callee['line']);
+        if (isset($calleeInfo->callerStep['file'])) {
+            $calledFrom .= 'Called from '
+                . SageHelper::ideLink($calleeInfo->callerStep['file'], $calleeInfo->callerStep['line']);
         }
 
-        if (! empty($miniTrace)) {
+        if ($calleeInfo->miniTrace) {
             $traceDisplay = '<ol>';
-            foreach ($miniTrace as $step) {
+            foreach ($calleeInfo->miniTrace as $step) {
                 $traceDisplay .= '<li>' . SageHelper::ideLink($step['file'], $step['line']); // closing tag not required
                 if (isset($step['function'])
                     && ! in_array($step['function'], array('include', 'include_once', 'require', 'require_once'))
@@ -251,14 +247,14 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             }
             $traceDisplay .= '</ol>';
 
-            $calleeInfo = '<nav></nav>' . $calleeInfo;
+            $calledFrom = '<nav></nav>' . $calledFrom;
         }
 
         $callingFunction .= ' @ ' . date('Y-m-d H:i:s');
 
         return '<footer>'
             . '<span class="_sage-popup-trigger" title="Open in new window">&rarr;</span> '
-            . "{$calleeInfo}{$callingFunction}{$traceDisplay}"
+            . "{$calledFrom}{$callingFunction}{$traceDisplay}"
             . '</footer></div>';
     }
 

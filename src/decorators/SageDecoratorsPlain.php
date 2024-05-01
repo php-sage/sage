@@ -209,7 +209,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return '';
     }
 
-    public function wrapEnd($callee, $miniTrace, $prevCaller)
+    public function wrapEnd($calleeInfo)
     {
         $lastLine     = '════════════════════════════════════════════════════════════════════════════════';
         $lastChar     = Sage::enabled() === Sage::MODE_PLAIN ? '</pre>' : '';
@@ -219,10 +219,10 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             return $this->colorize($lastLine . $lastChar, 'header');
         }
 
-        if (! empty($miniTrace)) {
+        if ($calleeInfo->miniTrace) {
             $traceDisplay = PHP_EOL;
             $i            = 0;
-            foreach ($miniTrace as $step) {
+            foreach ($calleeInfo->miniTrace as $step) {
                 $traceDisplay .= '        ' . ($i + 2) . '. ';
                 $traceDisplay .= SageHelper::ideLink($step['file'], $step['line']);
                 $traceDisplay .= PHP_EOL;
@@ -235,7 +235,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
         return $this->colorize(
                 $lastLine . PHP_EOL
-                . 'Call stack ' . SageHelper::ideLink($callee['file'], $callee['line'])
+                . 'Call stack ' . SageHelper::ideLink($calleeInfo->callerStep['file'], $calleeInfo->callerStep['line'])
                 . $traceDisplay,
                 'header'
             )

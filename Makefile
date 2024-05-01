@@ -67,7 +67,7 @@ down-for-good:
 
 composer-update:
 	@$(DOCKER) up -d php
-	$(DOCKER_EXEC) composer update
+	$(DOCKER) exec php composer update
 
 
 cu:
@@ -75,3 +75,5 @@ cu:
 	make composer-update
 
 
+play:
+	$(DOCKER) exec php php /var/www/playground.php

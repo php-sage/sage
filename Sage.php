@@ -35,6 +35,7 @@ if (defined('SAGE_DIR')) {
 define('SAGE_DIR', dirname(__FILE__) . '/');
 
 // With PHP 5.1++ compatibility in mind we don't use namespaces and do the autoloading manually
+require SAGE_DIR . 'src/inc/DataStructures/SageCallee.php';
 require SAGE_DIR . 'src/inc/SageDynamicFacade.php';
 require SAGE_DIR . 'src/inc/SageVariableData.php';
 require SAGE_DIR . 'src/inc/SageTraceStep.php';
@@ -490,11 +491,11 @@ class Sage
 
         self::_init();
 
-        list($names, $modifiers, $callee, $previousCaller, $miniTrace) = self::_getCalleeInfo();
+        $calleeInfo = SageCallee::getCalleeInfo(debug_backtrace());
 
         // auto-detect mode if not explicitly set
         if ($enabledMode === true) {
-            if (! empty($modifiers) && strpos($modifiers, 'print') !== false && isset($callee['file'])) {
+            if ($calleeInfo->hasModifier('print') && isset($calleeInfo->callerStep['file'])) {
                 $newMode = self::MODE_RICH;
             } elseif (self::$outputFile && substr(self::$outputFile, -5) === '.html') {
                 $newMode = self::MODE_RICH;
@@ -515,7 +516,7 @@ class Sage
                 }
             }
 
-            if (! empty($modifiers) && strpos($modifiers, '~') !== false) {
+            if ($calleeInfo->hasModifier('~')) {
                 switch ($newMode) {
                     case self::MODE_RICH:
                         $newMode = self::MODE_PLAIN;
@@ -537,18 +538,18 @@ class Sage
         $firstRunOldValue = $decorator->areAssetsNeeded();
 
         // process modifiers: @, +, !, ~ and -
-        if (! empty($modifiers) && strpos($modifiers, '-') !== false) {
+        if ($calleeInfo->hasModifier('-')) {
             $decorator->setAssetsNeeded(true);
 
             while (ob_get_level()) {
                 ob_end_clean();
             }
         }
-        if (! empty($modifiers) && strpos($modifiers, '+') !== false) {
+        if ($calleeInfo->hasModifier('+')) {
             $expandedByDefaultOldValue = self::$expandedByDefault;
             self::$expandedByDefault   = true;
         }
-        if (! empty($modifiers) && strpos($modifiers, '!') !== false) {
+        if ($calleeInfo->hasModifier('!')) {
             /*if (strpos($modifiers, '!!') !== false) {
                 $oldClassNameBlacklist = self::$classNameBlacklist = array();
                 $oldTraceBlacklist     = self::$traceBlacklist = array();
@@ -564,7 +565,7 @@ class Sage
             self::$maxLevels   = false;
             /*}*/
         }
-        if (! empty($modifiers) && strpos($modifiers, '@') !== false) {
+        if ($calleeInfo->hasModifier('@')) {
             $returnOldValue     = self::$returnOutput;
             self::$returnOutput = true;
         }
@@ -578,9 +579,9 @@ class Sage
             }
         }
 
-        if (! empty($modifiers) && strpos($modifiers, 'print') !== false && isset($callee['file'])) {
+        if ($calleeInfo->hasModifier('print') && isset($calleeInfo->callerStep['file'])) {
             $outputFileOldValue = self::$outputFile;
-            self::$outputFile   = dirname($callee['file']) . '/sage.html';
+            self::$outputFile   = dirname($calleeInfo->callerStep['file']) . '/sage.html';
         }
 
         if (self::$outputFile && ! isset(self::$_openedOutput[self::$outputFile])) {
@@ -592,10 +593,10 @@ class Sage
         $trace      = false;
         $lightTrace = false;
         if (func_num_args() === 1) {
-            if ($names === array('1') && $data === 1) {
+            if ($calleeInfo->parameterNames === array('1') && $data === 1) {
                 // Sage::dump(1) shorthand
                 $trace = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
-            } elseif ($names === array('2') && $data === 2) {
+            } elseif ($calleeInfo->parameterNames === array('2') && $data === 2) {
                 $lightTrace = true;
                 $trace      = debug_backtrace();
             } elseif (is_array($data)) {
@@ -624,11 +625,13 @@ class Sage
                 $varData->name  = 'Sage called with no arguments';
                 $varData->value = null;
                 $varData->size  = null;
-                if (! empty($callee['function'])) {
-                    if (! empty($callee['class']) && ! empty($callee['type'])) {
-                        $name = $callee['class'] . $callee['type'] . $callee['function'];
+                if (! empty($calleeInfo->callerStep['file'])) {
+                    if (! empty($calleeInfo->callerStep['class']) && ! empty($calleeInfo->callerStep['type'])) {
+                        $name = $calleeInfo->callerStep['class']
+                            . $calleeInfo->callerStep['type']
+                            . $calleeInfo->callerStep['function'];
                     } else {
-                        $name = $callee['function'];
+                        $name = $calleeInfo->callerStep['function'];
                     }
                     $varData->name = $name . '( no parameters )';
                 }
@@ -646,7 +649,7 @@ class Sage
             }
         }
 
-        $output .= $decorator->wrapEnd($callee, $miniTrace, $previousCaller);
+        $output .= $decorator->wrapEnd($calleeInfo);
 
         // now restore all on-the-fly settings and return
 
@@ -673,31 +676,29 @@ class Sage
 
         $decorator->setAssetsNeeded(false);
 
-        if (! empty($modifiers)) {
-            if (strpos($modifiers, '~') !== false) {
-                $decorator->setAssetsNeeded($firstRunOldValue);
-            }
+        if ($calleeInfo->hasModifier('~')) {
+            $decorator->setAssetsNeeded($firstRunOldValue);
+        }
 
-            if (strpos($modifiers, '+') !== false) {
-                self::$expandedByDefault = $expandedByDefaultOldValue;
-            }
+        if ($calleeInfo->hasModifier('+')) {
+            self::$expandedByDefault = $expandedByDefaultOldValue;
+        }
 
-            if (isset($maxLevelsOldValue)) {
-                self::$maxLevels = $maxLevelsOldValue;
-            }
+        if (isset($maxLevelsOldValue)) {
+            self::$maxLevels = $maxLevelsOldValue;
+        }
 
-            if (! empty($modifiers) && strpos($modifiers, 'print') !== false && isset($callee['file'])) {
-                self::$outputFile = $outputFileOldValue;
+        if ($calleeInfo->hasModifier('print') && isset($calleeInfo->callerStep['file'])) {
+            self::$outputFile = $outputFileOldValue;
 
-                return 5463;
-            }
+            return 5463;
+        }
 
-            if (strpos($modifiers, '@') !== false) {
-                self::$returnOutput = $returnOldValue;
-                $decorator->setAssetsNeeded($firstRunOldValue);
+        if ($calleeInfo->hasModifier('@')) {
+            self::$returnOutput = $returnOldValue;
+            $decorator->setAssetsNeeded($firstRunOldValue);
 
-                return $output;
-            }
+            return $output;
         }
 
         if (self::$returnOutput) {
@@ -749,231 +750,6 @@ class Sage
      *    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝  ╚═╝  ╚═╝   ╚═╝   ╚══════╝
      *
      */
-
-    /**
-     * returns parameter names that the function was passed, as well as any predefined symbols before function
-     * call (modifiers)
-     *
-     * @return array{$parameters, $modifier, $callee, $previousCaller}
-     */
-    private static function _getCalleeInfo()
-    {
-        $trace                  = debug_backtrace();
-        $previousCaller         = array();
-        $miniTrace              = array();
-        $prevStep               = array();
-        $insideTemplateDetected = null;
-
-        // go from back of trace forward to find first occurrence of call to Sage or its wrappers
-        while ($step = array_pop($trace)) {
-            if (SageHelper::stepIsInternal($step)) {
-                $previousCaller = $prevStep;
-                break;
-            }
-
-            if (
-                isset($step['args'][0])
-                && is_string($step['args'][0])
-                && substr($step['args'][0], -strlen('.blade.php')) === '.blade.php'
-            ) {
-                $insideTemplateDetected = $step['args'][0];
-            }
-
-            if (isset($step['file'], $step['line'])) {
-                unset($step['object'], $step['args']);
-                array_unshift($miniTrace, $step);
-            }
-
-            $prevStep = $step;
-        }
-        $callee = $step;
-
-        if (! isset($callee['file']) || ! is_readable($callee['file'])) {
-            return array(null, null, $callee, $previousCaller, $miniTrace);
-        }
-
-        SageHelper::detectProjectRoot($callee['file']);
-
-        // open the file and read it up to the position where the function call expression ended
-        // TODO since PHP 8.2 backtrace reports the lineno of the function/method name!
-        // https://github.com/php/php-src/pull/8818
-        //        $file = new SplFileObject($callee['file']);
-        //        do {
-        //            $file->seek($callee['line']);
-        //            $contents = $file->current(); // $contents would hold the data from line x
-        //
-        //        } while (! $file->eof());
-
-        $file   = fopen($callee['file'], 'r');
-        $line   = 0;
-        $source = '';
-        while (($row = fgets($file)) !== false) {
-            if (++$line > $callee['line']) {
-                break;
-            }
-            $source .= $row;
-        }
-        fclose($file);
-        $source = self::_removeAllButCode($source);
-
-        if (empty($callee['class'])) {
-            $codePattern = $callee['function'];
-        } else {
-            $codePattern = "\w+\x07*" . $callee['type'] . "\x07*" . $callee['function'];
-        }
-
-        // get the position of the last call to the function
-        preg_match_all(
-            "
-            /
-            # beginning of statement
-            [\x07{(]
-
-            # search for modifiers (group 1)
-            ([print\x07-+!@~]*)?
-
-            # spaces
-            \x07*
-
-            # possibly a namespace symbol
-            \\\\?
-
-            # spaces again
-            \x07*
-
-            # main call to Sage
-            ({$codePattern})
-
-            # spaces everywhere
-            \x07*
-
-            # find the character where Sage's opening bracket resides (group 3)
-            (\\()
-
-            /ix",
-            $source,
-            $matches,
-            PREG_OFFSET_CAPTURE
-        );
-
-        $modifiers  = end($matches[1]);
-        $callToSage = end($matches[2]);
-        $bracket    = end($matches[3]);
-
-        if (empty($callToSage)) {
-            // if a wrapper is misconfigured, don't display the whole file as variable name
-            return array(array(), $modifiers, $callee, $previousCaller, $miniTrace);
-        }
-
-        $modifiers    = str_replace("\x07", '', $modifiers[0]);
-        $paramsString = preg_replace("[\x07+]", ' ', substr($source, $bracket[1] + 1));
-        // we now have a string like this:
-        // <parameters passed>); <the rest of the last read line>
-
-        // remove everything in brackets and quotes, we don't need nested statements nor literal strings which would
-        // complicate separating individual arguments
-        $c              = strlen($paramsString);
-        $inString       = $escaped = $openedBracket = $closingBracket = false;
-        $i              = 0;
-        $inBrackets     = 0;
-        $openedBrackets = array();
-        $bracketPairs   = array('(' => ')', '[' => ']', '{' => '}');
-
-        while ($i < $c) {
-            $letter = $paramsString[$i];
-
-            if (! $inString) {
-                if ($letter === '\'' || $letter === '"') {
-                    $inString = $letter;
-                } elseif ($letter === '(' || $letter === '[' || $letter === '{') {
-                    $inBrackets++;
-                    $openedBrackets[] = $openedBracket = $letter;
-                    $closingBracket   = $bracketPairs[$letter];
-                } elseif ($inBrackets && $letter === $closingBracket) {
-                    $inBrackets--;
-                    array_pop($openedBrackets);
-                    $openedBracket = end($openedBrackets);
-                    if ($openedBracket) {
-                        $closingBracket = $bracketPairs[$openedBracket];
-                    }
-                } elseif (! $inBrackets && $letter === ')') {
-                    $paramsString = substr($paramsString, 0, $i);
-                    break;
-                }
-            } elseif ($letter === $inString && ! $escaped) {
-                $inString = false;
-            }
-
-            // replace whatever was inside quotes or brackets with untypeable characters, we don't
-            // need that info.
-            if ($inBrackets > 0) {
-                if ($inBrackets > 1 || $letter !== $openedBracket) {
-                    $paramsString[$i] = "\x07";
-                }
-            }
-            if ($inString) {
-                if ($letter !== $inString || $escaped) {
-                    $paramsString[$i] = "\x07";
-                }
-            }
-
-            $escaped = ! $escaped && ($letter === '\\');
-            $i++;
-        }
-
-        $names = explode(',', preg_replace("[\x07+]", '...', $paramsString));
-        $names = array_map('trim', $names);
-
-        if ($insideTemplateDetected) {
-            $callee['file'] = $insideTemplateDetected;
-            $callee['line'] = null;
-        }
-
-        return array($names, $modifiers, $callee, $previousCaller, $miniTrace);
-    }
-
-    /**
-     * removes comments and zaps whitespace & < ?php tags from php code, makes for easier further parsing
-     *
-     * @param string $source
-     *
-     * @return string
-     */
-    private static function _removeAllButCode($source)
-    {
-        $commentTokens    = array(
-            T_COMMENT     => true,
-            T_INLINE_HTML => true,
-            T_DOC_COMMENT => true,
-        );
-        $whiteSpaceTokens = array(
-            T_WHITESPACE         => true,
-            T_CLOSE_TAG          => true,
-            T_OPEN_TAG           => true,
-            T_OPEN_TAG_WITH_ECHO => true,
-        );
-
-        $cleanedSource = '';
-        foreach (token_get_all($source) as $token) {
-            if (is_array($token)) {
-                if (isset($commentTokens[$token[0]])) {
-                    continue;
-                }
-
-                if (isset($whiteSpaceTokens[$token[0]])) {
-                    $token = "\x07";
-                } else {
-                    $token = $token[1];
-                }
-            } elseif ($token === ';') {
-                $token = "\x07";
-            }
-
-            $cleanedSource .= $token;
-        }
-
-        return $cleanedSource;
-    }
 
     private static function _parseTrace($data)
     {
