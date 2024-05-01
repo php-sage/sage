@@ -42,6 +42,8 @@ php51:
 update-test-snapshots:
 	$(DOCKER) run php pest -d --update-snapshots
 
+up:
+	$(DOCKER) up -d
 
 
 nuke-docker:

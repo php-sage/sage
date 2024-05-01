@@ -6,7 +6,24 @@ $queryNumber = 0;
     $state                   = Sage::saveState();
     Sage::$displayCalledFrom = false;
 
-    $EloquentQuery = array('#' => $queryNumber++, 'sql' => $query->sql, 'bindings' => $query->bindings);
+    $callee = 'unknown';
+    $trace  = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+    foreach ($trace as $step) {
+        if (array_key_exists('file', $step) && strpos($step['file'], '/vendor/laravel/') === false) {
+            $callee = $step['file'];
+            if (array_key_exists('line', $step)) {
+                $callee .= ':' . $step['line'];
+            }
+            break;
+        }
+    }
+
+    $EloquentQuery = [
+        '#'           => $queryNumber++,
+        'sql'         => $query->sql,
+        'bindings'    => $query->bindings,
+        'called_from' => $callee,
+    ];
     Sage::dump($EloquentQuery);
 
     Sage::saveState($state);

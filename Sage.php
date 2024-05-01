@@ -466,13 +466,13 @@ class Sage
      */
     public static function dump($data = null)
     {
-//        try {
+        try {
             $params = func_get_args();
 
             return call_user_func_array(array('Sage', 'doDump'), $params);
-//        } catch (Throwable $e) {
-//        } catch (Exception $e) {
-//        }
+        } catch (Throwable $e) {
+        } catch (Exception $e) {
+        }
 
         return 5463;
     }

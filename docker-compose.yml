@@ -1,13 +1,4 @@
 services:
-  #  php53:
-  #    build: docker/php53
-  #    working_dir: /var/www/
-  #    volumes:
-  #      - ./:/var/www
-  #    extra_hosts:
-  #      - "host.docker.internal:host-gateway" # docker on mac lacks `host-gateway`
-  #    environment:
-  #      PHP_IDE_CONFIG: serverName=localhost # For Xdebug to work: PhpStorm ⇛ Settings ⇛ PHP ⇛ Servers ⇛ Name
   php:
     build:
       context: docker
