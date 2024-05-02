@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageCallee
+class SageCaller
 {
     /**
      * @var array $parameterNames parameter names/expressions which were passed to be dumped
@@ -97,11 +97,32 @@ class SageCallee
         //
         //        } while (! $file->eof());
 
-        $file   = fopen($result->callerStep['file'], 'r');
+        if (SageHelper::php82orLater()) {
+            $result->solveForPhp82();
+        } else {
+            $result->solveForEarlierVersions();
+        }
+
+        if ($insideTemplateDetected) {
+            $result->callerStep['file'] = $insideTemplateDetected;
+            $result->callerStep['line'] = null;
+        }
+
+        return $result;
+    }
+
+    private function solveForPhp82()
+    {
+        return $this->solveForEarlierVersions();
+    }
+
+    private function solveForEarlierVersions()
+    {
+        $file   = fopen($this->callerStep['file'], 'r');
         $line   = 0;
         $source = '';
         while (($row = fgets($file)) !== false) {
-            if (++$line > $result->callerStep['file']) {
+            if (++$line > $this->callerStep['file']) {
                 break;
             }
             $source .= $row;
@@ -109,10 +130,10 @@ class SageCallee
         fclose($file);
         $source = self::_removeAllButCode($source);
 
-        if (empty($result->callerStep['class'])) {
-            $codePattern = $result->callerStep['function'];
+        if (empty($this->callerStep['class'])) {
+            $codePattern = $this->callerStep['function'];
         } else {
-            $codePattern = "\w+\x07*" . $result->callerStep['type'] . "\x07*" . $result->callerStep['function'];
+            $codePattern = "\w+\x07*" . $this->callerStep['type'] . "\x07*" . $this->callerStep['function'];
         }
 
         // get the position of the last call to the function
@@ -149,17 +170,17 @@ class SageCallee
             PREG_OFFSET_CAPTURE
         );
 
-        $result->modifiers = end($matches[1]);
-        $callToSage        = end($matches[2]);
-        $bracket           = end($matches[3]);
+        $this->modifiers = end($matches[1]);
+        $callToSage      = end($matches[2]);
+        $bracket         = end($matches[3]);
 
         if (empty($callToSage)) {
             // if a wrapper is misconfigured, don't display the whole file as variable name
-            return $result;
+            return $this;
         }
 
-        $result->modifiers = str_replace("\x07", '', $result->modifiers[0]);
-        $paramsString      = preg_replace("[\x07+]", ' ', substr($source, $bracket[1] + 1));
+        $this->modifiers = str_replace("\x07", '', $this->modifiers[0]);
+        $paramsString    = preg_replace("[\x07+]", ' ', substr($source, $bracket[1] + 1));
         // we now have a string like this:
         // <parameters passed>); <the rest of the last read line>
 
@@ -214,15 +235,8 @@ class SageCallee
             $i++;
         }
 
-        $result->parameterNames = explode(',', preg_replace("[\x07+]", '...', $paramsString));
-        $result->parameterNames = array_map('trim', $result->parameterNames);
-
-        if ($insideTemplateDetected) {
-            $result->callerStep['file'] = $insideTemplateDetected;
-            $result->callerStep['line'] = null;
-        }
-
-        return $result;
+        $this->parameterNames = explode(',', preg_replace("[\x07+]", '...', $paramsString));
+        $this->parameterNames = array_map('trim', $this->parameterNames);
     }
 
     /**

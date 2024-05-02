@@ -35,7 +35,7 @@ if (defined('SAGE_DIR')) {
 define('SAGE_DIR', dirname(__FILE__) . '/');
 
 // With PHP 5.1++ compatibility in mind we don't use namespaces and do the autoloading manually
-require SAGE_DIR . 'src/inc/DataStructures/SageCallee.php';
+require SAGE_DIR . 'src/inc/DataStructures/SageCaller.php';
 require SAGE_DIR . 'src/inc/SageDynamicFacade.php';
 require SAGE_DIR . 'src/inc/SageVariableData.php';
 require SAGE_DIR . 'src/inc/SageTraceStep.php';
@@ -491,11 +491,11 @@ class Sage
 
         self::_init();
 
-        $calleeInfo = SageCallee::getCalleeInfo(debug_backtrace());
+        $caller = SageCaller::getCalleeInfo(debug_backtrace());
 
         // auto-detect mode if not explicitly set
         if ($enabledMode === true) {
-            if ($calleeInfo->hasModifier('print') && isset($calleeInfo->callerStep['file'])) {
+            if ($caller->hasModifier('print') && isset($caller->callerStep['file'])) {
                 $newMode = self::MODE_RICH;
             } elseif (self::$outputFile && substr(self::$outputFile, -5) === '.html') {
                 $newMode = self::MODE_RICH;
@@ -516,7 +516,7 @@ class Sage
                 }
             }
 
-            if ($calleeInfo->hasModifier('~')) {
+            if ($caller->hasModifier('~')) {
                 switch ($newMode) {
                     case self::MODE_RICH:
                         $newMode = self::MODE_PLAIN;
@@ -538,18 +538,18 @@ class Sage
         $firstRunOldValue = $decorator->areAssetsNeeded();
 
         // process modifiers: @, +, !, ~ and -
-        if ($calleeInfo->hasModifier('-')) {
+        if ($caller->hasModifier('-')) {
             $decorator->setAssetsNeeded(true);
 
             while (ob_get_level()) {
                 ob_end_clean();
             }
         }
-        if ($calleeInfo->hasModifier('+')) {
+        if ($caller->hasModifier('+')) {
             $expandedByDefaultOldValue = self::$expandedByDefault;
             self::$expandedByDefault   = true;
         }
-        if ($calleeInfo->hasModifier('!')) {
+        if ($caller->hasModifier('!')) {
             /*if (strpos($modifiers, '!!') !== false) {
                 $oldClassNameBlacklist = self::$classNameBlacklist = array();
                 $oldTraceBlacklist     = self::$traceBlacklist = array();
@@ -565,7 +565,7 @@ class Sage
             self::$maxLevels   = false;
             /*}*/
         }
-        if ($calleeInfo->hasModifier('@')) {
+        if ($caller->hasModifier('@')) {
             $returnOldValue     = self::$returnOutput;
             self::$returnOutput = true;
         }
@@ -579,9 +579,9 @@ class Sage
             }
         }
 
-        if ($calleeInfo->hasModifier('print') && isset($calleeInfo->callerStep['file'])) {
+        if ($caller->hasModifier('print') && isset($caller->callerStep['file'])) {
             $outputFileOldValue = self::$outputFile;
-            self::$outputFile   = dirname($calleeInfo->callerStep['file']) . '/sage.html';
+            self::$outputFile   = dirname($caller->callerStep['file']) . '/sage.html';
         }
 
         if (self::$outputFile && ! isset(self::$_openedOutput[self::$outputFile])) {
@@ -593,10 +593,10 @@ class Sage
         $trace      = false;
         $lightTrace = false;
         if (func_num_args() === 1) {
-            if ($calleeInfo->parameterNames === array('1') && $data === 1) {
+            if ($caller->parameterNames === array('1') && $data === 1) {
                 // Sage::dump(1) shorthand
                 $trace = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
-            } elseif ($calleeInfo->parameterNames === array('2') && $data === 2) {
+            } elseif ($caller->parameterNames === array('2') && $data === 2) {
                 $lightTrace = true;
                 $trace      = debug_backtrace();
             } elseif (is_array($data)) {
@@ -625,13 +625,13 @@ class Sage
                 $varData->name  = 'Sage called with no arguments';
                 $varData->value = null;
                 $varData->size  = null;
-                if (! empty($calleeInfo->callerStep['file'])) {
-                    if (! empty($calleeInfo->callerStep['class']) && ! empty($calleeInfo->callerStep['type'])) {
-                        $name = $calleeInfo->callerStep['class']
-                            . $calleeInfo->callerStep['type']
-                            . $calleeInfo->callerStep['function'];
+                if (! empty($caller->callerStep['file'])) {
+                    if (! empty($caller->callerStep['class']) && ! empty($caller->callerStep['type'])) {
+                        $name = $caller->callerStep['class']
+                            . $caller->callerStep['type']
+                            . $caller->callerStep['function'];
                     } else {
-                        $name = $calleeInfo->callerStep['function'];
+                        $name = $caller->callerStep['function'];
                     }
                     $varData->name = $name . '( no parameters )';
                 }
@@ -649,7 +649,7 @@ class Sage
             }
         }
 
-        $output .= $decorator->wrapEnd($calleeInfo);
+        $output .= $decorator->wrapEnd($caller);
 
         // now restore all on-the-fly settings and return
 
@@ -676,11 +676,11 @@ class Sage
 
         $decorator->setAssetsNeeded(false);
 
-        if ($calleeInfo->hasModifier('~')) {
+        if ($caller->hasModifier('~')) {
             $decorator->setAssetsNeeded($firstRunOldValue);
         }
 
-        if ($calleeInfo->hasModifier('+')) {
+        if ($caller->hasModifier('+')) {
             self::$expandedByDefault = $expandedByDefaultOldValue;
         }
 
@@ -688,13 +688,13 @@ class Sage
             self::$maxLevels = $maxLevelsOldValue;
         }
 
-        if ($calleeInfo->hasModifier('print') && isset($calleeInfo->callerStep['file'])) {
+        if ($caller->hasModifier('print') && isset($caller->callerStep['file'])) {
             self::$outputFile = $outputFileOldValue;
 
             return 5463;
         }
 
-        if ($calleeInfo->hasModifier('@')) {
+        if ($caller->hasModifier('@')) {
             self::$returnOutput = $returnOldValue;
             $decorator->setAssetsNeeded($firstRunOldValue);
 

@@ -196,7 +196,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         return "<div class=\"_sage\">";
     }
 
-    public function wrapEnd($calleeInfo)
+    public function wrapEnd($caller)
     {
         if (! Sage::$displayCalledFrom) {
             return '</div>';
@@ -205,31 +205,31 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         $callingFunction = '';
         $calledFrom      = '';
         $traceDisplay    = '';
-        if (isset($calleeInfo->previousCaller['class'])) {
-            $callingFunction = $calleeInfo->previousCaller['class'];
+        if (isset($caller->miniTrace[0]['class'])) {
+            $callingFunction = $caller->miniTrace[0]['class'];
         }
-        if (isset($calleeInfo->previousCaller['type'])) {
-            $callingFunction .= $calleeInfo->previousCaller['type'];
+        if (isset($caller->previousCaller['type'])) {
+            $callingFunction .= $caller->previousCaller['type'];
         }
         if (
-            isset($calleeInfo->previousCaller['function'])
+            isset($caller->previousCaller['function'])
             && ! in_array(
-                $calleeInfo->previousCaller['function'],
+                $caller->previousCaller['function'],
                 array('include', 'include_once', 'require', 'require_once')
             )
         ) {
-            $callingFunction .= $calleeInfo->previousCaller['function'] . '()';
+            $callingFunction .= $caller->previousCaller['function'] . '()';
         }
         $callingFunction and $callingFunction = " [{$callingFunction}]";
 
-        if (isset($calleeInfo->callerStep['file'])) {
+        if (isset($caller->callerStep['file'])) {
             $calledFrom .= 'Called from '
-                . SageHelper::ideLink($calleeInfo->callerStep['file'], $calleeInfo->callerStep['line']);
+                . SageHelper::ideLink($caller->callerStep['file'], $caller->callerStep['line']);
         }
 
-        if ($calleeInfo->miniTrace) {
+        if ($caller->miniTrace) {
             $traceDisplay = '<ol>';
-            foreach ($calleeInfo->miniTrace as $step) {
+            foreach ($caller->miniTrace as $step) {
                 $traceDisplay .= '<li>' . SageHelper::ideLink($step['file'], $step['line']); // closing tag not required
                 if (isset($step['function'])
                     && ! in_array($step['function'], array('include', 'include_once', 'require', 'require_once'))

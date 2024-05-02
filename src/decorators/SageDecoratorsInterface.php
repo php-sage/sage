@@ -20,11 +20,11 @@ interface SageDecoratorsInterface
     /**
      * Closes wrapStart() and displays callee information
      *
-     * @param SageCallee $calleeInfo caller information taken from debug backtrace
+     * @param SageCaller $caller caller information taken from debug backtrace
      *
      * @return string
      */
-    public function wrapEnd($calleeInfo);
+    public function wrapEnd($caller);
 
     public function init();
 }
