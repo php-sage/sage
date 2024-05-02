@@ -10,39 +10,30 @@ class SageCaller
      */
     public $parameterNames = array();
     /**
-     * @var string $modifiers @deprecated? list of realtime modifiers eg `+! sage()` => '+!'
-     */
-    public $modifiers = '';
-    /**
-     * @var array $callerStep caller information taken from debug backtrace
-     */
-    public $callerStep = array();
-    /**
-     * @var array $previousCaller code which invoked sage - the function & line where it was called
-     */
-    public $previousCaller = array();
-    /**
      * @var array $miniTrace full trace up to sage without arguments and objects
      */
     public $miniTrace = array();
 
     public function __construct(
         $names = array(),
-        $modifiers = '',
-        $callerStep = array(),
-        $previousCaller = array(),
         $miniTrace = array()
     ) {
         $this->parameterNames = $names;
-        $this->modifiers      = $modifiers;
-        $this->callerStep     = $callerStep;
-        $this->previousCaller = $previousCaller;
         $this->miniTrace      = $miniTrace;
     }
 
-    public function hasModifier($modifier)
+    public function getUserLandInvoker($key = null)
     {
-        return $this->modifiers !== '' && strpos($this->modifiers, $modifier) !== false;
+        $step = count($this->miniTrace) > 1 ? $this->miniTrace[1] : array();
+        if ($key === null) {
+            return $step;
+        }
+
+        if (array_key_exists($key, $step)) {
+            return $step[$key];
+        }
+
+        return null;
     }
 
     /**
@@ -54,16 +45,10 @@ class SageCaller
     public static function getCalleeInfo($trace)
     {
         $result                 = new self();
-        $prevStep               = array();
         $insideTemplateDetected = null;
 
         // go from back of trace forward to find first occurrence of call to Sage or its wrappers
         while ($step = array_pop($trace)) {
-            if (SageHelper::stepIsInternal($step)) {
-                $result->previousCaller = $prevStep;
-                break;
-            }
-
             if (
                 isset($step['args'][0])
                 && is_string($step['args'][0])
@@ -77,15 +62,16 @@ class SageCaller
                 array_unshift($result->miniTrace, $step);
             }
 
-            $prevStep = $step;
+            if (SageHelper::stepIsInternal($step)) {
+                break;
+            }
         }
-        $result->callerStep = $step;
 
-        if (! isset($result->callerStep['file']) || ! is_readable($result->callerStep['file'])) {
+        if (! isset($step['file']) || ! is_readable($step['file'])) {
             return $result;
         }
 
-        SageHelper::detectProjectRoot($result->callerStep['file']);
+        SageHelper::detectProjectRoot($result->getUserLandInvoker('file'));
 
         // open the file and read it up to the position where the function call expression ended
         // TODO since PHP 8.2 backtrace reports the lineno of the function/method name!
@@ -104,8 +90,8 @@ class SageCaller
         }
 
         if ($insideTemplateDetected) {
-            $result->callerStep['file'] = $insideTemplateDetected;
-            $result->callerStep['line'] = null;
+            $result->miniTrace[1]['file'] = $insideTemplateDetected;
+            $result->miniTrace[1]['line'] = null;
         }
 
         return $result;
@@ -118,11 +104,13 @@ class SageCaller
 
     private function solveForEarlierVersions()
     {
-        $file   = fopen($this->callerStep['file'], 'r');
+        $userLandInvoker = $this->miniTrace[0];
+
+        $file   = fopen($userLandInvoker['file'], 'r');
         $line   = 0;
         $source = '';
         while (($row = fgets($file)) !== false) {
-            if (++$line > $this->callerStep['file']) {
+            if (++$line > $userLandInvoker['line']) {
                 break;
             }
             $source .= $row;
@@ -130,10 +118,10 @@ class SageCaller
         fclose($file);
         $source = self::_removeAllButCode($source);
 
-        if (empty($this->callerStep['class'])) {
-            $codePattern = $this->callerStep['function'];
+        if (empty($userLandInvoker['class'])) {
+            $codePattern = $userLandInvoker['function'];
         } else {
-            $codePattern = "\w+\x07*" . $this->callerStep['type'] . "\x07*" . $this->callerStep['function'];
+            $codePattern = "\w+\x07*" . $userLandInvoker['type'] . "\x07*" . $userLandInvoker['function'];
         }
 
         // get the position of the last call to the function
@@ -142,9 +130,6 @@ class SageCaller
             /
             # beginning of statement
             [\x07{(]
-
-            # search for modifiers (group 1)
-            ([print\x07-+!@~]*)?
 
             # spaces
             \x07*
@@ -155,13 +140,13 @@ class SageCaller
             # spaces again
             \x07*
 
-            # main call to Sage
+            # main call to Sage (group 1)
             ({$codePattern})
 
             # spaces everywhere
             \x07*
 
-            # find the character where Sage's opening bracket resides (group 3)
+            # find the character where Sage's opening bracket resides (group 2)
             (\\()
 
             /ix",
@@ -170,17 +155,15 @@ class SageCaller
             PREG_OFFSET_CAPTURE
         );
 
-        $this->modifiers = end($matches[1]);
-        $callToSage      = end($matches[2]);
-        $bracket         = end($matches[3]);
+        $callToSage = end($matches[1]);
+        $bracket    = end($matches[2]);
 
         if (empty($callToSage)) {
             // if a wrapper is misconfigured, don't display the whole file as variable name
-            return $this;
+            return;
         }
 
-        $this->modifiers = str_replace("\x07", '', $this->modifiers[0]);
-        $paramsString    = preg_replace("[\x07+]", ' ', substr($source, $bracket[1] + 1));
+        $paramsString = preg_replace("[\x07+]", ' ', substr($source, $bracket[1] + 1));
         // we now have a string like this:
         // <parameters passed>); <the rest of the last read line>
 

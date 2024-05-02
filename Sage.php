@@ -495,9 +495,7 @@ class Sage
 
         // auto-detect mode if not explicitly set
         if ($enabledMode === true) {
-            if ($caller->hasModifier('print') && isset($caller->callerStep['file'])) {
-                $newMode = self::MODE_RICH;
-            } elseif (self::$outputFile && substr(self::$outputFile, -5) === '.html') {
+            if (self::$outputFile && substr(self::$outputFile, -5) === '.html') {
                 $newMode = self::MODE_RICH;
             } else {
                 $newMode = PHP_SAPI === 'cli' && self::$cliDetection === true
@@ -516,18 +514,6 @@ class Sage
                 }
             }
 
-            if ($caller->hasModifier('~')) {
-                switch ($newMode) {
-                    case self::MODE_RICH:
-                        $newMode = self::MODE_PLAIN;
-                        break;
-                    case self::MODE_PLAIN:
-                    case self::MODE_CLI:
-                        $newMode = self::MODE_TEXT_ONLY;
-                        break;
-                }
-            }
-
             self::enabled($newMode);
         }
 
@@ -537,38 +523,6 @@ class Sage
 
         $firstRunOldValue = $decorator->areAssetsNeeded();
 
-        // process modifiers: @, +, !, ~ and -
-        if ($caller->hasModifier('-')) {
-            $decorator->setAssetsNeeded(true);
-
-            while (ob_get_level()) {
-                ob_end_clean();
-            }
-        }
-        if ($caller->hasModifier('+')) {
-            $expandedByDefaultOldValue = self::$expandedByDefault;
-            self::$expandedByDefault   = true;
-        }
-        if ($caller->hasModifier('!')) {
-            /*if (strpos($modifiers, '!!') !== false) {
-                $oldClassNameBlacklist = self::$classNameBlacklist = array();
-                $oldTraceBlacklist     = self::$traceBlacklist = array();
-                $oldEnabledParsers     = self::$enabledParsers;
-
-                self::$classNameBlacklist = array();
-                self::$traceBlacklist     = array();
-                if (($key = array_search('SageParsersEloquent', self::$enabledParsers)) !== false) {
-                    unset(self::$enabledParsers[$key]);
-                }
-            } else {*/
-            $maxLevelsOldValue = self::$maxLevels;
-            self::$maxLevels   = false;
-            /*}*/
-        }
-        if ($caller->hasModifier('@')) {
-            $returnOldValue     = self::$returnOutput;
-            self::$returnOutput = true;
-        }
         if (self::$returnOutput) {
             if (self::$returnOutput === true) {
                 $decorator->setAssetsNeeded(true);
@@ -577,11 +531,6 @@ class Sage
 
                 self::$_openedOutput[self::$returnOutput] = true;
             }
-        }
-
-        if ($caller->hasModifier('print') && isset($caller->callerStep['file'])) {
-            $outputFileOldValue = self::$outputFile;
-            self::$outputFile   = dirname($caller->callerStep['file']) . '/sage.html';
         }
 
         if (self::$outputFile && ! isset(self::$_openedOutput[self::$outputFile])) {
@@ -625,13 +574,13 @@ class Sage
                 $varData->name  = 'Sage called with no arguments';
                 $varData->value = null;
                 $varData->size  = null;
-                if (! empty($caller->callerStep['file'])) {
-                    if (! empty($caller->callerStep['class']) && ! empty($caller->callerStep['type'])) {
-                        $name = $caller->callerStep['class']
-                            . $caller->callerStep['type']
-                            . $caller->callerStep['function'];
+                if ($caller->getUserLandInvoker('file')) {
+                    if ($caller->getUserLandInvoker('class') && $caller->getUserLandInvoker('type')) {
+                        $name = $caller->getUserLandInvoker('class')
+                            . $caller->getUserLandInvoker('type')
+                            . $caller->getUserLandInvoker('function');
                     } else {
-                        $name = $caller->callerStep['function'];
+                        $name = $caller->getUserLandInvoker('function');
                     }
                     $varData->name = $name . '( no parameters )';
                 }
@@ -643,7 +592,10 @@ class Sage
                     // Sage might not parse the arguments correctly, so check if names are set and while the
                     // displayed names might be wrong, at least don't throw an error
                     $output .= $decorator->decorate(
-                        SageParser::process($argument, empty($names[$k]) ? '???' : $names[$k])
+                        SageParser::process(
+                            $argument,
+                            empty($caller->parameterNames[$k]) ? '???' : $caller->parameterNames[$k]
+                        )
                     );
                 }
             }
@@ -675,31 +627,6 @@ class Sage
         self::enabled($enabledMode);
 
         $decorator->setAssetsNeeded(false);
-
-        if ($caller->hasModifier('~')) {
-            $decorator->setAssetsNeeded($firstRunOldValue);
-        }
-
-        if ($caller->hasModifier('+')) {
-            self::$expandedByDefault = $expandedByDefaultOldValue;
-        }
-
-        if (isset($maxLevelsOldValue)) {
-            self::$maxLevels = $maxLevelsOldValue;
-        }
-
-        if ($caller->hasModifier('print') && isset($caller->callerStep['file'])) {
-            self::$outputFile = $outputFileOldValue;
-
-            return 5463;
-        }
-
-        if ($caller->hasModifier('@')) {
-            self::$returnOutput = $returnOldValue;
-            $decorator->setAssetsNeeded($firstRunOldValue);
-
-            return $output;
-        }
 
         if (self::$returnOutput) {
             return $output;
