@@ -37,8 +37,8 @@ define('SAGE_DIR', dirname(__FILE__) . '/');
 // With PHP 5.1++ compatibility in mind we don't use namespaces and do the autoloading manually
 require SAGE_DIR . 'src/inc/DataStructures/SageCaller.php';
 require SAGE_DIR . 'src/inc/SageDynamicFacade.php';
-require SAGE_DIR . 'src/inc/SageVariableData.php';
-require SAGE_DIR . 'src/inc/SageTraceStep.php';
+require SAGE_DIR . 'src/inc/DataStructures/SageVariableData.php';
+require SAGE_DIR . 'src/inc/DataStructures/SageTraceStep.php';
 require SAGE_DIR . 'src/inc/SageParser.php';
 require SAGE_DIR . 'src/inc/SageHelper.php';
 require SAGE_DIR . 'src/inc/shorthands.inc.php';
@@ -251,6 +251,7 @@ class Sage
 
     /** @var class-string<SageParser>[] */
     public static $enabledParsers = array(
+        'SageParsersTrace'             => true,
         'SageParsersSmarty'            => true,
         'SageParsersSplFileInfo'       => true,
         'SageParsersClosure'           => true,
@@ -493,36 +494,10 @@ class Sage
 
         $caller = SageCaller::getCalleeInfo(debug_backtrace());
 
-        // auto-detect mode if not explicitly set
-        if ($enabledMode === true) {
-            if (self::$outputFile && substr(self::$outputFile, -5) === '.html') {
-                $newMode = self::MODE_RICH;
-            } else {
-                $newMode = PHP_SAPI === 'cli' && self::$cliDetection === true
-                    ? self::MODE_CLI
-                    : self::MODE_RICH;
-            }
-
-            if (self::$simplifyDisplay) {
-                switch ($newMode) {
-                    case self::MODE_RICH:
-                        $newMode = self::MODE_PLAIN;
-                        break;
-                    case self::MODE_CLI:
-                        $newMode = self::MODE_TEXT_ONLY;
-                        break;
-                }
-            }
-
-            self::enabled($newMode);
-        }
-
-        $decoratorClass = self::enabled() === self::MODE_RICH ? 'SageDecoratorsRich' : 'SageDecoratorsPlain';
-        /** @var SageDecoratorsPlain|SageDecoratorsRich $decorator */
-        $decorator = new $decoratorClass();
-
+        $decorator        = self::detectDisplayMode($enabledMode);
         $firstRunOldValue = $decorator->areAssetsNeeded();
 
+        // self::$returnOutput can be true, can be a string to put multiple dumps together
         if (self::$returnOutput) {
             if (self::$returnOutput === true) {
                 $decorator->setAssetsNeeded(true);
@@ -819,6 +794,43 @@ class Sage
         );
         self::_initSetting('returnOutput', false);
         self::_initSetting('aliases', array());
+    }
+
+    /**
+     * @return SageDecoratorsPlain|SageDecoratorsRich
+     */
+    private static function detectDisplayMode(mixed $enabledMode)
+    {
+        // auto-detect mode if not explicitly set
+        if ($enabledMode === true) {
+            if (self::$outputFile && substr(self::$outputFile, -5) === '.html') {
+                $newMode = self::MODE_RICH;
+            } else {
+                $newMode = PHP_SAPI === 'cli' && self::$cliDetection === true
+                    ? self::MODE_CLI
+                    : self::MODE_RICH;
+            }
+
+            if (self::$simplifyDisplay) {
+                switch ($newMode) {
+                    case self::MODE_RICH:
+                        $newMode = self::MODE_PLAIN;
+                        break;
+                    case self::MODE_CLI:
+                        $newMode = self::MODE_TEXT_ONLY;
+                        break;
+                }
+            }
+
+            // change mode globally
+            self::enabled($newMode);
+        }
+
+        $decoratorClass = self::enabled() === self::MODE_RICH ? 'SageDecoratorsRich' : 'SageDecoratorsPlain';
+        /** @var SageDecoratorsPlain|SageDecoratorsRich $decorator */
+        $decorator = new $decoratorClass();
+
+        return $decorator;
     }
 }
 
