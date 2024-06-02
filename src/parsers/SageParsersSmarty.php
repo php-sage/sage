@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageParsersSmarty implements SageParserInterface
+class SageParsersSmarty implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {

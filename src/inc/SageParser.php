@@ -21,7 +21,13 @@ class SageParser
         self::$_objects = self::$_marker = null;
     }
 
-    final public static function process(&$variable, $name = null)
+    /**
+     * @param mixed   $variable
+     * @param ?string $name
+     *
+     * @return SageTraceContainer|SageVariableData
+     */
+    public static function process(&$variable, $name = null)
     {
         // save internal data to revert after dumping to properly handle recursions etc
         $revert = array(
@@ -31,53 +37,48 @@ class SageParser
 
         self::$_level++;
 
-        // set name
-        $varData = new SageVariableData();
-        if (isset($name)) {
-            $varData->name = $name;
+        $varData       = new SageVariableData();
+        $varData->name = $name;
 
-            if (strlen($varData->name) > 60) {
-                $varData->name =
-                    SageHelper::substr($varData->name, 0, 27)
-                    . '...'
-                    . SageHelper::substr($varData->name, -28, null);
-            }
-        }
+        $traceOutput = self::parseIfTrace($variable);
+        if ($traceOutput) {
+            $varData = $traceOutput;
+        } else {
+            // first go through alternative parsers (eg.: json detection)
+            foreach (Sage::$enabledParsers as $parserClass => $enabled) {
+                if (! $enabled || array_key_exists($parserClass, self::$parsingAlternative)) {
+                    continue;
+                }
+                self::$parsingAlternative[$parserClass] = true;
+                $parser                                 = new $parserClass();
+                $parseResult                            = $parser->parse($variable, $varData);
 
-        // first go through alternative parsers (eg.: json detection)
-        foreach (Sage::$enabledParsers as $parserClass => $enabled) {
-            if (! $enabled || array_key_exists($parserClass, self::$parsingAlternative)) {
-                continue;
-            }
-            self::$parsingAlternative[$parserClass] = true;
-            $parser                                 = new $parserClass();
-            $parseResult                            = $parser->parse($variable, $varData);
+                // if var was parsed by "can only be one"-parser - return here
+                if ($parseResult !== false && $parser->replacesAllOtherParsers()) {
+                    unset(self::$parsingAlternative[$parserClass]);
+                    self::$_level   = $revert['level'];
+                    self::$_objects = $revert['objects'];
 
-            // if var was parsed by "can only be one"-parser - return here
-            if ($parseResult !== false && $parser->replacesAllOtherParsers()) {
+                    return $varData;
+                }
                 unset(self::$parsingAlternative[$parserClass]);
-                self::$_level   = $revert['level'];
-                self::$_objects = $revert['objects'];
+            }
+
+            // parse the variable based on its type
+            $varType = gettype($variable);
+            $varType === 'unknown type' and $varType = 'unknown'; // PHP 5.4 inconsistency
+            $methodName = '_parse_' . $varType;
+            if (! method_exists(__CLASS__, $methodName)) {
+                $varData->type = $varType; // resource (closed) for example
 
                 return $varData;
             }
-            unset(self::$parsingAlternative[$parserClass]);
-        }
+            // base type parser returning false means "stop processing further": e.g. recursion
+            if (self::$methodName($variable, $varData) === false) {
+                self::$_level--;
 
-        // parse the variable based on its type
-        $varType = gettype($variable);
-        $varType === 'unknown type' and $varType = 'unknown'; // PHP 5.4 inconsistency
-        $methodName = '_parse_' . $varType;
-        if (! method_exists(__CLASS__, $methodName)) {
-            $varData->type = $varType; // resource (closed) for example
-
-            return $varData;
-        }
-        // base type parser returning false means "stop processing further": e.g. recursion
-        if (self::$methodName($variable, $varData) === false) {
-            self::$_level--;
-
-            return $varData;
+                return $varData;
+            }
         }
 
         self::$_level   = $revert['level'];
@@ -89,6 +90,81 @@ class SageParser
     private static function isDepthLimit()
     {
         return Sage::$maxLevels && self::$_level >= Sage::$maxLevels;
+    }
+
+    /**
+     * @return ?SageTraceContainer
+     */
+    private static function parseIfTrace($data)
+    {
+        if (! is_array($data)) {
+            return null;
+        }
+
+        $trace       = array();
+        $traceFields = array('file', 'line', 'args', 'class');
+        $fileFound   = false; // file element must exist in one of the steps
+        $lastStep    = array();
+
+        // validate whether a trace was indeed passed
+        foreach ($data as $step) {
+            if (! is_array($step) || ! isset($step['function'])) {
+                return null;
+            }
+            if (! $fileFound && isset($step['file']) && file_exists($step['file'])) {
+                $fileFound = true;
+            }
+
+            $valid = false;
+            foreach ($traceFields as $element) {
+                if (isset($step[$element])) {
+                    $valid = true;
+                    break;
+                }
+            }
+            if (! $valid) {
+                return null;
+            }
+
+            if ($step['function'] === 'spl_autoload_call') { // meaningless
+                continue;
+            }
+
+            // also modify it in the same go
+            if (SageHelper::stepIsInternal($step)) {
+                // take first step from the top that is not inside Sage already
+                if (isset($step['file'], $step['line'])) {
+                    $lastStep = array(
+                        'file'     => $step['file'],
+                        'line'     => $step['line'],
+                        'function' => '',
+                    );
+                }
+
+                continue;
+            }
+
+            $trace[] = $step;
+        }
+
+        if (! $fileFound) {
+            return null;
+        }
+
+        if ($lastStep) {
+            array_unshift($trace, $lastStep);
+        }
+
+        // now parse the trace into a usable format
+        $output = array();
+        foreach ($trace as $i => $step) {
+            $output[] = new SageTraceStep($step, $i);
+        }
+
+        $result        = new SageTraceContainer();
+        $result->steps = $output;
+
+        return $result;
     }
 
     /**
@@ -139,7 +215,9 @@ class SageParser
     private static function _decorateCell(SageVariableData $varData)
     {
         if ($varData->extendedValue !== null) {
-            return '<td>' . SageDecoratorsRich::decorate($varData) . '</td>';
+            $decorator = new SageDecoratorsRich();
+
+            return '<td>' . $decorator->decorate($varData) . '</td>';
         }
 
         $output = '<td';
@@ -238,9 +316,9 @@ class SageParser
 
                 $extendedValue .= '<tr>';
                 if ($isSequential) {
-                    $output = '<td>' . (((int)$rowIndex) + 1) . '</td>';
+                    $nestedVarData = '<td>' . (((int)$rowIndex) + 1) . '</td>';
                 } else {
-                    $output = self::_decorateCell(self::process($rowIndex));
+                    $nestedVarData = self::_decorateCell(self::process($rowIndex));
                 }
                 if ($firstRow) {
                     $extendedValue .= '<th>&nbsp;</th>';
@@ -254,12 +332,12 @@ class SageParser
                     }
 
                     if (SageHelper::isKeyBlacklisted($key)) {
-                        $output .= '<td class="_sage-empty"><u>*REDACTED*</u></td>';
+                        $nestedVarData .= '<td class="_sage-empty"><u>*REDACTED*</u></td>';
                         continue;
                     }
 
                     if (! array_key_exists($key, $row)) {
-                        $output .= '<td class="_sage-empty"></td>';
+                        $nestedVarData .= '<td class="_sage-empty"></td>';
                         continue;
                     }
 
@@ -270,9 +348,9 @@ class SageParser
 
                         return false;
                     } elseif ($var->value === '*RECURSION*') {
-                        $output .= '<td class="_sage-empty"><u>*RECURSION*</u></td>';
+                        $nestedVarData .= '<td class="_sage-empty"><u>*RECURSION*</u></td>';
                     } else {
-                        $output .= self::_decorateCell($var);
+                        $nestedVarData .= self::_decorateCell($var);
                     }
                     unset($var);
                 }
@@ -282,7 +360,7 @@ class SageParser
                     $firstRow      = false;
                 }
 
-                $extendedValue .= $output . '</tr>';
+                $extendedValue .= $nestedVarData . '</tr>';
             }
             self::$_placeFullStringInValue = false;
 
@@ -299,22 +377,22 @@ class SageParser
                     $val = '*REDACTED*';
                 }
 
-                $output = self::process($val);
-                if ($output->value === self::$_marker) {
+                $nestedVarData = self::process($val);
+                if ($nestedVarData->value === self::$_marker) {
                     // recursion occurred on a higher level, thus $variableData is recursion
                     $variableData->value = '*RECURSION*';
 
                     return false;
                 }
                 if ($isSequential) {
-                    $output->name = null;
+                    $nestedVarData->name = null;
                 } else {
-                    $output->operator = '=>';
-                    $output->name     = is_int($key)
+                    $nestedVarData->operator = '=>';
+                    $nestedVarData->name     = is_int($key)
                         ? $key
                         : "'" . $key . "'";
                 }
-                $extendedValue[] = $output;
+                $extendedValue[] = $nestedVarData;
             }
             $variableData->extendedValue = $extendedValue;
         }
@@ -407,12 +485,12 @@ class SageParser
                 $value = '*REDACTED*';
             }
 
-            $output           = self::process($value);
-            $output->name     = SageHelper::esc($key);
-            $output->access   = $access;
-            $output->operator = '->';
+            $nestedVarData           = self::process($value);
+            $nestedVarData->name     = SageHelper::esc($key);
+            $nestedVarData->access   = $access;
+            $nestedVarData->operator = '->';
 
-            $extendedValue[$key] = $output;
+            $extendedValue[$key] = $nestedVarData;
 
             $variableData->size++;
         }
@@ -455,11 +533,11 @@ class SageParser
                 $value = $property->getValue($variable);
             }
 
-            $output = self::process($value, SageHelper::esc($name));
+            $nestedVarData = self::process($value, SageHelper::esc($name));
 
-            $output->access   = $access;
-            $output->operator = '->';
-            $extendedValue[]  = $output;
+            $nestedVarData->access   = $access;
+            $nestedVarData->operator = '->';
+            $extendedValue[]         = $nestedVarData;
             $variableData->size++;
         }
 
@@ -538,36 +616,42 @@ class SageParser
 
         if (self::$_placeFullStringInValue) { // in tabular view
             $variableData->value = SageHelper::esc($variable);
-        } elseif (! SageHelper::isRichMode()) {
+
+            return;
+        }
+
+        if (! SageHelper::isRichMode()) {
             $variableData->value = '"' . SageHelper::esc($variable) . '"';
+
+            return;
+        }
+
+        $decoded = SageHelper::esc($variable);
+
+        // trim inline value if too long
+        if ($variableData->size > (SageHelper::MAX_STR_LENGTH + 8)) {
+            $variableData->value =
+                '"'
+                . SageHelper::esc(
+                    SageHelper::substr($variable, 0, SageHelper::MAX_STR_LENGTH, $encoding),
+                    false
+                )
+                . '&hellip;"';
         } else {
-            $decoded = SageHelper::esc($variable);
+            $variableData->value = '"' . SageHelper::esc($variable, false) . '"';
+        }
 
-            // trim inline value if too long
-            if ($variableData->size > (SageHelper::MAX_STR_LENGTH + 8)) {
-                $variableData->value =
-                    '"'
-                    . SageHelper::esc(
-                        SageHelper::substr($variable, 0, SageHelper::MAX_STR_LENGTH, $encoding),
-                        false
-                    )
-                    . '&hellip;"';
-            } else {
-                $variableData->value = '"' . SageHelper::esc($variable, false) . '"';
-            }
-
-            // detect invisible characters
-            if ($variable !== preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]/u', '', $variable)) {
-                $variableData->extendedValue = SageHelper::esc($variable, false);
-                $variableData->addTabToView($variable, 'Hidden characters escaped', $decoded);
-            } elseif ($variableData->size > (SageHelper::MAX_STR_LENGTH + 8)
-                || $variable !== preg_replace(
-                    '/\s+/',
-                    ' ',
-                    $variable
-                )) {
-                $variableData->extendedValue = $decoded;
-            }
+        // detect invisible characters
+        if ($variable !== preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]/u', '', $variable)) {
+            $variableData->extendedValue = SageHelper::esc($variable, false);
+            $variableData->addTabToView($variable, 'Hidden characters escaped', $decoded);
+        } elseif ($variableData->size > (SageHelper::MAX_STR_LENGTH + 8)
+            || $variable !== preg_replace(
+                '/\s+/',
+                ' ',
+                $variable
+            )) {
+            $variableData->extendedValue = $decoded;
         }
     }
 

@@ -16,6 +16,21 @@ class SageDynamicFacade
     /** @var string Same but globally */
     private static $saveAllOutputToThisVariable = null;
 
+    /**
+     * Support ancient PHP versions
+     */
+    public function SageDynamicFacade()
+    {
+        if (! in_array('SageDynamicFacade::*', Sage::$aliases, true)) {
+            Sage::$aliases[] = 'SageDynamicFacade::*';
+        }
+    }
+
+    public function __construct()
+    {
+        $this->SageDynamicFacade();
+    }
+
     public function dump($data = null)
     {
         $params = func_get_args();
@@ -51,7 +66,19 @@ class SageDynamicFacade
     {
         $params = func_get_args();
 
-        return call_user_func_array(array($this, 'dump'), $params);
+        return call_user_func_array(array($this, 'dump'), $params); # PROCEDURE: dump
+    }
+
+    /**
+     * Display trace
+     */
+    public function trace($onlyFilePaths = false)
+    {
+        if ($onlyFilePaths) {
+            Sage::dump(2);
+        } else {
+            Sage::trace();
+        }
     }
 
     /**

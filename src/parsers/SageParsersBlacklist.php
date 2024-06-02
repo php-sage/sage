@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageParsersBlacklist implements SageParserInterface
+class SageParsersBlacklist implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {

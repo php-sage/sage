@@ -12,7 +12,7 @@
  * @link       http://github.com/jdorn/sql-formatter
  * @version    1.2.18
  */
-class SqlFormatter
+class SageSqlFormatter
 {
     // Constants for token types
     const TOKEN_TYPE_WHITESPACE = 0;

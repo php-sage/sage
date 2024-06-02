@@ -1,7 +1,9 @@
 <?php
 
+require_once 'SageSqlFormatter.php';
+
 $queryNumber = 0;
-\DB::listen(function ($query) use (&$queryNumber) {
+DB::listen(function($query) use (&$queryNumber) {
     // todo ideally we should detect where Sage::showEloquentQueries() was invoked from and display that.
     $state                   = Sage::saveState();
     Sage::$displayCalledFrom = false;
@@ -20,7 +22,7 @@ $queryNumber = 0;
 
     $EloquentQuery = [
         '#'           => $queryNumber++,
-        'sql'         => $query->sql,
+        'sql'         => PHP_EOL . SageSqlFormatter::format($query->sql, false),
         'bindings'    => $query->bindings,
         'called_from' => $callee,
     ];

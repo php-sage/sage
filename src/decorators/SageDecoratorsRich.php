@@ -17,7 +17,10 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         self::$needsAssets = $added;
     }
 
-    public function decorate(SageVariableData $varData)
+    /**
+     * @param SageTraceContainer|SageVariableData $varData
+     */
+    public function decorate($varData, $level = 0)
     {
         $output = '<dl>';
 
@@ -336,5 +339,4 @@ class SageDecoratorsRich implements SageDecoratorsInterface
 
         return $output;
     }
-
 }

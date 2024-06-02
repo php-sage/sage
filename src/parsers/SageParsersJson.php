@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageParsersJson implements SageParserInterface
+class SageParsersJson implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {

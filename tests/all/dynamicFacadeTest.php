@@ -101,3 +101,4 @@ describe('settings tests', function() {
     $a = ob_get_clean();
     it('does not prevent future dumps from echoing', fn() => expect($a)->toContain('123'));
 });
+

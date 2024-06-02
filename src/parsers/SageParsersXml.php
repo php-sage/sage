@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageParsersXml implements SageParserInterface
+class SageParsersXml implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {

@@ -58,7 +58,13 @@ php51:
 update-test-snapshots:
 	$(DOCKER) run php pest -d --update-snapshots
 
+
 up:
+	$(DOCKER) up -d
+
+
+restart:
+	-$(DOCKER) down
 	$(DOCKER) up -d
 
 
@@ -93,3 +99,10 @@ cu:
 
 play:
 	$(DOCKER) exec php php /var/www/playground.php
+
+
+serve:
+	make up
+	@echo "go to ----> http://localhost:8181 <-----"
+	$(DOCKER) exec php php -S 0.0.0.0:8181 /dupe/playground.php
+

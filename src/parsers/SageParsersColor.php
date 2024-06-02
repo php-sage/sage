@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageParsersColor implements SageParserInterface
+class SageParsersColor implements SageCustomParserInterface
 {
     private static $colorNames = array(
         'aliceblue'            => '#f0f8ff',

@@ -4,7 +4,7 @@
  * @internal
  */
 
-class SageParsersFilePath extends SageParsersSplFileInfo implements SageParserInterface
+class SageParsersFilePath extends SageParsersSplFileInfo implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {

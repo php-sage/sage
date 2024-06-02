@@ -14,7 +14,7 @@ class SageTraceStep
     /** @var SageVariableData|null */
     public $object = null;
 
-    public function __construct($step, $stepNumber)
+    public function SageTraceStep($step, $stepNumber)
     {
         $this->fileLine      = $this->getFileAndLine($step);
         $this->argumentNames = $this->getStepArgumentNames($step);
@@ -30,6 +30,11 @@ class SageTraceStep
         $this->object        = $this->getObject($step);
         $this->sourceSnippet = $this->getSourceSnippet($step);
         $this->arguments     = $this->getArguments($step, $this->argumentNames);
+    }
+
+    public function __construct($step, $stepNumber)
+    {
+        $this->SageTraceStep($step, $stepNumber);
     }
 
     private function isStepBlacklisted($step, $stepNumber)

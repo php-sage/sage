@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageParsersMicrotime implements SageParserInterface
+class SageParsersMicrotime implements SageCustomParserInterface
 {
     private static $times = array();
     private static $laps = array();

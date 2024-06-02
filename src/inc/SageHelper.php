@@ -128,17 +128,25 @@ class SageHelper
      */
     public static function stepIsInternal($step)
     {
-        if (isset($step['class'])) {
-            foreach (self::$aliasesRaw['methods'] as $alias) {
-                if ($alias[0] === strtolower($step['class']) && $alias[1] === strtolower($step['function'])) {
+        $methodName = strtolower($step['function']);
+        $className  = array_key_exists('class', $step) ? strtolower($step['class']) : '';
+
+        if (! $className) {
+            return in_array($methodName, self::$aliasesRaw['functions'], true);
+        }
+
+        foreach (self::$aliasesRaw['methods'] as $alias) {
+            if ($className === $alias[0]) {
+                if (
+                    $methodName === $alias[1]
+                    || $alias[1] === '*'
+                ) {
                     return true;
                 }
             }
-
-            return false;
         }
 
-        return in_array(strtolower($step['function']), self::$aliasesRaw['functions'], true);
+        return false;
     }
 
     public static function isKeyBlacklisted($key)
@@ -245,25 +253,20 @@ class SageHelper
             array($file, $line, Sage::$fileLinkLocalPath),
             isset(self::$editors[Sage::$editor]) ? self::$editors[Sage::$editor] : Sage::$editor
         );
-
+        
         if ($enabledMode === Sage::MODE_RICH) {
-            $class = (strpos($ideLink, 'http://') === 0) ? ' class="_sage-ide-link" ' : ' ';
-
-            return "<a{$class}href=\"{$ideLink}\">{$linkText}</a>";
+            return new SageHtmlable("<a class=\"_sage-ide-link\" href=\"{$ideLink}\">{$linkText}</a>");
         }
 
-        // MODE_PLAIN
-        if (strpos($ideLink, 'http://') === 0) {
-            return <<<HTML
-<a href="{$ideLink}">{$linkText}</a>
-HTML;
-        }
-
-        return "<a href=\"{$ideLink}\">{$linkText}</a>";
+        return new SageHtmlable("<a href=\"{$ideLink}\">{$linkText}</a>");
     }
 
     public static function esc($value, $decode = true)
     {
+        if ($value instanceof SageHtmlable) {
+            return $value->toHtml();
+        }
+
         $value = self::isHtmlMode()
             ? htmlspecialchars($value, ENT_NOQUOTES, 'UTF-8')
             : $value;

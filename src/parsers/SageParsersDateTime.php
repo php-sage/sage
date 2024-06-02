@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageParsersDateTime implements SageParserInterface
+class SageParsersDateTime implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {

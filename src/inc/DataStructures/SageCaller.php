@@ -14,7 +14,7 @@ class SageCaller
      */
     public $miniTrace = array();
 
-    public function __construct(
+    public function SageCaller(
         $names = array(),
         $miniTrace = array()
     ) {
@@ -22,6 +22,16 @@ class SageCaller
         $this->miniTrace      = $miniTrace;
     }
 
+    public function __construct(
+        $names = array(),
+        $miniTrace = array()
+    ) {
+        $this->SageCaller($names, $miniTrace);
+    }
+
+    /**
+     * @return ?array|string|int trace step (or specific element like "file") where sage was called from
+     */
     public function getUserLandInvoker($key = null)
     {
         $step = count($this->miniTrace) > 1 ? $this->miniTrace[1] : array();
@@ -73,16 +83,6 @@ class SageCaller
 
         SageHelper::detectProjectRoot($result->getUserLandInvoker('file'));
 
-        // open the file and read it up to the position where the function call expression ended
-        // TODO since PHP 8.2 backtrace reports the lineno of the function/method name!
-        // https://github.com/php/php-src/pull/8818
-        //        $file = new SplFileObject($callee['file']);
-        //        do {
-        //            $file->seek($callee['line']);
-        //            $contents = $file->current(); // $contents would hold the data from line x
-        //
-        //        } while (! $file->eof());
-
         if (SageHelper::php82orLater()) {
             $result->solveForPhp82();
         } else {
@@ -99,7 +99,24 @@ class SageCaller
 
     private function solveForPhp82()
     {
-        return $this->solveForEarlierVersions();
+        $this->solveForEarlierVersions();
+
+        return;
+        // open the file and read it up to the position where the function call expression ended
+        // TODO since PHP 8.2 backtrace reports the lineno of the function/method name!
+        // https://github.com/php/php-src/pull/8818
+
+        $userLandInvoker = $this->miniTrace[0];
+
+        $file = new SplFileObject($userLandInvoker['file']);
+        $line = $userLandInvoker['line'];
+        do {
+            $file->seek($line);
+            $contents = $file->current(); // $contents would hold the data from line x
+
+        } while (! $file->eof());
+
+        $this->solveForEarlierVersions();
     }
 
     private function solveForEarlierVersions()
@@ -169,9 +186,9 @@ class SageCaller
 
         // remove everything in brackets and quotes, we don't need nested statements nor literal strings which would
         // complicate separating individual arguments
-        $c              = strlen($paramsString);
-        $inString       = $escaped = $openedBracket = $closingBracket = false;
         $i              = 0;
+        $c              = strlen($paramsString);
+        $betweenQuotes  = $escaped = $openedBracket = $closingBracket = false;
         $inBrackets     = 0;
         $openedBrackets = array();
         $bracketPairs   = array('(' => ')', '[' => ']', '{' => '}');
@@ -179,9 +196,9 @@ class SageCaller
         while ($i < $c) {
             $letter = $paramsString[$i];
 
-            if (! $inString) {
-                if ($letter === '\'' || $letter === '"') {
-                    $inString = $letter;
+            if (! $betweenQuotes) {
+                if ($letter === "'" || $letter === '"') {
+                    $betweenQuotes = $letter;
                 } elseif ($letter === '(' || $letter === '[' || $letter === '{') {
                     $inBrackets++;
                     $openedBrackets[] = $openedBracket = $letter;
@@ -197,19 +214,18 @@ class SageCaller
                     $paramsString = substr($paramsString, 0, $i);
                     break;
                 }
-            } elseif ($letter === $inString && ! $escaped) {
-                $inString = false;
+            } elseif ($letter === $betweenQuotes && ! $escaped) {
+                $betweenQuotes = false;
             }
 
-            // replace whatever was inside quotes or brackets with untypeable characters, we don't
-            // need that info.
+            // replace whatever was inside quotes or brackets with untypeable characters, we don't need that info.
             if ($inBrackets > 0) {
                 if ($inBrackets > 1 || $letter !== $openedBracket) {
                     $paramsString[$i] = "\x07";
                 }
             }
-            if ($inString) {
-                if ($letter !== $inString || $escaped) {
+            if ($betweenQuotes) {
+                if ($letter !== $betweenQuotes || $escaped) {
                     $paramsString[$i] = "\x07";
                 }
             }

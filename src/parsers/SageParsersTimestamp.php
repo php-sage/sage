@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageParsersTimestamp implements SageParserInterface
+class SageParsersTimestamp implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {

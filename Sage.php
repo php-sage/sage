@@ -39,13 +39,15 @@ require SAGE_DIR . 'src/inc/DataStructures/SageCaller.php';
 require SAGE_DIR . 'src/inc/SageDynamicFacade.php';
 require SAGE_DIR . 'src/inc/DataStructures/SageVariableData.php';
 require SAGE_DIR . 'src/inc/DataStructures/SageTraceStep.php';
+require SAGE_DIR . 'src/inc/DataStructures/SageTraceContainer.php';
+require SAGE_DIR . 'src/inc/DataStructures/SageHtmlable.php';
 require SAGE_DIR . 'src/inc/SageParser.php';
 require SAGE_DIR . 'src/inc/SageHelper.php';
 require SAGE_DIR . 'src/inc/shorthands.inc.php';
 require SAGE_DIR . 'src/decorators/SageDecoratorsInterface.php';
 require SAGE_DIR . 'src/decorators/SageDecoratorsRich.php';
 require SAGE_DIR . 'src/decorators/SageDecoratorsPlain.php';
-require SAGE_DIR . 'src/parsers/SageParserInterface.php';
+require SAGE_DIR . 'src/parsers/SageCustomParserInterface.php';
 
 class Sage
 {
@@ -410,7 +412,7 @@ class Sage
     }
 
     /*
-     *    SECTION: MAIN
+     *    SECTION: TRACE/DUMP
      *    ████████╗██████╗  █████╗  ██████╗███████╗    ██╗██████╗ ██╗   ██╗███╗   ███╗██████╗
      *    ╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██╔════╝   ██╔╝██╔══██╗██║   ██║████╗ ████║██╔══██╗
      *       ██║   ██████╔╝███████║██║     █████╗    ██╔╝ ██║  ██║██║   ██║██╔████╔██║██████╔╝
@@ -471,109 +473,56 @@ class Sage
         try {
             $params = func_get_args();
 
-            return call_user_func_array(array('Sage', 'doDump'), $params);
+            return call_user_func_array(array(new self(), 'doDump'), $params);
         } catch (Throwable $e) {
+            if (file_exists(SAGE_DIR . '/.dev-mode')) {
+                throw $e;
+            }
         } catch (Exception $e) {
         }
 
-        return 5463;
+        return self::ERROR_STATUS;
     }
 
     /**
      * @internal use Sage::dump() instead
      */
-    public static function doDump($data = null)
+    private function doDump($data = null)
     {
         $enabledMode = self::enabled();
 
         if (! $enabledMode) {
-            return 5463;
+            return self::ERROR_STATUS;
         }
 
-        self::_init();
+        $this->settingsInit();
 
-        $caller = SageCaller::getCalleeInfo(debug_backtrace());
+        $output           = '';
+        $backtraceData    = debug_backtrace();
+        $caller           = SageCaller::getCalleeInfo($backtraceData);
+        $decorator        = $this->detectDisplayMode($enabledMode);
+        $firstRunOldValue = $this->initDecorator($decorator);
+        $arguments        = $this->getWhatToDump($caller, func_get_args(), $backtraceData);
 
-        $decorator        = self::detectDisplayMode($enabledMode);
-        $firstRunOldValue = $decorator->areAssetsNeeded();
-
-        // self::$returnOutput can be true, can be a string to put multiple dumps together
-        if (self::$returnOutput) {
-            if (self::$returnOutput === true) {
-                $decorator->setAssetsNeeded(true);
-            } elseif (! isset(self::$_openedOutput[self::$returnOutput])) {
-                $decorator->setAssetsNeeded(true);
-
-                self::$_openedOutput[self::$returnOutput] = true;
-            }
-        }
-
-        if (self::$outputFile && ! isset(self::$_openedOutput[self::$outputFile])) {
-            $firstRunOldValue = $decorator->areAssetsNeeded();
-
-            $decorator->setAssetsNeeded(true);
-        }
-
-        $trace      = false;
-        $lightTrace = false;
-        if (func_num_args() === 1) {
-            if ($caller->parameterNames === array('1') && $data === 1) {
-                // Sage::dump(1) shorthand
-                $trace = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
-            } elseif ($caller->parameterNames === array('2') && $data === 2) {
-                $lightTrace = true;
-                $trace      = debug_backtrace();
-            } elseif (is_array($data)) {
-                $trace = $data; // test if the single parameter is result of debug_backtrace()
-            }
-        }
-
-        if ($trace) {
-            $trace = self::_parseTrace($trace);
-        }
-
-        $output = '';
         if ($decorator->areAssetsNeeded()) {
             $output .= $decorator->init();
         }
         $output .= $decorator->wrapStart();
 
-        if ($trace) {
-            $output .= $decorator->decorateTrace($trace, $lightTrace);
-        } else {
-            if (func_num_args() === 0) {
-                SageParser::reset();
-                $tmp            = microtime();
-                $varData        = SageParser::process($tmp, '');
-                $varData->type  = null;
-                $varData->name  = 'Sage called with no arguments';
-                $varData->value = null;
-                $varData->size  = null;
-                if ($caller->getUserLandInvoker('file')) {
-                    if ($caller->getUserLandInvoker('class') && $caller->getUserLandInvoker('type')) {
-                        $name = $caller->getUserLandInvoker('class')
-                            . $caller->getUserLandInvoker('type')
-                            . $caller->getUserLandInvoker('function');
-                    } else {
-                        $name = $caller->getUserLandInvoker('function');
-                    }
-                    $varData->name = $name . '( no parameters )';
-                }
-                $output .= $decorator->decorate($varData);
-            } else {
-                foreach (func_get_args() as $k => $argument) {
-                    SageParser::reset();
-                    // when the dump arguments take long to generate output, user might have changed the file and
-                    // Sage might not parse the arguments correctly, so check if names are set and while the
-                    // displayed names might be wrong, at least don't throw an error
-                    $output .= $decorator->decorate(
-                        SageParser::process(
-                            $argument,
-                            empty($caller->parameterNames[$k]) ? '???' : $caller->parameterNames[$k]
-                        )
-                    );
-                }
+        foreach ($arguments as $k => $argument) {
+            SageParser::reset();
+
+            // getWhatToDump can return an array of prepared SageVariableData
+            if (! $argument instanceof SageVariableData) {
+                // when the dump arguments take long to generate output, user might have changed the file and
+                // Sage might not parse the arguments correctly, so check if names are set and while the
+                // displayed names might be wrong, at least don't throw an error
+                $name = $this->getParameterName($caller, $k);
+
+                $argument = SageParser::process($argument, $name);
             }
+
+            $output .= $decorator->decorate($argument, $k);
         }
 
         $output .= $decorator->wrapEnd($caller);
@@ -608,12 +557,73 @@ class Sage
         }
 
         if (self::$outputFile) {
-            return 5463;
+            return self::ERROR_STATUS;
         }
 
         echo $output;
 
-        return 5463;
+        return self::ERROR_STATUS;
+    }
+
+    /**
+     * @return SageDecoratorsPlain|SageDecoratorsRich
+     */
+    private function detectDisplayMode(mixed $enabledMode)
+    {
+        // auto-detect mode if not explicitly set
+        if ($enabledMode === true) {
+            if (self::$outputFile && substr(self::$outputFile, -5) === '.html') {
+                $newMode = self::MODE_RICH;
+            } else {
+                $newMode = PHP_SAPI === 'cli' && self::$cliDetection === true
+                    ? self::MODE_CLI
+                    : self::MODE_RICH;
+            }
+
+            if (self::$simplifyDisplay) {
+                switch ($newMode) {
+                    case self::MODE_RICH:
+                        $newMode = self::MODE_PLAIN;
+                        break;
+                    case self::MODE_CLI:
+                        $newMode = self::MODE_TEXT_ONLY;
+                        break;
+                }
+            }
+
+            // change mode globally
+            self::enabled($newMode);
+        }
+
+        $decoratorClass = self::enabled() === self::MODE_RICH ? 'SageDecoratorsRich' : 'SageDecoratorsPlain';
+        /** @var SageDecoratorsPlain|SageDecoratorsRich $decorator */
+        $decorator = new $decoratorClass();
+
+        return $decorator;
+    }
+
+    private function initDecorator(SageDecoratorsPlain|SageDecoratorsRich $decorator): bool
+    {
+        $firstRunOldValue = $decorator->areAssetsNeeded();
+
+        // self::$returnOutput can be true, can be a string to put multiple dumps together
+        if (self::$returnOutput) {
+            if (self::$returnOutput === true) {
+                $decorator->setAssetsNeeded(true);
+            } elseif (! isset(self::$_openedOutput[self::$returnOutput])) {
+                $decorator->setAssetsNeeded(true);
+
+                self::$_openedOutput[self::$returnOutput] = true;
+            }
+        }
+
+        if (self::$outputFile && ! isset(self::$_openedOutput[self::$outputFile])) {
+            $firstRunOldValue = $decorator->areAssetsNeeded();
+
+            $decorator->setAssetsNeeded(true);
+        }
+
+        return $firstRunOldValue;
     }
 
     /*
@@ -642,80 +652,20 @@ class Sage
         }
     }
 
-    /*
-     *    SECTION: PRIVATE
-     *    ██████╗ ██████╗ ██╗██╗   ██╗ █████╗ ████████╗███████╗
-     *    ██╔══██╗██╔══██╗██║██║   ██║██╔══██╗╚══██╔══╝██╔════╝
-     *    ██████╔╝██████╔╝██║██║   ██║███████║   ██║   █████╗
-     *    ██╔═══╝ ██╔══██╗██║╚██╗ ██╔╝██╔══██║   ██║   ██╔══╝
-     *    ██║     ██║  ██║██║ ╚████╔╝ ██║  ██║   ██║   ███████╗
-     *    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝  ╚═╝  ╚═╝   ╚═╝   ╚══════╝
-     *
-     */
-
-    private static function _parseTrace($data)
+    private function getParameterName(SageCaller $caller, int $k)
     {
-        $trace       = array();
-        $traceFields = array('file', 'line', 'args', 'class');
-        $fileFound   = false; // file element must exist in one of the steps
-        $lastStep    = array();
+        $name = array_key_exists($k, $caller->parameterNames)
+            ? $caller->parameterNames[$k]
+            : '???';
 
-        // validate whether a trace was indeed passed
-        foreach ($data as $step) {
-            if (! is_array($step) || ! isset($step['function'])) {
-                return false;
-            }
-            if (! $fileFound && isset($step['file']) && file_exists($step['file'])) {
-                $fileFound = true;
-            }
-
-            $valid = false;
-            foreach ($traceFields as $element) {
-                if (isset($step[$element])) {
-                    $valid = true;
-                    break;
-                }
-            }
-            if (! $valid) {
-                return false;
-            }
-
-            if ($step['function'] === 'spl_autoload_call') { // meaningless
-                continue;
-            }
-
-            // also modify it in the same go
-            if (SageHelper::stepIsInternal($step)) {
-                // take first step from the top that is not inside Sage already
-                if (isset($step['file'], $step['line'])) {
-                    $lastStep = array(
-                        'file'     => $step['file'],
-                        'line'     => $step['line'],
-                        'function' => '',
-                    );
-                }
-
-                continue;
-            }
-
-            $trace[] = $step;
+        if (strlen($name) > 60) {
+            $name =
+                SageHelper::substr($name, 0, 27)
+                . '...'
+                . SageHelper::substr($name, -28, null);
         }
 
-        if (! $fileFound) {
-            return false;
-        }
-
-        if ($lastStep) {
-            array_unshift($trace, $lastStep);
-        }
-
-        // now parse the trace into a usable format
-        $output = array();
-        foreach ($trace as $i => $step) {
-            $output[] = new SageTraceStep($step, $i);
-        }
-
-        return $output;
+        return $name;
     }
 
     /*
@@ -728,22 +678,10 @@ class Sage
      *
      */
 
-    private static function _initSetting($name, $default)
-    {
-        if (! isset(self::$$name)) {
-            $value = get_cfg_var('sage.' . $name);
-            if (! $value) {
-                $value = $default;
-            }
-
-            self::$$name = $value;
-        }
-    }
-
     private static $loadedParsers = 0;
 
     /** Called before each invocation */
-    private static function _init()
+    private function settingsInit()
     {
         SageHelper::buildAliases();
 
@@ -796,41 +734,72 @@ class Sage
         self::_initSetting('aliases', array());
     }
 
-    /**
-     * @return SageDecoratorsPlain|SageDecoratorsRich
-     */
-    private static function detectDisplayMode(mixed $enabledMode)
+    private static function _initSetting($name, $default)
     {
-        // auto-detect mode if not explicitly set
-        if ($enabledMode === true) {
-            if (self::$outputFile && substr(self::$outputFile, -5) === '.html') {
-                $newMode = self::MODE_RICH;
-            } else {
-                $newMode = PHP_SAPI === 'cli' && self::$cliDetection === true
-                    ? self::MODE_CLI
-                    : self::MODE_RICH;
+        if (! isset(self::$$name)) {
+            $value = get_cfg_var('sage.' . $name);
+            if (! $value) {
+                $value = $default;
             }
 
-            if (self::$simplifyDisplay) {
-                switch ($newMode) {
-                    case self::MODE_RICH:
-                        $newMode = self::MODE_PLAIN;
-                        break;
-                    case self::MODE_CLI:
-                        $newMode = self::MODE_TEXT_ONLY;
-                        break;
+            self::$$name = $value;
+        }
+    }
+
+    /**
+     * @param SageCaller $caller
+     * @param array      $arguments
+     * @param array      $backtraceData
+     *
+     * @return array|array[]
+     */
+    private function getWhatToDump(SageCaller $caller, array $arguments, array $backtraceData): array
+    {
+        if (count($arguments) === 0) {
+            $tmp            = microtime();
+            $varData        = SageParser::process($tmp, '');
+            $varData->type  = null;
+            $varData->name  = 'Sage called with no arguments';
+            $varData->value = null;
+            $varData->size  = null;
+            if ($caller->getUserLandInvoker('file')) {
+                if ($caller->getUserLandInvoker('class') && $caller->getUserLandInvoker('type')) {
+                    $name = $caller->getUserLandInvoker('class')
+                        . $caller->getUserLandInvoker('type')
+                        . $caller->getUserLandInvoker('function');
+                } else {
+                    $name = $caller->getUserLandInvoker('function');
                 }
+                $varData->name = $name . '( no parameters )';
             }
 
-            // change mode globally
-            self::enabled($newMode);
+            return array($varData);
         }
 
-        $decoratorClass = self::enabled() === self::MODE_RICH ? 'SageDecoratorsRich' : 'SageDecoratorsPlain';
-        /** @var SageDecoratorsPlain|SageDecoratorsRich $decorator */
-        $decorator = new $decoratorClass();
+        if (count($arguments) === 1) {
+            if ($caller->parameterNames === array('1') && $arguments[0] === 1) {
+                // Sage::dump(1) shorthand
+                return array(
+                    SageHelper::php53orLater()
+                        ? debug_backtrace(true)
+                        : $backtraceData
+                );
+            }
 
-        return $decorator;
+            if ($caller->parameterNames === array('2') && $arguments[0] === 2) {
+                $lightTrace = array();
+                foreach ($backtraceData as $step) {
+                    $lightTrace[] = array(
+                        'file' => array_key_exists('file', $step) ? $step['file'] : '',
+                        'line' => array_key_exists('line', $step) ? $step['line'] : '',
+                    );
+                }
+
+                return array($lightTrace);
+            }
+        }
+
+        return $arguments;
     }
 }
 

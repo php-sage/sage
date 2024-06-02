@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageParsersEloquent implements SageParserInterface
+class SageParsersEloquent implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {
@@ -25,12 +25,15 @@ class SageParsersEloquent implements SageParserInterface
         $reference = '`' . $variable->getConnection()->getDatabaseName() . '`.`' . $variable->getTable() . '`';
 
         $varData->size = count($attributes);
+
         if (SageHelper::isRichMode()) {
             $varData->type = $reflection->getName();
             $varData->addTabToView($variable, 'data from ' . $reference, $attributes);
-        } else {
-            $varData->type          = $reflection->getName() . '; ' . $reference . ' row data:';
-            $varData->extendedValue = SageParser::alternativesParse($variable, $attributes);
+
+            return;
         }
+
+        $varData->type          = $reflection->getName() . '; ' . $reference . ' row data:';
+        $varData->extendedValue = SageParser::alternativesParse($variable, $attributes);
     }
 }

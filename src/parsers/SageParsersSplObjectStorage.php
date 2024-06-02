@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageParsersSplObjectStorage implements SageParserInterface
+class SageParsersSplObjectStorage implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {

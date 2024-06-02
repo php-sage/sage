@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageParsersObjectIterateable implements SageParserInterface
+class SageParsersObjectIterateable implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {

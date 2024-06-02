@@ -1,9 +1,7 @@
 <?php
 
-/**
- * @internal
- */
-class SageParsersSplFileInfo implements SageParserInterface
+/** @internal */
+class SageParsersSplFileInfo implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {
@@ -119,12 +117,14 @@ class SageParsersSplFileInfo implements SageParserInterface
                     $extra['linkTarget'] = $fileInfo->getLinkTarget();
                 }
 
+                $extra['ide link'] = SageHelper::ideLink($fileInfo->getRealPath(), 0);
+
                 $varData->addTabToView($variable, $name . " [{$size}]", $extra);
             } else {
                 if ($type === 'Directory') {
-                    $extended = array('Existing Directory' => $fileInfo->getFilename());
+                    $extra = array('Existing Directory' => $fileInfo->getFilename());
                 } else {
-                    $extended = array("Existing {$type}" => $this->humanFilesize($fileInfo->getSize()));
+                    $extra = array("Existing {$type}" => $this->humanFilesize($fileInfo->getSize()));
                 }
 
                 $varData->extendedValue = array($name => $size) + $extra;

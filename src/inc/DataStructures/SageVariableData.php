@@ -1,38 +1,34 @@
 <?php
 
-/**
- * @internal
- * @noinspection AutoloadingIssuesInspection
- */
-
+/** @internal */
 class SageVariableData
 {
+    // basics:
+    /** @var string */
+    public $name;
     /** @var string */
     public $type;
     /** @var string */
     public $access;
     /** @var string */
-    public $name;
-    /** @var string */
     public $operator;
     /** @var int */
     public $size;
-    /** @var array|string full variable representation */
-    public $extendedValue;
     /** @var string short inline value */
     public $value;
 
-    /** @var array extra views of the same variable data used in rich view. Keys are tab names, values is content */
-    private $alternativeRepresentations = array();
+    /** @var SageRichViewTab[] */
+    public $richViewTabs;
 
-    /**
-     * @param string       $name
-     * @param string|array $value
-     *
-     * @return void
-     */
+    /** @var string|array string is <pre> contents, array will be parsed further */
+    public $fullContents;
+
     public function addTabToView($originalVariable, $tabName, $value)
     {
+        if (Sage::enabled() !== Sage::MODE_RICH) {
+            return;
+        }
+
         if (is_array($value)) {
             if (! (reset($value) instanceof self)) {
                 // convert to SageVariableData[]
@@ -50,15 +46,15 @@ class SageVariableData
     public function getAllRepresentations()
     {
         # if alternative displays exist, push extendedValue to their front and display it as one of alternatives
-        $prepared = array();
+        $result = array();
 
         if (! empty($this->extendedValue)) {
-            $prepared['Contents'] = $this->extendedValue;
+            $result['Contents'] = $this->extendedValue;
         }
         if (! empty($this->alternativeRepresentations)) {
-            $prepared = array_merge($prepared, $this->alternativeRepresentations);
+            $result = array_merge($result, $this->alternativeRepresentations);
         }
 
-        return $prepared;
+        return $result;
     }
 }

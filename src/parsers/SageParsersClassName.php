@@ -3,13 +3,14 @@
 /**
  * @internal
  */
-class SageParsersClassName implements SageParserInterface
+class SageParsersClassName implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {
         return false;
     }
 
+    /** @return false|void */
     public function parse(&$variable, $varData)
     {
         if (
@@ -47,20 +48,24 @@ class SageParsersClassName implements SageParserInterface
                     $reflector->getShortName()
                 )
             );
-        } else {
-            if (SageHelper::isHtmlMode()) {
-                $varData->extendedValue =
-                    array(
-                        'Existing class' => SageHelper::ideLink(
-                            $reflector->getFileName(),
-                            $reflector->getStartLine(),
-                            $reflector->getShortName()
-                        )
-                    );
-            } else {
-                $varData->extendedValue =
-                    array('Existing class' => $reflector->getFileName() . ':' . $reflector->getStartLine());
-            }
+
+            return;
         }
+
+        if (SageHelper::isHtmlMode()) {
+            $varData->extendedValue = array(
+                'Existing class' => SageHelper::ideLink(
+                    $reflector->getFileName(),
+                    $reflector->getStartLine(),
+                    $reflector->getShortName()
+                )
+            );
+
+            return;
+        }
+
+        $varData->extendedValue = array(
+            'Existing class' => $reflector->getFileName() . ':' . $reflector->getStartLine()
+        );
     }
 }
