@@ -3,101 +3,12 @@
 /**
  * @internal
  */
-class SageParser
+class SagePrimitivesParser
 {
-    public static $_level = 0;
-    /** @var array<string, true> */
-    private static $_objects;
-    /** @var string */
-    private static $_marker;
-
-    /**
-     * @var array keep parsers from looping
-     */
-    private static $parsingAlternative = array();
-
-    private static $_placeFullStringInValue = false;
-
-    public static function reset()
-    {
-        self::$_level   = 0;
-        self::$_objects = self::$_marker = null;
-    }
-
-    /**
-     * @param mixed   $variable
-     * @param ?string $name
-     *
-     * @return SageTraceContainer|SageVariableData
-     */
-    public static function process(&$variable, $name = null)
-    {
-        // save internal data to revert after dumping to properly handle recursions etc
-        $revert = array(
-            'level'   => self::$_level,
-            'objects' => self::$_objects,
-        );
-        self::$_level++;
-
-        if ($traceOutput = SagePrimitivesParser::parseIfTrace($variable)) {
-            $varData = $traceOutput;
-        } else {
-            $varData       = new SageVariableData();
-            $varData->name = $name;
-
-            // first go through alternative parsers (eg.: json detection)
-            foreach (Sage::$enabledParsers as $parserClass => $enabled) {
-                if (! $enabled || array_key_exists($parserClass, self::$parsingAlternative)) {
-                    continue;
-                }
-                self::$parsingAlternative[$parserClass] = true;
-
-                $parser      = new $parserClass();
-                $parseResult = $parser->parse($variable, $varData);
-
-                // if var was parsed by "can only be one"-parser - return here
-                if ($parseResult !== false && $parser->replacesAllOtherParsers()) {
-                    unset(self::$parsingAlternative[$parserClass]);
-                    self::$_level   = $revert['level'];
-                    self::$_objects = $revert['objects'];
-
-                    return $varData;
-                }
-                unset(self::$parsingAlternative[$parserClass]);
-            }
-
-            // parse the variable based on its type
-            $varType = gettype($variable);
-            $varType === 'unknown type' and $varType = 'unknown'; // PHP 5.4 inconsistency
-            $methodName = '_parse_' . $varType;
-            if (! method_exists(__CLASS__, $methodName)) {
-                $varData->type = $varType; // resource (closed) for example
-
-                return $varData;
-            }
-            // base type parser returning false means "stop processing further": e.g. recursion
-            if (self::$methodName($variable, $varData) === false) {
-                self::$_level--;
-
-                return $varData;
-            }
-        }
-
-        self::$_level   = $revert['level'];
-        self::$_objects = $revert['objects'];
-
-        return $varData;
-    }
-
-    private static function isDepthLimit()
-    {
-        return Sage::$maxLevels && self::$_level >= Sage::$maxLevels;
-    }
-
     /**
      * @return ?SageTraceContainer
      */
-    private static function parseIfTrace($data)
+    public static function parseIfTrace($data)
     {
         if (! is_array($data)) {
             return null;

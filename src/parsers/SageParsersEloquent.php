@@ -10,30 +10,39 @@ class SageParsersEloquent implements SageCustomParserInterface
         return true;
     }
 
+    /** @return false|void */
     public function parse(&$variable, $varData)
     {
-        if (! SageHelper::php53orLater() || ! is_a($variable, '\Illuminate\Database\Eloquent\Model')) {
+        if (
+            ! SageHelper::php53orLater()
+            || ! is_a($variable, '\Illuminate\Database\Eloquent\Model')
+        ) {
             return false;
         }
 
-        $reflection = new ReflectionObject($variable);
-
-        $attrReflecion = $reflection->getProperty('attributes');
+        $reflection    = new ReflectionObject($variable);
+        $attrReflecion = $reflection->getProperty('attributes'); // todo is this really the best way??
         $attrReflecion->setAccessible(true);
         $attributes = $attrReflecion->getValue($variable);
+        $reference  = '`' . $variable->getConnection()->getDatabaseName() . '`.`' . $variable->getTable() . '`';
 
-        $reference = '`' . $variable->getConnection()->getDatabaseName() . '`.`' . $variable->getTable() . '`';
+        $attributesDump = new SageVariableExtendedView(
+            SageVariableExtendedView::CONTENT_TYPE_DUMP,
+            'Retrieved DB data from: ' . $reference,
+            $attributes
+        );
 
         $varData->size = count($attributes);
+        $varData->type = $reflection->getName();
 
         if (SageHelper::isRichMode()) {
-            $varData->type = $reflection->getName();
-            $varData->addTabToView($variable, 'data from ' . $reference, $attributes);
+            $varData->addAlternativeView($attributesDump);
 
+            // todo add relations
             return;
         }
 
-        $varData->type          = $reflection->getName() . '; ' . $reference . ' row data:';
-        $varData->extendedValue = SageParser::alternativesParse($variable, $attributes);
+        $varData->type         = $reflection->getName() . '; ' . $reference . ' row data:';
+        $varData->extendedView = $attributes;
     }
 }

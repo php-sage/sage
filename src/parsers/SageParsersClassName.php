@@ -14,9 +14,8 @@ class SageParsersClassName implements SageCustomParserInterface
     public function parse(&$variable, $varData)
     {
         if (
-            Sage::enabled() === Sage::MODE_TEXT_ONLY
+            ! SageHelper::isHtmlMode()
             || ! SageHelper::php53orLater()
-            || empty($variable)
             || ! is_string($variable)
             || strlen($variable) < 3
         ) {
@@ -38,34 +37,10 @@ class SageParsersClassName implements SageCustomParserInterface
             return false;
         }
 
-        if (SageHelper::isRichMode()) {
-            $varData->addTabToView(
-                $variable,
-                'Existing class',
-                SageHelper::ideLink(
-                    $reflector->getFileName(),
-                    $reflector->getStartLine(),
-                    $reflector->getShortName()
-                )
-            );
-
-            return;
-        }
-
-        if (SageHelper::isHtmlMode()) {
-            $varData->extendedValue = array(
-                'Existing class' => SageHelper::ideLink(
-                    $reflector->getFileName(),
-                    $reflector->getStartLine(),
-                    $reflector->getShortName()
-                )
-            );
-
-            return;
-        }
-
-        $varData->extendedValue = array(
-            'Existing class' => $reflector->getFileName() . ':' . $reflector->getStartLine()
+        // produces link to userland class, eg.: "MyClass" string|class-name
+        $varData->type = new SageHtmlable(
+            'string|'
+            . SageHelper::ideLink($reflector->getFileName(), $reflector->getStartLine(), 'class-name')
         );
     }
 }

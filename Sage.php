@@ -253,28 +253,29 @@ class Sage
 
     /** @var class-string<SageParser>[] */
     public static $enabledParsers = array(
-        'SageParsersTrace'             => true,
-        'SageParsersSmarty'            => true,
-        'SageParsersSplFileInfo'       => true,
-        'SageParsersClosure'           => true,
-        'SageParsersEloquent'          => true,
-        'SageParsersDateTime'          => true,
-        'SageParsersSplObjectStorage'  => true,
-        'SageParsersTimestamp'         => true,
-        'SageParsersFilePath'          => true,
+        'SageParsersTrace'                     => true,
+        'SageParsersSmarty'                    => true,
+        'SageParsersSplFileInfo'               => true,
+        'SageParsersClosure'                   => true,
+        'SageParsersEloquent'                  => true,
+        'SageParsersDateTime'                  => true,
+        'SageParsersSplObjectStorage'          => true,
+        'SageParsersTimestamp'                 => true,
+        'SageParsersFilePath'                  => true,
         // above this line are only those parsers that $replacesAllOtherParsers
 
         // now we run the blacklist
-        'SageParsersBlacklist'         => true,
+        'SageParsersBlacklist'                 => true,
 
         // all the rest
-        'SageParsersXml'               => true,
-        'SageParsersObjectIterateable' => true,
-        'SageParsersClassStatics'      => true,
-        'SageParsersColor'             => true,
-        'SageParsersJson'              => true,
-        'SageParsersClassName'         => true,
-        'SageParsersMicrotime'         => true,
+        'SageParsersXml'                       => true,
+        'SageParsersObjectIterateable'         => true,
+        'SageParsersClassStatics'              => true,
+        'SageParsersColor'                     => true,
+        'SageParsersJson'                      => true,
+        'SageParsersClassName'                 => true,
+        'SageParsersMicrotime'                 => true,
+        'SageParsersInvisibleStringCharacters' => true,
     );
 
     public static function saveState($state = array())
@@ -367,8 +368,8 @@ class Sage
      *
      *    ~d(); // TypeError: Cannot perform bitwise not on null
      *
-     * It's not zero because it doesn't matter, and if you find this somewhere in your logs or something - you know who
-     * to blame :))
+     * It's not zero because it doesn't matter, plus if you find this number somewhere in your logs or something - you
+     * know who to blame :))
      */
     const ERROR_STATUS = 5463;
 

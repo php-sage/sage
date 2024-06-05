@@ -13,6 +13,7 @@ class SageParsersMicrotime implements SageCustomParserInterface
         return false;
     }
 
+    /** @return false|void */
     public function parse(&$variable, $varData)
     {
         if (! is_string($variable)
@@ -21,55 +22,33 @@ class SageParsersMicrotime implements SageCustomParserInterface
         }
 
         list($usec, $sec) = explode(' ', $variable);
-
-        $time = (float)$usec + (float)$sec;
-
-        $size = memory_get_usage(true);
-
-        $unit        = array('B', 'KB', 'MB', 'GB', 'TB');
-        $memoryUsage = round($size / pow(1024, ($i = floor(log($size, 1024)))), 3) . $unit[$i];
-
+        $time          = (float)$usec + (float)$sec;
+        $size          = memory_get_usage(true);
         $numberOfCalls = count(self::$times);
+        $result        = new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_PLAIN_TEXT_ROWS, 'Benchmark');
+
         if ($numberOfCalls > 0) {
             $lap          = $time - end(self::$times);
             self::$laps[] = $lap;
 
             $sinceLast = round($lap, 4) . 's.';
-            if ($numberOfCalls > 1) {
-                $sinceStart      = round($time - self::$times[0], 4) . 's.';
-                $averageDuration = round(array_sum(self::$laps) / $numberOfCalls, 4) . 's.';
-            } else {
-                $sinceStart      = null;
-                $averageDuration = null;
-            }
-
             if (SageHelper::isRichMode()) {
-                $tabContents = "<b>SINCE LAST SUCH CALL:</b> <b class=\"_sage-microtime\">" . round($lap, 4) . '</b>s.';
-                if ($numberOfCalls > 1) {
-                    $tabContents .= "\n<b>SINCE START:</b> {$sinceStart}";
-                    $tabContents .= "\n<b>AVERAGE DURATION:</b> {$averageDuration}";
-                }
-                $tabContents .= "\n<b>PHP MEMORY USAGE:</b> {$memoryUsage}";
+                $sinceLast = new SageHtmlable('<b class="_sage-microtime">' . $sinceLast . '</b>');
+            }
+            $result->addRow($sinceLast . 's.', 'Since last such call');
 
-                $varData->addTabToView($variable, 'Benchmark', $tabContents);
-            } else {
-                $varData->extendedValue = array(
-                    'Since last such call' => $sinceLast
-                );
-
-                if ($sinceStart !== null) {
-                    $varData->extendedValue['Since start']      = $sinceStart;
-                    $varData->extendedValue['Average duration'] = $averageDuration;
-                }
-
-                $varData->extendedValue['Memory usage'] = $memoryUsage;
+            if ($numberOfCalls > 1) {
+                $result->addRow(round($time - self::$times[0], 4) . 's.', 'Since start');
+                $result->addRow(round(array_sum(self::$laps) / $numberOfCalls, 4) . 's.', 'Average duration');
             }
         } else {
-            $varData->extendedValue = array(
-                'Time (from microtime)' => @date('Y-m-d H:i:s', (int)$sec) . substr($usec, 1),
-                'PHP MEMORY USAGE'      => $memoryUsage
-            );
+            $result->addRow(@date('Y-m-d H:i:s', (int)$sec) . substr($usec, 1), 'Time (from microtime)');
         }
+
+        $unit = array('B', 'KB', 'MB', 'GB', 'TB');
+        $result->addRow(round($size / pow(1024, ($i = floor(log($size, 1024)))), 3) . $unit[$i], 'PHP memory usage');
+
+        $varData->addAlternativeView($result);
 
         self::$times[] = $time;
     }

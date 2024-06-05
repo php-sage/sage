@@ -18,8 +18,13 @@ class SageParsersTimestamp implements SageCustomParserInterface
 
         $var = strlen($variable) === 13 ? substr($variable, 0, -3) : $variable;
 
-        // avoid dreaded "Timezone must be set" error
-        $varData->addTabToView($variable, 'Timestamp', @date('Y-m-d H:i:s', $var));
+        $varData->addAlternativeView(
+            new SageVariableExtendedView(
+                SageVariableExtendedView::CONTENT_TYPE_STRING,
+                'Timestamp',
+                @date('Y-m-d H:i:s', $var) // avoid dreaded "Timezone must be set" error
+            )
+        );
     }
 
     private function _fits($variable)

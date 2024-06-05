@@ -253,7 +253,7 @@ class SageHelper
             array($file, $line, Sage::$fileLinkLocalPath),
             isset(self::$editors[Sage::$editor]) ? self::$editors[Sage::$editor] : Sage::$editor
         );
-        
+
         if ($enabledMode === Sage::MODE_RICH) {
             return new SageHtmlable("<a class=\"_sage-ide-link\" href=\"{$ideLink}\">{$linkText}</a>");
         }
@@ -264,7 +264,7 @@ class SageHelper
     public static function esc($value, $decode = true)
     {
         if ($value instanceof SageHtmlable) {
-            return $value->toHtml();
+            return $value;
         }
 
         $value = self::isHtmlMode()
@@ -275,7 +275,7 @@ class SageHelper
             $value = self::decodeStr($value);
         }
 
-        return $value;
+        return new SageHtmlable($value);
     }
 
     /**

@@ -160,14 +160,12 @@ class SageParsersColor implements SageCustomParserInterface
         return false;
     }
 
+    /** @return false|void */
     public function parse(&$variable, $varData)
     {
         if (! $this->_fits($variable)) {
             return false;
         }
-
-        // todo after we migrate from less:
-        // $originalVarData->name .= "<div style=\"background:{$variable}\" class=\"_sage-color-preview\">{$variable}</div>";
 
         $variants = $this->_convert($variable);
         $value    = <<<HTML
@@ -179,7 +177,13 @@ HTML;
             $value .= PHP_EOL . "<strong>css:</strong> {$variants['name']}";
         }
 
-        $varData->addTabToView($variable, 'CSS color', $value);
+        $varData->addAlternativeView(
+            new SageVariableExtendedView(
+                SageVariableExtendedView::CONTENT_TYPE_STRING,
+                'CSS color',
+                new SageHtmlable($value)
+            )
+        );
     }
 
     private function _fits($variable)

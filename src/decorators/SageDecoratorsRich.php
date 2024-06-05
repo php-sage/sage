@@ -25,7 +25,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         $output = '<dl>';
 
         $allRepresentations = $varData->getAllRepresentations();
-        $extendedPresent    = ! empty($allRepresentations);
+        $extendedPresent    = $varData->extendedView || $varData->alternativeViews;
 
         if ($extendedPresent) {
             $class = '_sage-parent';

@@ -34,6 +34,6 @@ class SageParsersBlacklist implements SageCustomParserInterface
             return false;
         }
 
-        $varData->type = get_class($variable) . ' [skipped, dump object in top level to see contents]';
+        $varData->type = $className . ' [skipped, dump object in top level to see contents]';
     }
 }

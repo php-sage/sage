@@ -32,13 +32,20 @@ class SageParsersSmarty implements SageCustomParserInterface
             $globalAssigns[$name] = $var->value;
         }
 
-        $varData->addTabToView($variable, 'Assigned to view', $assigned);
-        $varData->addTabToView($variable, 'Assigned globally', $globalAssigns);
-        $varData->addTabToView($variable, 'Configuration', array(
-                'Compiled files stored in' => isset($variable->compile_dir)
-                    ? $variable->compile_dir
-                    : $variable->getCompileDir(),
-            )
+        $varData->addAlternativeView(
+            new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_DUMP, 'Assigned to view', $assigned)
+        );
+        $varData->addAlternativeView(
+            new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_DUMP, 'Assigned globally', $globalAssigns)
+        );
+        $varData->addAlternativeView(
+            (new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_PLAIN_TEXT_ROWS, 'Configuration'))
+                ->addRow(
+                    'Compiled files stored in',
+                    isset($variable->compile_dir)
+                        ? $variable->compile_dir
+                        : $variable->getCompileDir()
+                )
         );
     }
 }

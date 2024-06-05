@@ -10,28 +10,28 @@ class SageParsersSplFileInfo implements SageCustomParserInterface
 
     public function parse(&$variable, $varData)
     {
-        if (! SageHelper::php53orLater()
+        if (
+            ! SageHelper::php53orLater()
             || ! $variable instanceof SplFileInfo
             || $variable instanceof SplFileObject
         ) {
             return false;
         }
 
-        return $this->run($variable, $varData, $variable);
+        $varData->type  = get_class($variable);
+        $varData->value = new SageHtmlable('"' . SageHelper::esc($variable->getPathname()) . '"');
+
+        return self::inspect($variable, $varData);
     }
 
     /**
-     * @param mixed            $variable
-     * @param SageVariableData $varData
      * @param SplFileInfo      $fileInfo
+     * @param SageVariableData $varData
      *
      * @return bool
      */
-    protected function run(&$variable, $varData, $fileInfo)
+    public static function inspect($fileInfo, $varData)
     {
-        $varData->value = '"' . SageHelper::esc($fileInfo->getPathname()) . '"';
-        $varData->type  = get_class($fileInfo);
-
         if (! $fileInfo->getPathname() || ! $fileInfo->getRealPath()) {
             $varData->size = 'invalid path';
 
@@ -83,51 +83,49 @@ class SageParsersSplFileInfo implements SageCustomParserInterface
             $flags[] = (($perms & 0x0002) ? 'w' : '-');
             $flags[] = (($perms & 0x0001) ? (($perms & 0x0200) ? 't' : 'x') : (($perms & 0x0200) ? 'T' : '-'));
 
-            $varData->type = get_class($fileInfo);
-
             if ($type === 'Directory') {
                 $name = 'Existing Directory';
-                $size = iterator_count(
-                        new FilesystemIterator($fileInfo->getRealPath(), FilesystemIterator::SKIP_DOTS)
-                    ) . ' item(s)';
+                $size = iterator_count(new FilesystemIterator($fileInfo->getRealPath(), FilesystemIterator::SKIP_DOTS))
+                    . ' item(s)';
             } else {
                 $name = "Existing {$type}";
-                $size = $this->humanFilesize($fileInfo->getSize());
-            }
-
-            $extra = array();
-
-            if ($fileInfo->getRealPath() !== $fileInfo->getPathname()) {
-                $extra['realPath'] = $fileInfo->getRealPath();
+                $size = self::humanFilesize($fileInfo->getSize());
             }
 
             if (SageHelper::isRichMode()) {
-                $extra['flags'] = implode($flags);
+                $result = new SageVariableExtendedView(
+                    SageVariableExtendedView::CONTENT_TYPE_PLAIN_TEXT_ROWS,
+                    $name . " [{$size}]"
+                );
+
+                if ($fileInfo->getRealPath() !== $fileInfo->getPathname()) {
+                    $result->addRow($fileInfo->getRealPath(), 'realPath');
+                }
+
+                $result->addRow(implode($flags), 'flags');
 
                 if ($fileInfo->getGroup() || $fileInfo->getOwner()) {
-                    $extra['group&owner'] = $fileInfo->getGroup() . ':' . $fileInfo->getOwner();
+                    $result->addRow($fileInfo->getGroup() . ':' . $fileInfo->getOwner(), 'group&owner');
                 }
 
-                $extra['created']  = date('Y-m-d H:i:s', $fileInfo->getCTime());
-                $extra['modified'] = date('Y-m-d H:i:s', $fileInfo->getMTime());
-                $extra['accessed'] = date('Y-m-d H:i:s', $fileInfo->getATime());
+                $result->addRow(date('Y-m-d H:i:s', $fileInfo->getCTime()), 'created');
+                $result->addRow(date('Y-m-d H:i:s', $fileInfo->getMTime()), 'modified');
+                $result->addRow(date('Y-m-d H:i:s', $fileInfo->getATime()), 'accessed');
 
                 if ($fileInfo->isLink()) {
-                    $extra['link']       = 'true';
-                    $extra['linkTarget'] = $fileInfo->getLinkTarget();
+                    $result->addRow('true', 'link');
+                    $result->addRow($fileInfo->getLinkTarget(), 'linkTarget');
                 }
+                $result->addRow(SageHelper::ideLink($fileInfo->getRealPath(), 0), 'IDE link');
 
-                $extra['ide link'] = SageHelper::ideLink($fileInfo->getRealPath(), 0);
+                // todo add file preview for text files..?
 
-                $varData->addTabToView($variable, $name . " [{$size}]", $extra);
+                $varData->addAlternativeView($result);
             } else {
-                if ($type === 'Directory') {
-                    $extra = array('Existing Directory' => $fileInfo->getFilename());
-                } else {
-                    $extra = array("Existing {$type}" => $this->humanFilesize($fileInfo->getSize()));
-                }
+                $result = new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_PLAIN_TEXT_ROWS);
+                $result->addRow($size, $name);
 
-                $varData->extendedValue = array($name => $size) + $extra;
+                $varData->extendedView = $result;
             }
         } catch (Exception $e) {
             return false;
@@ -136,7 +134,7 @@ class SageParsersSplFileInfo implements SageCustomParserInterface
         return true;
     }
 
-    private function humanFilesize($bytes)
+    private static function humanFilesize($bytes)
     {
         $sizeInBytes = $bytes;
         if ($bytes < 10240) {

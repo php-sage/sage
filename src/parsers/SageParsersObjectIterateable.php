@@ -26,6 +26,8 @@ class SageParsersObjectIterateable implements SageCustomParserInterface
 
         $size = count($arrayCopy);
 
-        $varData->addTabToView($variable, "Iterator contents ({$size})", $arrayCopy);
+        $varData->addAlternativeView(
+            new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_DUMP, "Iterator contents ({$size})", $arrayCopy)
+        );
     }
 }

@@ -16,45 +16,37 @@ class SageVariableData
     public $size;
     /** @var string short inline value */
     public $value;
+    /** @var string for exceptions like "depth limit", "blacklisted key", "recursion" */
+    public $error = '';
 
-    /** @var SageRichViewTab[] */
-    public $richViewTabs;
+    /**
+     * Detailed information container.
+     *
+     * The view is collapsed in Rich view, and if more alternative views exist, it's put alongside them under UI tabs.
+     *
+     * The name will be HIDDEN if no alternatives exist (so don't put important information in the name!)
+     *
+     * @var SageVariableExtendedView
+     */
+    public $extendedView;
 
-    /** @var string|array string is <pre> contents, array will be parsed further */
-    public $fullContents;
+    /** @var SageVariableExtendedView[] each element is the same as $extendedView, only MUST have a name */
+    public $alternativeViews;
 
-    public function addTabToView($originalVariable, $tabName, $value)
+    public function addAlternativeView(SageVariableExtendedView $details)
     {
-        if (Sage::enabled() !== Sage::MODE_RICH) {
+        if ($details->isEmpty()) {
             return;
         }
 
-        if (is_array($value)) {
-            if (! (reset($value) instanceof self)) {
-                // convert to SageVariableData[]
-                $value = SageParser::alternativesParse($originalVariable, $value);
-            }
-        } elseif (is_string($value)) {
-            // do nothin'
-        } else {
-            // ERROR: incorrect parser
-        }
-
-        $this->alternativeRepresentations[$tabName] = $value;
+        $this->alternativeViews[] = $details;
     }
 
-    public function getAllRepresentations()
+    public static function erroneous(string $reason)
     {
-        # if alternative displays exist, push extendedValue to their front and display it as one of alternatives
-        $result = array();
+        $me        = new self();
+        $me->error = $reason;
 
-        if (! empty($this->extendedValue)) {
-            $result['Contents'] = $this->extendedValue;
-        }
-        if (! empty($this->alternativeRepresentations)) {
-            $result = array_merge($result, $this->alternativeRepresentations);
-        }
-
-        return $result;
+        return $me;
     }
 }

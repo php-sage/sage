@@ -10,6 +10,7 @@ class SageParsersXml implements SageCustomParserInterface
         return false;
     }
 
+    /** @return false|void */
     public function parse(&$variable, $varData)
     {
         return false; // this is an unsolved problem at humanity level
@@ -33,8 +34,13 @@ class SageParsersXml implements SageCustomParserInterface
             return false;
         }
 
-        //        dd($xml);
-
-        $varData->addTabToView($variable, 'XML', SageParser::alternativesParse($variable, $xml));
+        // todo issue #1
+        $varData->addAlternativeView(
+            new SageVariableExtendedView(
+                SageVariableExtendedView::CONTENT_TYPE_DUMP,
+                'XML',
+                $xml
+            )
+        );
     }
 }

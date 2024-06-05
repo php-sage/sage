@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @internal
+ * @internal wrap string so it does not get escaped when passed to SageHelper::esc()
  */
 class SageHtmlable
 {
@@ -17,23 +17,8 @@ class SageHtmlable
         $this->SageHtmlable($html);
     }
 
-    public function toHtml()
-    {
-        return $this->html;
-    }
-
-    public function isEmpty()
-    {
-        return $this->html === '';
-    }
-
-    public function isNotEmpty()
-    {
-        return ! $this->isEmpty();
-    }
-
     public function __toString()
     {
-        return $this->toHtml();
+        return $this->html;
     }
 }

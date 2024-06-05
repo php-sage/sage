@@ -10,6 +10,7 @@ class SageParsersJson implements SageCustomParserInterface
         return false;
     }
 
+    /** @return false|void */
     public function parse(&$variable, $varData)
     {
         if (! SageHelper::isRichMode()
@@ -24,10 +25,10 @@ class SageParsersJson implements SageCustomParserInterface
 
         $val = (array)$json;
 
-        if (empty($val)) {
+        if (! $val) {
             return false;
         }
 
-        $varData->addTabToView($variable, 'Json', $val);
+        $varData->addAlternativeView(new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_DUMP, 'Json', $val));
     }
 }

@@ -10,18 +10,24 @@ class SageParsersClassStatics implements SageCustomParserInterface
         return false;
     }
 
+    /** @return false|void */
     public function parse(&$variable, $varData)
     {
         if (! SageHelper::isRichMode() || ! SageHelper::php53orLater() || ! is_object($variable)) {
             return false;
         }
 
-        $statics    = array();
-        $class      = get_class($variable);
-        $reflection = new ReflectionClass($class);
+        $staticProperties = (new ReflectionClass($variable))->getProperties(ReflectionProperty::IS_STATIC);
+        if (count($staticProperties) === 0) {
+            return false;
+        }
 
-        // first show static values
-        foreach ($reflection->getProperties(ReflectionProperty::IS_STATIC) as $property) {
+        $result = new SageVariableExtendedView(
+            SageVariableExtendedView::CONTENT_TYPE_RICH_ROWS,
+            'Static class properties (' . count($staticProperties) . ')'
+        );
+
+        foreach ($staticProperties as $property) {
             if ($property->isProtected()) {
                 $property->setAccessible(true);
                 $access = 'protected';
@@ -39,22 +45,13 @@ class SageParsersClassStatics implements SageCustomParserInterface
                 $value = $property->getValue($variable);
             }
 
-            $name   = '$' . $property->getName();
-            $output = SageParser::process($value, SageHelper::esc($name));
-
+            $name             = '$' . $property->getName();
+            $output           = SageParser::process($value, SageHelper::esc($name));
             $output->access   = $access;
             $output->operator = '::';
-            $statics[]        = $output;
+            $result->addRow($output);
         }
 
-        if (empty($statics)) {
-            return false;
-        }
-
-        $varData->addTabToView(
-            $variable,
-            'Static class properties (' . count($statics) . ')',
-            $statics
-        );
+        $varData->addAlternativeView($result);
     }
 }

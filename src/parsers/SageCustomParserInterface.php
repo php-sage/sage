@@ -8,10 +8,8 @@ interface SageCustomParserInterface
     public function replacesAllOtherParsers();
 
     /**
-     * Process and
-     *
      * @param                  $variable
-     * @param SageVariableData $varData
+     * @param SageVariableData $varData receives the full variable representation to alter it as needed
      *
      * @return false|void return false if the parser doesn't handle the current variable
      */

@@ -10,6 +10,7 @@ class SageParsersSplObjectStorage implements SageCustomParserInterface
         return false;
     }
 
+    /** @return false|void */
     public function parse(&$variable, $varData)
     {
         if (! SageHelper::isRichMode() || ! is_object($variable) || ! $variable instanceof SplObjectStorage) {
@@ -28,6 +29,12 @@ class SageParsersSplObjectStorage implements SageCustomParserInterface
             $variable->next();
         }
 
-        $varData->addTabToView($variable, "Storage contents ({$count})", $arrayCopy);
+        $varData->addAlternativeView(
+            new SageVariableExtendedView(
+                SageVariableExtendedView::CONTENT_TYPE_DUMP,
+                "Object contents ({$count})",
+                $arrayCopy
+            )
+        );
     }
 }

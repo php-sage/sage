@@ -4,7 +4,7 @@
  * @internal
  */
 
-class SageParsersFilePath extends SageParsersSplFileInfo implements SageCustomParserInterface
+class SageParsersFilePath implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {
@@ -13,10 +13,11 @@ class SageParsersFilePath extends SageParsersSplFileInfo implements SageCustomPa
 
     public function parse(&$variable, $varData)
     {
-        if (! SageHelper::php53orLater()
+        if (
+            ! SageHelper::php53orLater()
             || ! is_string($variable)
-            || ($strlen = strlen($variable)) > 2048
-            || $strlen < 3
+            || ($strlen = strlen($variable)) > 512
+            || $strlen < 12
             || ! preg_match('#[\\\\/]#', $variable)
             || preg_match('/[?<>"*|]/', $variable)
             || ! @is_readable($variable) // PHP and its random warnings
@@ -24,6 +25,6 @@ class SageParsersFilePath extends SageParsersSplFileInfo implements SageCustomPa
             return false;
         }
 
-        return $this->run($variable, $varData, new SplFileInfo($variable));
+        return SageParsersSplFileInfo::inspect(new SplFileInfo($variable), $varData);
     }
 }
