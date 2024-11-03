@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @internal
- */
+/** @internal */
 class SageParsersSplObjectStorage implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
@@ -10,16 +8,15 @@ class SageParsersSplObjectStorage implements SageCustomParserInterface
         return false;
     }
 
-    /** @return false|void */
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         if (! SageHelper::isRichMode() || ! is_object($variable) || ! $variable instanceof SplObjectStorage) {
-            return false;
+            return null;
         }
 
         $count = $variable->count();
         if ($count === 0) {
-            return false;
+            return null;
         }
 
         $variable->rewind();
@@ -29,12 +26,15 @@ class SageParsersSplObjectStorage implements SageCustomParserInterface
             $variable->next();
         }
 
-        $varData->addAlternativeView(
-            new SageVariableExtendedView(
-                SageVariableExtendedView::CONTENT_TYPE_DUMP,
+        $result = new SageParsedVariable();
+        $result->addAlternativeView(
+            new SageParsedVariableContents(
+                SageParsedVariableContents::CONTENT_TYPE_DUMP,
                 "Object contents ({$count})",
                 $arrayCopy
             )
         );
+
+        return $result;
     }
 }

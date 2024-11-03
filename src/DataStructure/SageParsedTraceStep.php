@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageTraceStep
+class SageParsedTraceStep
 {
     public $functionName = null;
     public $isBlackListed = false;
@@ -11,7 +11,7 @@ class SageTraceStep
     public $sourceSnippet = null;
     public $arguments = array();
     public $argumentNames = array();
-    /** @var SageVariableData|null */
+    /** @var SageParsedVariable|null */
     public $object = null;
 
     public function SageTraceStep($step, $stepNumber)
@@ -92,6 +92,8 @@ class SageTraceStep
         foreach ($step['args'] as $i => $arg) {
             if (isset($params[$i])) {
                 $names[] = '$' . $params[$i]->name;
+            } elseif (is_string($i)) {
+                $names[] = '$' . $i;
             } else {
                 $names[] = '#' . ($i + 1);
             }
@@ -120,7 +122,7 @@ class SageTraceStep
             return null;
         }
 
-        return SageParser::process($step['object']);
+        return SageParser::parse($step['object']);
     }
 
     private function getSourceSnippet($step)
@@ -179,21 +181,24 @@ class SageTraceStep
     private function getArguments($step, $argumentNames)
     {
         $result = array();
-        foreach ($this->getRawArguments($step) as $k => $variable) {
-            $name = isset($argumentNames[$k]) ? $argumentNames[$k] : '';
+        $i      = 0;
+        foreach ($this->sanitizeStepForProcessing($step) as $variable) {
+            $i++;
+            $name = isset($argumentNames[$i]) ? $argumentNames[$i] : '';
             if (SageHelper::isKeyBlacklisted($name)) {
-                $variable = '*REDACTED*';
+                $parsed = SageParsedVariable::erroneous('Redacted');
+            } else {
+                $parsed           = SageParser::parse($variable, $name);
+                $parsed->operator = substr($name, 0, 1) === '$' ? '=' : ':';
             }
 
-            $parsed           = SageParser::process($variable, $argumentNames[$k]);
-            $parsed->operator = substr($name, 0, 1) === '$' ? '=' : ':';
-            $result[]         = $parsed;
+            $result[] = $parsed;
         }
 
         return $result;
     }
 
-    private function getRawArguments($step)
+    private function sanitizeStepForProcessing($step)
     {
         if (
             ! empty($step['args'])

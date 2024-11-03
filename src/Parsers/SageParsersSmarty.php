@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @internal
- */
+/** @internal */
 class SageParsersSmarty implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
@@ -10,15 +8,16 @@ class SageParsersSmarty implements SageCustomParserInterface
         return true;
     }
 
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         if (! $variable instanceof Smarty
             || ! defined('Smarty::SMARTY_VERSION') // lower than 3.x
         ) {
-            return false;
+            return null;
         }
 
-        $varData->name = 'Smarty v' . Smarty::SMARTY_VERSION;
+        $result       = new SageParsedVariable();
+        $result->name = 'Smarty v' . Smarty::SMARTY_VERSION;
 
         $assigned = $globalAssigns = array();
         foreach ($variable->tpl_vars as $name => $var) {
@@ -32,14 +31,22 @@ class SageParsersSmarty implements SageCustomParserInterface
             $globalAssigns[$name] = $var->value;
         }
 
-        $varData->addAlternativeView(
-            new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_DUMP, 'Assigned to view', $assigned)
+        $result->addAlternativeView(
+            new SageParsedVariableContents(
+                SageParsedVariableContents::CONTENT_TYPE_DUMP,
+                'Assigned to view',
+                $assigned
+            )
         );
-        $varData->addAlternativeView(
-            new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_DUMP, 'Assigned globally', $globalAssigns)
+        $result->addAlternativeView(
+            new SageParsedVariableContents(
+                SageParsedVariableContents::CONTENT_TYPE_DUMP,
+                'Assigned globally',
+                $globalAssigns
+            )
         );
-        $varData->addAlternativeView(
-            (new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_PLAIN_TEXT_ROWS, 'Configuration'))
+        $result->addAlternativeView(
+            (new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS, 'Configuration'))
                 ->addRow(
                     'Compiled files stored in',
                     isset($variable->compile_dir)
@@ -47,5 +54,7 @@ class SageParsersSmarty implements SageCustomParserInterface
                         : $variable->getCompileDir()
                 )
         );
+
+        return $result;
     }
 }

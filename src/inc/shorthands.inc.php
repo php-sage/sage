@@ -72,7 +72,7 @@ if (! function_exists('s')) {
     function s()
     {
         if (! Sage::enabled()) {
-            return Sage::ERROR_STATUS;
+            return Sage::STATUS_ERROR;
         }
 
         Sage::$aliases[] = __FUNCTION__;
@@ -92,7 +92,7 @@ if (! function_exists('saged')) {
     function saged()
     {
         if (! Sage::enabled()) {
-            return Sage::ERROR_STATUS;
+            return Sage::STATUS_ERROR;
         }
 
         Sage::$aliases[] = __FUNCTION__;
@@ -114,7 +114,7 @@ if (! function_exists('sd')) {
     function sd()
     {
         if (! Sage::enabled()) {
-            return Sage::ERROR_STATUS;
+            return Sage::STATUS_ERROR;
         }
 
         Sage::$aliases[] = __FUNCTION__;
@@ -140,7 +140,7 @@ if (! function_exists('ssage')) {
     function ssage()
     {
         if (! Sage::enabled()) {
-            return Sage::ERROR_STATUS;
+            return Sage::STATUS_ERROR;
         }
 
         $simplify              = Sage::$simplifyDisplay;
@@ -170,7 +170,7 @@ if (! function_exists('ss')) {
     function ss()
     {
         if (! Sage::enabled()) {
-            return Sage::ERROR_STATUS;
+            return Sage::STATUS_ERROR;
         }
 
         $simplify              = Sage::$simplifyDisplay;
@@ -194,7 +194,7 @@ if (! function_exists('ssaged')) {
     function ssaged()
     {
         if (! Sage::enabled()) {
-            return Sage::ERROR_STATUS;
+            return Sage::STATUS_ERROR;
         }
 
         Sage::$simplifyDisplay = true;
@@ -214,7 +214,7 @@ if (! function_exists('ssd')) {
     function ssd()
     {
         if (! Sage::enabled()) {
-            return Sage::ERROR_STATUS;
+            return Sage::STATUS_ERROR;
         }
 
         Sage::$simplifyDisplay = true;
@@ -236,7 +236,7 @@ if (! function_exists('d')) {
     function d()
     {
         if (! Sage::enabled()) {
-            return Sage::ERROR_STATUS;
+            return Sage::STATUS_ERROR;
         }
 
         Sage::$aliases[] = __FUNCTION__;
@@ -258,7 +258,7 @@ if (! function_exists('sagetrace')) {
     function sagetrace()
     {
         if (! Sage::enabled()) {
-            return Sage::ERROR_STATUS;
+            return Sage::STATUS_ERROR;
         }
 
         Sage::$aliases[] = __FUNCTION__;

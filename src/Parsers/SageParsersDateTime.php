@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @internal
- */
+/** @internal */
 class SageParsersDateTime implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
@@ -10,7 +8,7 @@ class SageParsersDateTime implements SageCustomParserInterface
         return true;
     }
 
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         if (! $variable instanceof DateTimeInterface) {
             return false;
@@ -30,7 +28,10 @@ class SageParsersDateTime implements SageCustomParserInterface
         }
         $format .= ' (P)';
 
-        $varData->value = $variable->format($format);
-        $varData->type  = get_class($variable);
+        $result        = new SageParsedVariable();
+        $result->value = $variable->format($format);
+        $result->type  = get_class($variable);
+
+        return $result;
     }
 }

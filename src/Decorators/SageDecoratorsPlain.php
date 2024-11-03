@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @internal
  */
@@ -13,15 +14,15 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return self::$needsAssets;
     }
 
-    public function setAssetsNeeded($added)
+    public function setAssetsNeeded($on)
     {
-        self::$needsAssets = $added;
+        self::$needsAssets = $on;
     }
 
     private static $_enableColors;
     private static $levelColors = array();
 
-    public function decorate(SageVariableData $varData, $level = 0)
+    public function decorate(SageParsedVariable $varData, $level = 0)
     {
         $output = '';
         if ($level === 0) {
@@ -76,8 +77,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return $output;
     }
 
-    /** @param SageTraceStep[] $traceData */
-    public function decorateTrace(array $traceData, $pathsOnly = false)
+    public function decorateTrace(SageParsedVariable $trace, $pathsOnly = false)
     {
         $lastStepNumber = count($traceData);
         $output         = $this->title($pathsOnly ? 'QUICK TRACE' : 'TRACE');
@@ -239,7 +239,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             . $lastChar;
     }
 
-    private function drawHeader(SageVariableData $varData)
+    private function drawHeader(SageParsedVariable $varData)
     {
         $output = '';
 

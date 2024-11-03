@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @internal
- */
+/** @internal */
 class SageParsersBlacklist implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
@@ -10,15 +8,15 @@ class SageParsersBlacklist implements SageCustomParserInterface
         return true;
     }
 
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         // allow explicit, first level parameters
-        if (SageParser::$_level === 1) {
-            return false;
+        if (SageParser::$level === 1) {
+            return null;
         }
 
         if (! is_object($variable)) {
-            return false;
+            return null;
         }
 
         $className = get_class($variable);
@@ -31,9 +29,12 @@ class SageParsersBlacklist implements SageCustomParserInterface
         }
 
         if (! $match) {
-            return false;
+            return null;
         }
 
-        $varData->type = $className . ' [skipped, dump object in top level to see contents]';
+        $result       = new SageParsedVariable();
+        $result->type = $className . ' [skipped, dump object in top level to see contents]';
+
+        return $result;
     }
 }

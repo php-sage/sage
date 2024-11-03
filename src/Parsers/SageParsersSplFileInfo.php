@@ -8,34 +8,35 @@ class SageParsersSplFileInfo implements SageCustomParserInterface
         return true;
     }
 
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         if (
             ! SageHelper::php53orLater()
             || ! $variable instanceof SplFileInfo
             || $variable instanceof SplFileObject
         ) {
-            return false;
+            return null;
         }
 
-        $varData->type  = get_class($variable);
-        $varData->value = new SageHtmlable('"' . SageHelper::esc($variable->getPathname()) . '"');
+        $result        = new SageParsedVariable();
+        $result->type  = get_class($variable);
+        $result->value = new SageHtmlable('"' . SageHelper::esc($variable->getPathname()) . '"');
 
-        return self::inspect($variable, $varData);
+        return self::inspect($variable, $result);
     }
 
     /**
-     * @param SplFileInfo      $fileInfo
-     * @param SageVariableData $varData
+     * @param SplFileInfo        $fileInfo
+     * @param SageParsedVariable $result
      *
-     * @return bool
+     * @return SageParsedVariable
      */
-    public static function inspect($fileInfo, $varData)
+    public static function inspect($fileInfo, $result)
     {
         if (! $fileInfo->getPathname() || ! $fileInfo->getRealPath()) {
-            $varData->size = 'invalid path';
+            $result->size = 'invalid path';
 
-            return true;
+            return $result;
         }
 
         try {
@@ -93,45 +94,45 @@ class SageParsersSplFileInfo implements SageCustomParserInterface
             }
 
             if (SageHelper::isRichMode()) {
-                $result = new SageVariableExtendedView(
-                    SageVariableExtendedView::CONTENT_TYPE_PLAIN_TEXT_ROWS,
+                $tab = new SageParsedVariableContents(
+                    SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS,
                     $name . " [{$size}]"
                 );
 
                 if ($fileInfo->getRealPath() !== $fileInfo->getPathname()) {
-                    $result->addRow($fileInfo->getRealPath(), 'realPath');
+                    $tab->addRow($fileInfo->getRealPath(), 'realPath');
                 }
 
-                $result->addRow(implode($flags), 'flags');
+                $tab->addRow(implode($flags), 'flags');
 
                 if ($fileInfo->getGroup() || $fileInfo->getOwner()) {
-                    $result->addRow($fileInfo->getGroup() . ':' . $fileInfo->getOwner(), 'group&owner');
+                    $tab->addRow($fileInfo->getGroup() . ':' . $fileInfo->getOwner(), 'group&owner');
                 }
 
-                $result->addRow(date('Y-m-d H:i:s', $fileInfo->getCTime()), 'created');
-                $result->addRow(date('Y-m-d H:i:s', $fileInfo->getMTime()), 'modified');
-                $result->addRow(date('Y-m-d H:i:s', $fileInfo->getATime()), 'accessed');
+                $tab->addRow(date('Y-m-d H:i:s', $fileInfo->getCTime()), 'created');
+                $tab->addRow(date('Y-m-d H:i:s', $fileInfo->getMTime()), 'modified');
+                $tab->addRow(date('Y-m-d H:i:s', $fileInfo->getATime()), 'accessed');
 
                 if ($fileInfo->isLink()) {
-                    $result->addRow('true', 'link');
-                    $result->addRow($fileInfo->getLinkTarget(), 'linkTarget');
+                    $tab->addRow('true', 'link');
+                    $tab->addRow($fileInfo->getLinkTarget(), 'linkTarget');
                 }
-                $result->addRow(SageHelper::ideLink($fileInfo->getRealPath(), 0), 'IDE link');
+                $tab->addRow(SageHelper::ideLink($fileInfo->getRealPath(), 0), 'IDE link');
 
                 // todo add file preview for text files..?
 
-                $varData->addAlternativeView($result);
+                $result->addAlternativeView($tab);
             } else {
-                $result = new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_PLAIN_TEXT_ROWS);
-                $result->addRow($size, $name);
+                $tab = new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS);
+                $tab->addRow($size, $name);
 
-                $varData->extendedView = $result;
+                $result->extendedView = $tab;
             }
         } catch (Exception $e) {
-            return false;
+            return null;
         }
 
-        return true;
+        return $result;
     }
 
     private static function humanFilesize($bytes)

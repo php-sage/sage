@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @internal
- */
+/** @internal */
 class SageParsersClassStatics implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
@@ -10,20 +8,19 @@ class SageParsersClassStatics implements SageCustomParserInterface
         return false;
     }
 
-    /** @return false|void */
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         if (! SageHelper::isRichMode() || ! SageHelper::php53orLater() || ! is_object($variable)) {
-            return false;
+            return null;
         }
 
         $staticProperties = (new ReflectionClass($variable))->getProperties(ReflectionProperty::IS_STATIC);
         if (count($staticProperties) === 0) {
-            return false;
+            return null;
         }
 
-        $result = new SageVariableExtendedView(
-            SageVariableExtendedView::CONTENT_TYPE_RICH_ROWS,
+        $tab = new SageParsedVariableContents(
+            SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS,
             'Static class properties (' . count($staticProperties) . ')'
         );
 
@@ -45,13 +42,17 @@ class SageParsersClassStatics implements SageCustomParserInterface
                 $value = $property->getValue($variable);
             }
 
-            $name             = '$' . $property->getName();
-            $output           = SageParser::process($value, SageHelper::esc($name));
-            $output->access   = $access;
-            $output->operator = '::';
-            $result->addRow($output);
+            $name                     = '$' . $property->getName();
+            $parsedProperty           = SageParser::parse($value, SageHelper::esc($name));
+            $parsedProperty->access   = $access;
+            $parsedProperty->operator = '::';
+
+            $tab->addRow($parsedProperty);
         }
 
-        $varData->addAlternativeView($result);
+        $result = new SageParsedVariable();
+        $result->addAlternativeView($tab);
+
+        return $result;
     }
 }

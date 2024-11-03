@@ -8,44 +8,50 @@ class SageParsersClosure implements SageCustomParserInterface
         return true;
     }
 
-    /** @return false|void */
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         if (! $variable instanceof Closure) {
-            return false;
+            return null;
         }
 
-        $varData->type = 'Closure';
-        $reflection    = new ReflectionFunction($variable);
-        $sourceTab     = new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_STRING, 'Source');
+        $result       = new SageParsedVariable();
+        $result->type = 'Closure';
+        $sourceTab    = new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_STRING, 'Source');
+
+        $reflection = new ReflectionFunction($variable);
         $sourceTab->setContent($this->fetchSource($reflection));
 
         if (! SageHelper::isRichMode()) {
-            $varData->extendedView = $sourceTab;
+            $result->extendedView = $sourceTab;
 
-            return;
+            return $result;
         }
 
-        $internalsTab = new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_RICH_ROWS, 'Closure Internals');
+        $internalsTab = new SageParsedVariableContents(
+            SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS,
+            'Closure Internals'
+        );
         if ($val = $reflection->getStaticVariables()) {
             foreach ($val as $k => $item) {
-                $internalsTab->addRow(SageParser::process($item, $k . ' (static)'));
+                $internalsTab->addRow(SageParser::parse($item, $k . ' (static)'));
             }
         }
         if (method_exists($reflection, 'getClosureThis') && $val = $reflection->getClosureThis()) {
-            $internalsTab->addRow(SageParser::process($val, '$this'));
+            $internalsTab->addRow(SageParser::parse($val, '$this'));
         }
         if (method_exists($reflection, 'getClosureUsedVariables') && $val = $reflection->getClosureUsedVariables()) {
             foreach ($val as $k => $item) {
-                $internalsTab->addRow(SageParser::process($item, $k . ' (use)'));
+                $internalsTab->addRow(SageParser::parse($item, $k . ' (use)'));
             }
         }
 
-        $varData->addAlternativeView($internalsTab);
+        $result->addAlternativeView($internalsTab);
 
         if ($reflection->getFileName()) {
-            $varData->value = SageHelper::ideLink($reflection->getFileName(), $reflection->getStartLine());
+            $result->value = SageHelper::ideLink($reflection->getFileName(), $reflection->getStartLine());
         }
+
+        return $result;
     }
 
     /**
@@ -57,10 +63,9 @@ class SageParsersClosure implements SageCustomParserInterface
     {
         $src    = 'function (';
         $params = [];
+
         foreach ($reflection->getParameters() as $p) {
-            $s = '';
-            $s .= $this->getParameterType($p);
-            $s = ' ';
+            $s = $this->getParameterType($p);;
 
             if ($p->isPassedByReference()) {
                 $s .= '&';
@@ -71,8 +76,8 @@ class SageParsersClosure implements SageCustomParserInterface
             }
             $params[] = $s;
         }
-        $src .= implode(', ', $params);
-        $src .= ') ';
+        $src .= implode(', ', $params) . ') ';
+
         if (method_exists($reflection, 'getClosureUsedVariables') && $val = $reflection->getClosureUsedVariables()) {
             $src .= ') use (';
             $src .= implode(', ', array_keys($val));

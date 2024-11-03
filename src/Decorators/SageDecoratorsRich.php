@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @internal
- */
+/** @internal */
 class SageDecoratorsRich implements SageDecoratorsInterface
 {
     protected static $needsAssets = true;
@@ -12,22 +10,23 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         return self::$needsAssets;
     }
 
-    public function setAssetsNeeded($added)
+    public function setAssetsNeeded($on)
     {
-        self::$needsAssets = $added;
+        self::$needsAssets = $on;
     }
 
-    /**
-     * @param SageTraceContainer|SageVariableData $varData
-     */
-    public function decorate($varData, $level = 0)
+    public function decorate(SageParsedVariable $varData)
     {
+        if ($varData->traceSteps) {
+            return $this->decorateTrace($varData);
+        }
+        
         $output = '<dl>';
 
         $allRepresentations = $varData->getAllRepresentations();
-        $extendedPresent    = $varData->extendedView || $varData->alternativeViews;
+        $isExtendedPresent  = count($allRepresentations) !== 0;
 
-        if ($extendedPresent) {
+        if ($isExtendedPresent) {
             $class = '_sage-parent';
             if (Sage::$expandedByDefault) {
                 $class .= ' _sage-show';
@@ -37,20 +36,20 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             $output .= '<dt>';
         }
 
-        if ($extendedPresent) {
+        if ($isExtendedPresent) {
             $output .= '<span class="_sage-popup-trigger">&rarr;</span><nav></nav>';
         }
 
-        $output .= $this->_drawHeader($varData) . $varData->value . "</dt>";
+        $output .= $this->drawHeader($varData) . $varData->value . '</dt>';
 
-        if ($extendedPresent) {
+        if ($isExtendedPresent) {
             $output .= '<dd>';
         }
 
-        if (count($allRepresentations) === 1 && ! empty($varData->extendedValue)) {
-            $extendedValue = reset($allRepresentations);
-            $output        .= $this->decorateAlternativeView($extendedValue);
-        } elseif ($extendedPresent) {
+        $areTabsNeeded = count($allRepresentations) === 1;
+        if ($areTabsNeeded && $varData->extendedView) {
+            $output .= $this->drawAlternativeView(reset($allRepresentations));
+        } elseif ($isExtendedPresent) {
             $output .= "<ul class=\"_sage-tabs\">";
 
             $isFirst = true;
@@ -64,13 +63,13 @@ class SageDecoratorsRich implements SageDecoratorsInterface
 
             foreach ($allRepresentations as $alternative) {
                 $output .= '<li>';
-                $output .= $this->decorateAlternativeView($alternative);
+                $output .= $this->drawAlternativeView($alternative);
                 $output .= '</li>';
             }
 
             $output .= '</ul>';
         }
-        if ($extendedPresent) {
+        if ($isExtendedPresent) {
             $output .= '</dd>';
         }
 
@@ -79,10 +78,10 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         return $output;
     }
 
-    /** @param SageTraceStep[] $traceData */
-    public function decorateTrace(array $traceData, $pathsOnly = false)
+    public function decorateTrace(SageParsedVariable $trace, $pathsOnly = false)
     {
         $output = '<dl class="_sage-trace">';
+        $traceData = $trace->traceSteps;
 
         $blacklistedStepsInARow = 0;
         foreach ($traceData as $stepNumber => $step) {
@@ -267,7 +266,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             . '</footer></div>';
     }
 
-    private function _drawHeader(SageVariableData $varData)
+    private function drawHeader(SageParsedVariable $varData)
     {
         $output = '';
         if ($varData->access !== null) {
@@ -283,7 +282,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         }
 
         if ($varData->type !== null) {
-            // tyoe output is unescaped as it is set internally and contains links to user class
+            // type output is unescaped as it is set internally and contains links to user class
             $output .= "<var>{$varData->type}</var> ";
         }
 
@@ -295,8 +294,8 @@ class SageDecoratorsRich implements SageDecoratorsInterface
     }
 
     /**
-     * produces css and js required for display. May be called multiple times, will only produce output once per
-     * pageload or until `-` or `@` modifier is used
+     * Produces css and js required for display. May be called multiple times, will only produce output once per
+     * pageload or per output capture group.
      *
      * @return string
      */
@@ -313,30 +312,29 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             . '<style class="_sage-css">' . file_get_contents($cssFile) . "</style>\n";
     }
 
-    private function decorateAlternativeView($alternative)
+    private function drawAlternativeView(SageParsedVariableContents $variableContents)
     {
-        if (empty($alternative)) {
-            return '';
+        switch ($variableContents->displayType) {
+            case SageParsedVariableContents::CONTENT_TYPE_STRING:
+                return SageHelper::pre($variableContents->contents);
+            case SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS:
+                $output       = '<pre>';
+                $maxKeyLength = 0;
+                foreach ($variableContents->contents as $key => $value) {
+                    $maxKeyLength = max($maxKeyLength, strlen($value));
+                }
+                foreach ($variableContents->contents as $key => $value) {
+                    $output .= str_pad($key, $maxKeyLength, ' ') . ': ' . $value;
+                }
+                $output .= '</pre>';
+
+                return $output;
+            case SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS:
+                return $this->decorate(SageParser::parse($variableContents->contents));
+            case SageParsedVariableContents::CONTENT_TYPE_DUMP:
+                return $this->decorate(SageParser::parse($variableContents->contents));
+            default:
+                throw new SageLogicException('unexpected variable content type');
         }
-
-        $output = '';
-        if (is_array($alternative)) {
-            // we either get a prepared array of SageVariableData or a raw array of anything
-            $parse = reset($alternative) instanceof SageVariableData
-                ? $alternative
-                : SageParser::process($alternative)->extendedValue; // convert into SageVariableData[]
-
-            foreach ($parse as $v) {
-                $output .= $this->decorate($v);
-            }
-        } elseif (is_string($alternative)) {
-            // the browser does not render leading new line in <pre>
-            if ($alternative[0] === "\n" || $alternative[0] === "\r") {
-                $alternative = "\n" . $alternative;
-            }
-            $output .= "<pre>{$alternative}</pre>";
-        }
-
-        return $output;
     }
 }

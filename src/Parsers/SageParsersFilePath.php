@@ -1,9 +1,6 @@
 <?php
 
-/**
- * @internal
- */
-
+/** @internal */
 class SageParsersFilePath implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
@@ -11,7 +8,7 @@ class SageParsersFilePath implements SageCustomParserInterface
         return false;
     }
 
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         if (
             ! SageHelper::php53orLater()
@@ -22,9 +19,9 @@ class SageParsersFilePath implements SageCustomParserInterface
             || preg_match('/[?<>"*|]/', $variable)
             || ! @is_readable($variable) // PHP and its random warnings
         ) {
-            return false;
+            return null;
         }
 
-        return SageParsersSplFileInfo::inspect(new SplFileInfo($variable), $varData);
+        return SageParsersSplFileInfo::inspect(new SplFileInfo($variable), new SageParsedVariable());
     }
 }

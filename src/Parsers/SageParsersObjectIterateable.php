@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @internal
- */
+/** @internal */
 class SageParsersObjectIterateable implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
@@ -10,7 +8,7 @@ class SageParsersObjectIterateable implements SageCustomParserInterface
         return false;
     }
 
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         if (! SageHelper::isRichMode()
             || ! SageHelper::php53orLater()
@@ -19,15 +17,23 @@ class SageParsersObjectIterateable implements SageCustomParserInterface
             || stripos($class = get_class($variable), 'zend') !== false // zf2 PDO wrapper does not play nice
             || strpos($class, 'DOMN') !== 0 // DOMNamedNodeMap, DOMNamedNodeMap
         ) {
-            return false;
+            return null;
         }
 
         $arrayCopy = iterator_to_array($variable, true);
 
         $size = count($arrayCopy);
 
-        $varData->addAlternativeView(
-            new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_DUMP, "Iterator contents ({$size})", $arrayCopy)
+        $result = new SageParsedVariable();
+
+        $result->addAlternativeView(
+            new SageParsedVariableContents(
+                SageParsedVariableContents::CONTENT_TYPE_DUMP,
+                "Iterator contents ({$size})",
+                $arrayCopy
+            )
         );
+
+        return $result;
     }
 }

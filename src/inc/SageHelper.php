@@ -29,6 +29,7 @@ class SageHelper
         'xdebug'                 => 'xdebug://%file@%line'
     );
 
+    /** @var array build from internal methods and {@see Sage::$aliases} */
     private static $aliasesRaw;
     private static $projectRootDir;
 
@@ -86,7 +87,7 @@ class SageHelper
         self::$aliasesRaw = array(
             'methods'   => array(
                 array('sage', 'dump'),
-                array('sage', 'doDump'),
+                array('sage', strtolower('doDump')),
                 array('sage', 'trace')
             ),
             'functions' => array()
@@ -261,7 +262,7 @@ class SageHelper
         return new SageHtmlable("<a href=\"{$ideLink}\">{$linkText}</a>");
     }
 
-    public static function esc($value, $decode = true)
+    public static function esc($value, $exposeInvisibleCharacters = true)
     {
         if ($value instanceof SageHtmlable) {
             return $value;
@@ -271,8 +272,8 @@ class SageHelper
             ? htmlspecialchars($value, ENT_NOQUOTES, 'UTF-8')
             : $value;
 
-        if ($decode) {
-            $value = self::decodeStr($value);
+        if ($exposeInvisibleCharacters) {
+            $value = self::exposeInvisibleCharacters($value);
         }
 
         return new SageHtmlable($value);
@@ -281,7 +282,7 @@ class SageHelper
     /**
      * Make all invisible characters visible. HTML-escape if needed.
      */
-    private static function decodeStr($value)
+    private static function exposeInvisibleCharacters($value)
     {
         if (is_int($value)) {
             return (string)$value;
@@ -333,5 +334,15 @@ class SageHelper
         } while (isset($value[++$i]));
 
         return $out;
+    }
+
+    public static function pre($string)
+    {
+        // the browser does not render leading new line in <pre>
+        if ($string === "\n" || $string === "\r") {
+            $string = "\n" . $string;
+        }
+
+        return '<pre>' . self::esc($string) . '</pre>';
     }
 }

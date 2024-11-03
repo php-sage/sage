@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @internal
- */
+/** @internal */
 class SageParsersColor implements SageCustomParserInterface
 {
     private static $colorNames = array(
@@ -160,11 +158,10 @@ class SageParsersColor implements SageCustomParserInterface
         return false;
     }
 
-    /** @return false|void */
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         if (! $this->_fits($variable)) {
-            return false;
+            return null;
         }
 
         $variants = $this->_convert($variable);
@@ -177,13 +174,16 @@ HTML;
             $value .= PHP_EOL . "<strong>css:</strong> {$variants['name']}";
         }
 
-        $varData->addAlternativeView(
-            new SageVariableExtendedView(
-                SageVariableExtendedView::CONTENT_TYPE_STRING,
+        $result = new SageParsedVariable();
+        $result->addAlternativeView(
+            new SageParsedVariableContents(
+                SageParsedVariableContents::CONTENT_TYPE_STRING,
                 'CSS color',
                 new SageHtmlable($value)
             )
         );
+
+        return $result;
     }
 
     private function _fits($variable)

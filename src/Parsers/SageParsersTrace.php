@@ -1,0 +1,81 @@
+<?php
+
+/** @internal */
+class SageParsersTrace implements SageCustomParserInterface
+{
+    public function replacesAllOtherParsers()
+    {
+        return true;
+    }
+
+    public function parse(&$variable)
+    {
+        if (! is_array($variable)) {
+            return null;
+        }
+
+        $trace       = array();
+        $traceFields = array('file', 'line', 'args', 'class');
+        $fileFound   = false; // file element must exist in one of the steps
+        $lastStep    = array();
+
+        // validate whether a trace was indeed passed
+        foreach ($variable as $step) {
+            if (! is_array($step) || ! isset($step['function'])) {
+                return null;
+            }
+            if (! $fileFound && isset($step['file']) && file_exists($step['file'])) {
+                $fileFound = true;
+            }
+
+            $valid = false;
+            foreach ($traceFields as $element) {
+                if (isset($step[$element])) {
+                    $valid = true;
+                    break;
+                }
+            }
+            if (! $valid) {
+                return null;
+            }
+
+            if ($step['function'] === 'spl_autoload_call') { // meaningless
+                continue;
+            }
+
+            if (SageHelper::stepIsInternal($step)) {
+                // take first step from the top that is not inside Sage already
+                if (isset($step['file'], $step['line'])) {
+                    $lastStep = array(
+                        'file'     => $step['file'],
+                        'line'     => $step['line'],
+                        'function' => '',
+                    );
+                }
+
+                continue;
+            }
+
+            $trace[] = $step;
+        }
+
+        if (! $fileFound) {
+            return null;
+        }
+
+        if ($lastStep) {
+            array_unshift($trace, $lastStep);
+        }
+
+        // now parse the trace into a usable format
+        $output = array();
+        foreach ($trace as $i => $step) {
+            $output[] = new SageParsedTraceStep($step, $i);
+        }
+
+        $result             = new SageParsedVariable();
+        $result->traceSteps = $output;
+
+        return $result;
+    }
+}

@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageCaller
+class SageCallerData
 {
     /**
      * @var array $parameterNames parameter names/expressions which were passed to be dumped
@@ -14,51 +14,18 @@ class SageCaller
      */
     public $miniTrace = array();
 
-    public function SageCaller(
-        $names = array(),
-        $miniTrace = array()
-    ) {
-        $this->parameterNames = $names;
-        $this->miniTrace      = $miniTrace;
-    }
-
-    public function __construct(
-        $names = array(),
-        $miniTrace = array()
-    ) {
-        $this->SageCaller($names, $miniTrace);
-    }
-
     /**
-     * @return ?array|string|int trace step (or specific element like "file") where sage was called from
-     */
-    public function getUserLandInvoker($key = null)
-    {
-        $step = count($this->miniTrace) > 1 ? $this->miniTrace[1] : array();
-        if ($key === null) {
-            return $step;
-        }
-
-        if (array_key_exists($key, $step)) {
-            return $step[$key];
-        }
-
-        return null;
-    }
-
-    /**
-     * returns parameter names that the function was passed, as well as any predefined symbols before function
-     * call (modifiers)
+     * Fetches the public properties defined above.
      *
      * @return self
      */
-    public static function getCalleeInfo($trace)
+    public static function process($backtraceData)
     {
         $result                 = new self();
         $insideTemplateDetected = null;
 
         // go from back of trace forward to find first occurrence of call to Sage or its wrappers
-        while ($step = array_pop($trace)) {
+        while ($step = array_pop($backtraceData)) {
             if (
                 isset($step['args'][0])
                 && is_string($step['args'][0])
@@ -95,6 +62,25 @@ class SageCaller
         }
 
         return $result;
+    }
+
+    /**
+     * @param null|string $key fetch specific element not the whole step eg.: file, function
+     *
+     * @return ?array|string|int trace step where sage was called from
+     */
+    public function getUserLandInvoker($key = null)
+    {
+        $step = count($this->miniTrace) > 1 ? $this->miniTrace[1] : array();
+        if ($key === null) {
+            return $step;
+        }
+
+        if (array_key_exists($key, $step)) {
+            return $step[$key];
+        }
+
+        return null;
     }
 
     private function solveForPhp82()

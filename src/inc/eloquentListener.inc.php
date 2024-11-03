@@ -20,12 +20,13 @@ DB::listen(function($query) use (&$queryNumber) {
         }
     }
 
-    $EloquentQuery = [
-        '#'           => $queryNumber++,
-        'sql'         => PHP_EOL . SageSqlFormatter::format($query->sql, false),
-        'bindings'    => $query->bindings,
-        'called_from' => $callee,
-    ];
+    $EloquentQuery = array(
+        '#'             => $queryNumber++,
+        'sql'           => PHP_EOL . SageSqlFormatter::format($query->sql, false),
+        'bindings'      => $query->bindings,
+        'called_from'   => $callee,
+        'duration_in_s' => $query->time / 1000,
+    );
     Sage::dump($EloquentQuery);
 
     Sage::saveState($state);

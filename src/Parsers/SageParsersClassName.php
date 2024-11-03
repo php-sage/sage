@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @internal
- */
+/** @internal */
 class SageParsersClassName implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
@@ -10,8 +8,7 @@ class SageParsersClassName implements SageCustomParserInterface
         return false;
     }
 
-    /** @return false|void */
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         if (
             ! SageHelper::isHtmlMode()
@@ -19,28 +16,31 @@ class SageParsersClassName implements SageCustomParserInterface
             || ! is_string($variable)
             || strlen($variable) < 3
         ) {
-            return false;
+            return null;
         }
 
         try {
             if (! @class_exists($variable)) {
-                return false;
+                return null;
             }
         } catch (Throwable $t) {
-            return false;
+            return null;
         } catch (Exception $e) {
-            return false;
+            return null;
         }
 
         $reflector = new ReflectionClass($variable);
         if (! $reflector->isUserDefined()) {
-            return false;
+            return null;
         }
 
+        $result = new SageParsedVariable();
         // produces link to userland class, eg.: "MyClass" string|class-name
-        $varData->type = new SageHtmlable(
+        $result->type = new SageHtmlable(
             'string|'
             . SageHelper::ideLink($reflector->getFileName(), $reflector->getStartLine(), 'class-name')
         );
+
+        return $result;
     }
 }

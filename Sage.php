@@ -28,26 +28,26 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// Prevent repeat inclusion
 if (defined('SAGE_DIR')) {
     return;
 }
 define('SAGE_DIR', dirname(__FILE__) . '/');
 
 // With PHP 5.1++ compatibility in mind we don't use namespaces and do the autoloading manually
-require SAGE_DIR . 'src/inc/DataStructures/SageCaller.php';
+require SAGE_DIR . 'src/DataStructure/SageCallerData.php';
 require SAGE_DIR . 'src/inc/SageDynamicFacade.php';
-require SAGE_DIR . 'src/inc/DataStructures/SageVariableData.php';
-require SAGE_DIR . 'src/inc/DataStructures/SageTraceStep.php';
-require SAGE_DIR . 'src/inc/DataStructures/SageTraceContainer.php';
-require SAGE_DIR . 'src/inc/DataStructures/SageHtmlable.php';
+require SAGE_DIR . 'src/DataStructure/SageParsedVariable.php';
+require SAGE_DIR . 'src/DataStructure/SageParsedVariableContents.php';
+require SAGE_DIR . 'src/DataStructure/SageParsedTraceStep.php';
+require SAGE_DIR . 'src/DataStructure/SageHtmlable.php';
 require SAGE_DIR . 'src/inc/SageParser.php';
+require SAGE_DIR . 'src/inc/SagePrimitivesParser.php';
 require SAGE_DIR . 'src/inc/SageHelper.php';
 require SAGE_DIR . 'src/inc/shorthands.inc.php';
-require SAGE_DIR . 'src/decorators/SageDecoratorsInterface.php';
-require SAGE_DIR . 'src/decorators/SageDecoratorsRich.php';
-require SAGE_DIR . 'src/decorators/SageDecoratorsPlain.php';
-require SAGE_DIR . 'src/parsers/SageCustomParserInterface.php';
+require SAGE_DIR . 'src/Decorators/SageDecoratorsInterface.php';
+require SAGE_DIR . 'src/Decorators/SageDecoratorsRich.php';
+require SAGE_DIR . 'src/Decorators/SageDecoratorsPlain.php';
+require SAGE_DIR . 'src/Parsers/SageCustomParserInterface.php';
 
 class Sage
 {
@@ -251,9 +251,14 @@ class Sage
 
     public static $minimumTraceStepsToShowFull = 1;
 
-    /** @var class-string<SageParser>[] */
+    /**
+     * The ordering matters, each variable and its children are processed by each from top to bottom
+     *
+     * @var class-string<SageParser>[]
+     */
     public static $enabledParsers = array(
-        'SageParsersTrace'                     => true,
+        'SageParsersTrace' => true,
+
         'SageParsersSmarty'                    => true,
         'SageParsersSplFileInfo'               => true,
         'SageParsersClosure'                   => true,
@@ -268,7 +273,7 @@ class Sage
         'SageParsersBlacklist'                 => true,
 
         // all the rest
-        'SageParsersXml'                       => true,
+        //        'SageParsersXml'                       => true,
         'SageParsersObjectIterateable'         => true,
         'SageParsersClassStatics'              => true,
         'SageParsersColor'                     => true,
@@ -371,7 +376,7 @@ class Sage
      * It's not zero because it doesn't matter, plus if you find this number somewhere in your logs or something - you
      * know who to blame :))
      */
-    const ERROR_STATUS = 5463;
+    const STATUS_ERROR = 5463;
 
     /*
      *    SECTION: ENABLE
@@ -401,7 +406,7 @@ class Sage
     public static function enabled($forceMode = null)
     {
         // act both as a setter...
-        if (isset($forceMode)) {
+        if ($forceMode !== null) {
             $before             = self::$_enabledMode;
             self::$_enabledMode = $forceMode;
 
@@ -413,7 +418,7 @@ class Sage
     }
 
     /*
-     *    SECTION: TRACE/DUMP
+     *    SECTION: DUMP
      *    ████████╗██████╗  █████╗  ██████╗███████╗    ██╗██████╗ ██╗   ██╗███╗   ███╗██████╗
      *    ╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██╔════╝   ██╔╝██╔══██╗██║   ██║████╗ ████║██╔══██╗
      *       ██║   ██████╔╝███████║██║     █████╗    ██╔╝ ██║  ██║██║   ██║██╔████╔██║██████╔╝
@@ -467,7 +472,7 @@ class Sage
      *
      * @return string|int returns 5463 if disabled/error
      *
-     * @see Sage::ERROR_STATUS for explanation for 5463
+     * @see Sage::STATUS_ERROR for explanation for 5463
      */
     public static function dump($data = null)
     {
@@ -482,7 +487,7 @@ class Sage
         } catch (Exception $e) {
         }
 
-        return self::ERROR_STATUS;
+        return self::STATUS_ERROR;
     }
 
     /**
@@ -493,14 +498,14 @@ class Sage
         $enabledMode = self::enabled();
 
         if (! $enabledMode) {
-            return self::ERROR_STATUS;
+            return self::STATUS_ERROR;
         }
 
         $this->settingsInit();
 
         $output           = '';
-        $backtraceData    = debug_backtrace();
-        $caller           = SageCaller::getCalleeInfo($backtraceData);
+        $backtraceData    = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
+        $caller           = SageCallerData::process($backtraceData);
         $decorator        = $this->detectDisplayMode($enabledMode);
         $firstRunOldValue = $this->initDecorator($decorator);
         $arguments        = $this->getWhatToDump($caller, func_get_args(), $backtraceData);
@@ -511,16 +516,16 @@ class Sage
         $output .= $decorator->wrapStart();
 
         foreach ($arguments as $k => $argument) {
-            SageParser::reset();
+            SageParser::$level = 0;
 
-            // getWhatToDump can return an array of prepared SageVariableData
-            if (! $argument instanceof SageVariableData) {
+            // self::getWhatToDump can return an array of prepared SageVariableData
+            if (! $argument instanceof SageParsedVariable) {
                 // when the dump arguments take long to generate output, user might have changed the file and
                 // Sage might not parse the arguments correctly, so check if names are set and while the
                 // displayed names might be wrong, at least don't throw an error
                 $name = $this->getParameterName($caller, $k);
 
-                $argument = SageParser::process($argument, $name);
+                $argument = SageParser::parse($argument, $name);
             }
 
             $output .= $decorator->decorate($argument, $k);
@@ -558,18 +563,18 @@ class Sage
         }
 
         if (self::$outputFile) {
-            return self::ERROR_STATUS;
+            return self::STATUS_ERROR;
         }
 
         echo $output;
 
-        return self::ERROR_STATUS;
+        return self::STATUS_ERROR;
     }
 
     /**
      * @return SageDecoratorsPlain|SageDecoratorsRich
      */
-    private function detectDisplayMode(mixed $enabledMode)
+    private function detectDisplayMode($enabledMode)
     {
         // auto-detect mode if not explicitly set
         if ($enabledMode === true) {
@@ -653,7 +658,7 @@ class Sage
         }
     }
 
-    private function getParameterName(SageCaller $caller, int $k)
+    private function getParameterName(SageCallerData $caller, $k)
     {
         $name = array_key_exists($k, $caller->parameterNames)
             ? $caller->parameterNames[$k]
@@ -696,7 +701,7 @@ class Sage
         if (self::$loadedParsers !== $parsersCount) {
             self::$loadedParsers = $parsersCount;
             foreach (Sage::$enabledParsers as $className => $enabled) {
-                if ($enabled && file_exists($f = SAGE_DIR . 'src/parsers/' . $className . '.php')) {
+                if ($enabled && file_exists($f = SAGE_DIR . 'src/Parsers/' . $className . '.php')) {
                     require_once $f;
                 }
             }
@@ -748,17 +753,17 @@ class Sage
     }
 
     /**
-     * @param SageCaller $caller
-     * @param array      $arguments
-     * @param array      $backtraceData
+     * @param SageCallerData $caller
+     * @param array          $arguments
+     * @param array          $backtraceData
      *
      * @return array|array[]
      */
-    private function getWhatToDump(SageCaller $caller, array $arguments, array $backtraceData): array
+    private function getWhatToDump(SageCallerData $caller, array $arguments, array $backtraceData)
     {
         if (count($arguments) === 0) {
             $tmp            = microtime();
-            $varData        = SageParser::process($tmp, '');
+            $varData        = SageParser::parse($tmp, '');
             $varData->type  = null;
             $varData->name  = 'Sage called with no arguments';
             $varData->value = null;
@@ -780,11 +785,7 @@ class Sage
         if (count($arguments) === 1) {
             if ($caller->parameterNames === array('1') && $arguments[0] === 1) {
                 // Sage::dump(1) shorthand
-                return array(
-                    SageHelper::php53orLater()
-                        ? debug_backtrace(true)
-                        : $backtraceData
-                );
+                return array($backtraceData);
             }
 
             if ($caller->parameterNames === array('2') && $arguments[0] === 2) {

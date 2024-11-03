@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @internal
- */
+/** @internal */
 class SageParsersInvisibleStringCharacters implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
@@ -10,29 +8,31 @@ class SageParsersInvisibleStringCharacters implements SageCustomParserInterface
         return false;
     }
 
-    /** @return false|void */
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         if (
             ! SageHelper::isRichMode()
             || ! is_string($variable)
             || $variable === preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]/u', '', $variable)
         ) {
-            return false;
+            return null;
         }
 
-        $varData->addAlternativeView(
-            new SageVariableExtendedView(
-                SageVariableExtendedView::CONTENT_TYPE_STRING,
+        $result = new SageParsedVariable();
+        $result->addAlternativeView(
+            new SageParsedVariableContents(
+                SageParsedVariableContents::CONTENT_TYPE_STRING,
                 'Hidden characters escaped',
                 $variable
             )
         );
 
-        $varData->extendedView = new SageVariableExtendedView(
-            SageVariableExtendedView::CONTENT_TYPE_STRING,
+        $result->extendedView = new SageParsedVariableContents(
+            SageParsedVariableContents::CONTENT_TYPE_STRING,
             'Contents',
             SageHelper::esc($variable, false)
         );
+
+        return $result;
     }
 }

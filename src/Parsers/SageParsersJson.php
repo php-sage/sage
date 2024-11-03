@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @internal
- */
+/** @internal */
 class SageParsersJson implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
@@ -10,8 +8,7 @@ class SageParsersJson implements SageCustomParserInterface
         return false;
     }
 
-    /** @return false|void */
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         if (! SageHelper::isRichMode()
             || ! SageHelper::php53orLater()
@@ -20,15 +17,20 @@ class SageParsersJson implements SageCustomParserInterface
             || ($variable[0] !== '{' && $variable[0] !== '[')
             || ($json = json_decode($variable, true)) === null
         ) {
-            return false;
+            return null;
         }
 
         $val = (array)$json;
 
         if (! $val) {
-            return false;
+            return null;
         }
 
-        $varData->addAlternativeView(new SageVariableExtendedView(SageVariableExtendedView::CONTENT_TYPE_DUMP, 'Json', $val));
+        $result = new SageParsedVariable();
+        $result->addAlternativeView(
+            new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_DUMP, 'Json', $val)
+        );
+
+        return $result;
     }
 }
