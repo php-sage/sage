@@ -6,7 +6,7 @@ services:
         - DOCKER_UID
     working_dir: /var/www/
     ports:
-      - "8181:8181"
+      - "18181:18181"
     volumes:
       - ./:/var/www
       - ./:/dupe # for testing to be outside the sage dir to emulate real situation better

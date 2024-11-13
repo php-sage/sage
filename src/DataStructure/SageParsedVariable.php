@@ -108,6 +108,9 @@ class SageParsedVariable
         }
     }
 
+    /**
+     * @return SageParsedVariableContents[]
+     */
     public function getAllRepresentations()
     {
         $allRepresentations = array();

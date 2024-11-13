@@ -47,7 +47,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         }
 
         $areTabsNeeded = count($allRepresentations) === 1;
-        if ($areTabsNeeded && $varData->extendedView) {
+        if (! $areTabsNeeded && $varData->extendedView) {
             $output .= $this->drawAlternativeView(reset($allRepresentations));
         } elseif ($isExtendedPresent) {
             $output .= "<ul class=\"_sage-tabs\">";

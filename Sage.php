@@ -41,7 +41,7 @@ require SAGE_DIR . 'src/DataStructure/SageParsedVariableContents.php';
 require SAGE_DIR . 'src/DataStructure/SageParsedTraceStep.php';
 require SAGE_DIR . 'src/DataStructure/SageHtmlable.php';
 require SAGE_DIR . 'src/inc/SageParser.php';
-require SAGE_DIR . 'src/inc/SagePrimitivesParser.php';
+require SAGE_DIR . 'src/inc/SageNativeTypesParser.php';
 require SAGE_DIR . 'src/inc/SageHelper.php';
 require SAGE_DIR . 'src/inc/shorthands.inc.php';
 require SAGE_DIR . 'src/Decorators/SageDecoratorsInterface.php';
@@ -447,21 +447,7 @@ class Sage
     }
 
     /**
-     * Dump information about variables, accepts any number of parameters, supports prefix-modifiers:
-     *
-     * ```md
-     *           | Prefix |                                              | Example      |
-     *           |--------|----------------------------------------------|--------------|
-     *           | print  | Puts output into current DIR as sage.html    | print sage() |
-     *           | !      | Dump ignoring depth limits for large objects | ! sage()     |
-     *           | ~      | Simplifies sage output (rich->html->plain)   | ~ sage()     |
-     *           | -      | Clean up any output before dumping           | - sage()     |
-     *           | +      | Expand all nodes (in rich view)              | + sage()     |
-     *           | @      | Return output instead of displaying it       | @ sage()     |
-     *           |--------|----------------------------------------------|--------------|
-     * ```
-     *
-     * Modifiers are supported by all dump wrapper functions, including Sage::trace(). Combinations possible.
+     * Dump information about variables, accepts any number of parameters.
      *
      * -----
      * Shorthand to display debug_backtrace():
@@ -482,7 +468,7 @@ class Sage
             return call_user_func_array(array(new self(), 'doDump'), $params);
         } catch (Throwable $e) {
             if (file_exists(SAGE_DIR . '/.dev-mode')) {
-                throw $e;
+                dd($e);
             }
         } catch (Exception $e) {
         }

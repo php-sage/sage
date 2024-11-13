@@ -103,6 +103,6 @@ play:
 
 serve:
 	make up
-	@echo "go to ----> http://localhost:8181 <-----"
-	$(DOCKER) exec php php -S 0.0.0.0:8181 /dupe/playground.php
+	@echo "go to ----> http://localhost:18181 <-----"
+	$(DOCKER) exec php php -S 0.0.0.0:18181 /dupe/playground.php
 

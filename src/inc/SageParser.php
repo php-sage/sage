@@ -43,7 +43,7 @@ class SageParser
         $result       = new SageParsedVariable();
         $result->name = $name;
 
-        $parseAsPrimitive = true;
+        $parseAsNative = true;
 
         foreach (Sage::$enabledParsers as $parserClass => $enabled) {
             if (! $enabled) {
@@ -66,57 +66,55 @@ class SageParser
                 $result->mergeFrom($parseResult);
 
                 if ($parser->replacesAllOtherParsers()) {
-                    $parseAsPrimitive = false;
+                    $parseAsNative = false;
                     break;
                 }
             }
         }
 
-        if ($parseAsPrimitive) {
-            $result->mergeFrom(
-                $this->parsePrimitive($variable)
-            );
+        if ($parseAsNative) {
+            $parsed = $this->parseNative($variable);
+            // base type parser returning null means "stop processing further": e.g. recursion
+            if ($parsed) {
+                $result->mergeFrom($parsed);
+            } else {
+                self::$level--;
+            }
         }
-        // base type parser returning false means "stop processing further": e.g. recursion
-        //            if (self::parsePrimitive($variable, $varData) === false) {
-        //                self::$_level--;
-        //
-        //                return $varData;
-        //            }
 
         return $result;
     }
 
     /**
-     * @return SageParsedVariable
+     * @return ?SageParsedVariable null means 'stop processing further': e.g. recursion
      */
-    private function parsePrimitive(&$variable)
+    private function parseNative(&$variable)
     {
         $varType = gettype($variable);
         if ($varType === 'unknown type') {
             $varType = 'unknown';// PHP 5.4 inconsistency
         }
 
-        switch ($varType) { // sigh, modern PHP, I miss you so!
+        switch ($varType) {
             case 'array':
-                return SagePrimitivesParser::parseArray($variable);
+                return SageNativeTypesParser::parseArray($variable);
             case 'object':
-                return SagePrimitivesParser::parseObject($variable);
+                return SageNativeTypesParser::parseObject($variable);
             case 'boolean':
-                return SagePrimitivesParser::parseBoolean($variable);
+                return SageNativeTypesParser::parseBoolean($variable);
             case 'double':
-                return SagePrimitivesParser::parseDouble($variable);
+                return SageNativeTypesParser::parseDouble($variable);
             case 'integer':
-                return SagePrimitivesParser::parseInteger($variable);
+                return SageNativeTypesParser::parseInteger($variable);
             case 'null':
-                return SagePrimitivesParser::parseNull($variable);
+                return SageNativeTypesParser::parseNull($variable);
             case 'resource':
-                return SagePrimitivesParser::parseResource($variable);
+                return SageNativeTypesParser::parseResource($variable);
             case 'string':
-                return SagePrimitivesParser::parseString($variable);
+                return SageNativeTypesParser::parseString($variable);
             case 'unknown':
             default: // resource (closed) for example
-                return SagePrimitivesParser::parseUnknown($variable);
+                return SageNativeTypesParser::parseUnknown($variable);
         }
     }
 }

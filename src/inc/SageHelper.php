@@ -85,11 +85,7 @@ class SageHelper
     public static function buildAliases()
     {
         self::$aliasesRaw = array(
-            'methods'   => array(
-                array('sage', 'dump'),
-                array('sage', strtolower('doDump')),
-                array('sage', 'trace')
-            ),
+            'methods'   => array(),
             'functions' => array()
         );
 
@@ -134,6 +130,10 @@ class SageHelper
 
         if (! $className) {
             return in_array($methodName, self::$aliasesRaw['functions'], true);
+        }
+
+        if ($className === 'sage') {
+            return true;
         }
 
         foreach (self::$aliasesRaw['methods'] as $alias) {

@@ -7,11 +7,14 @@ class SageParsedVariableContents
     public $name;
 
     /**
-     * @var string|SageHtmlable|array{name: string, value: string}|mixed - depending on self::$displayType can be either:
+     *  Depending on self::$displayType can be either:
      *  - string - escaped and put into <pre>;
      *  - SageHtmlable - contents put into <pre> without escaping;
-     *  - array - depending on the contentType will be displayed in plain text rows or full dump rows
+     *  - SageParsedVariable[]|array{name: string, value: string} - depending on the contentType will be displayed in
+     *    plain text rows or full dump rows
      *  - mixed (if CONTENT_TYPE_DUMP) will be just dumped verbatim
+     *
+     * @var string|SageHtmlable|SageParsedVariable[]|array{name: string, value: string}|mixed
      */
     public $contents = null;
 
@@ -27,8 +30,8 @@ class SageParsedVariableContents
     /**
      * Will produce:
      *
-     *   NameOfRow: value
-     *   row2     : value2
+     *   NameOfRow1: value
+     *   row2      : value2
      */
     const CONTENT_TYPE_PLAIN_TEXT_ROWS = 1;
     /**
@@ -36,15 +39,17 @@ class SageParsedVariableContents
      */
     const CONTENT_TYPE_RICH_ROWS = 2;
     /**
-     * Will just dump whatever you pass as the content
+     * Will just dump whatever you pass as the single item as content
      */
     const CONTENT_TYPE_DUMP = 3;
 
     /**
-     * todo legacy constructor @see SageHtmlable
-     * @param int    $contentType
+     * todo legacy constructor @param int $contentType
+     *
      * @param string $name
      * @param mixed  $content
+     *
+     * @see SageHtmlable
      */
     public function __construct($contentType, $name = '', $content = null)
     {

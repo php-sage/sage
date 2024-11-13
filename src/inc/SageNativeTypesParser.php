@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SagePrimitivesParser
+class SageNativeTypesParser
 {
     /**
      * todo
@@ -15,6 +15,9 @@ class SagePrimitivesParser
 
     private static $dealingWithGlobals = false;
 
+    /**
+     * @return ?SageParsedVariable
+     */
     public static function parseArray(array &$variable)
     {
         $result = new SageParsedVariable();
@@ -50,7 +53,7 @@ class SagePrimitivesParser
             unset($variable[self::$_marker]);
             $result->value = self::$_marker;
 
-            return false;
+            return null;
         }
         if (self::isDepthLimit()) {
             return SageParsedVariable::erroneous('Depth too Great');
@@ -75,7 +78,7 @@ class SagePrimitivesParser
                 if (isset($row[self::$_marker])) {
                     $result->error = 'Recursion';
 
-                    return false;
+                    return null;
                 }
 
                 $extendedValue .= '<tr>';
@@ -109,7 +112,7 @@ class SagePrimitivesParser
                     if ($processedVar->value === self::$_marker) {
                         $result->error = 'Recursion';
 
-                        return false;
+                        return null;
                     }
 
                     if ($processedVar->error) {
@@ -178,6 +181,9 @@ class SagePrimitivesParser
     /** @var array<string, true> used to prevent recursion */
     private static $objects = array();
 
+    /**
+     * @return ?SageParsedVariable
+     */
     public static function parseObject(&$variable)
     {
         $result = new SageParsedVariable();
@@ -212,14 +218,14 @@ class SagePrimitivesParser
         if (isset(self::$objects[$hash])) {
             $result->value = "*RECURSION* ({$hash})";
 
-            return false;
+            return null;
         }
 
         if (self::isDepthLimit()) {
             // todo provide solution
             $result->error = 'Depth too Great';
 
-            return false;
+            return null;
         }
 
         self::$objects[$hash] = true;
@@ -235,7 +241,7 @@ class SagePrimitivesParser
         }
         $result->size = 0;
 
-        $extendedValue = array();
+        $result->extendedView = new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS);
         static $publicProperties = array();
         if (! isset($publicProperties[$className])) {
             $reflectionClass = new ReflectionClass($className);
@@ -276,56 +282,53 @@ class SagePrimitivesParser
             $nestedVarData->access   = $access;
             $nestedVarData->operator = '->';
 
-            $extendedValue[$key] = $nestedVarData;
+            $result->extendedView->addRow($nestedVarData);
 
             $result->size++;
         }
 
         if ($variable instanceof __PHP_Incomplete_Class) { // todo test
-            $result->extendedView = $extendedValue;
-
             return $result;
         }
 
         $recursiveReflection = $variableReflection;
         do {
-            foreach ($recursiveReflection->getProperties() as $property) {
-                if ($property->isStatic()) {
+            foreach ($recursiveReflection->getProperties() as $propertyReflection) {
+                if ($propertyReflection->isStatic()) {
                     continue;
                 }
 
-                $name = $property->getName();
-                if (isset($extendedValue[$name])) {
-                    if (method_exists($property, 'isReadOnly') && $property->isReadOnly()) {
-                        $extendedValue[$name]->access .= ' readonly';
+                $name = $propertyReflection->getName();
+                foreach ($result->extendedView->contents as $alreadyParsed) {
+                    if ($alreadyParsed->name === $name) {
+                        $alreadyParsed->access .= ' readonly';
+                        continue 2;
                     }
-
-                    continue;
                 }
 
-                if ($property->isProtected()) {
-                    $property->setAccessible(true);
+                if ($propertyReflection->isProtected()) {
+                    $propertyReflection->setAccessible(true);
                     $access = 'protected';
-                } elseif ($property->isPrivate()) {
-                    $property->setAccessible(true);
+                } elseif ($propertyReflection->isPrivate()) {
+                    $propertyReflection->setAccessible(true);
                     $access = 'private';
                 } else {
                     $access = 'public';
                 }
 
-                if (method_exists($property, 'isInitialized')
-                    && ! $property->isInitialized($variable)) {
+                if (method_exists($propertyReflection, 'isInitialized')
+                    && ! $propertyReflection->isInitialized($variable)) {
                     $value  = null;
                     $access .= ' [uninitialized]';
                 } else {
-                    $value = $property->getValue($variable);
+                    $value = $propertyReflection->getValue($variable);
                 }
 
                 $output = SageParser::parse($value, SageHelper::esc($name));
 
                 $output->access   = $access;
                 $output->operator = '->';
-                $extendedValue[]  = $output;
+                $result->extendedView->addRow($output);
                 $result->size++;
             }
         } while ($recursiveReflection = $recursiveReflection->getParentClass());
@@ -337,10 +340,6 @@ class SagePrimitivesParser
         if (method_exists($variableReflection, 'isEnum') && $variableReflection->isEnum()) {
             $result->size  = 'enum';
             $result->value = '"' . $variable->name . '"';
-        }
-
-        if ($result->size) {
-            $result->extendedView = $extendedValue;
         }
 
         return $result;
@@ -406,6 +405,9 @@ class SagePrimitivesParser
         return $result;
     }
 
+    /**
+     * @return ?SageParsedVariable
+     */
     public static function parseString(&$variable)
     {
         $result = new SageParsedVariable();
@@ -426,13 +428,13 @@ class SagePrimitivesParser
         if (self::$_placeFullStringInValue) { // in tabular view
             $result->value = SageHelper::esc($variable);
 
-            return;
+            return $result;
         }
 
         if (! SageHelper::isRichMode()) {
             $result->value = '"' . SageHelper::esc($variable) . '"';
 
-            return;
+            return $result;
         }
 
         // trim inline value if too long
