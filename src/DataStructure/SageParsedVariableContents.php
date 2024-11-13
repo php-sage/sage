@@ -3,7 +3,7 @@
 /** @internal */
 class SageParsedVariableContents
 {
-    /** @var string */
+    /** @var SageHtmlable|string */
     public $name;
 
     /**
@@ -51,7 +51,7 @@ class SageParsedVariableContents
      *
      * @see SageHtmlable
      */
-    public function __construct($contentType, $name = '', $content = null)
+    public function __construct($contentType, $name = 'Contents', $content = null)
     {
         $this->displayType = $contentType;
         if ($name) {

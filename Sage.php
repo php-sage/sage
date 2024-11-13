@@ -34,6 +34,7 @@ if (defined('SAGE_DIR')) {
 define('SAGE_DIR', dirname(__FILE__) . '/');
 
 // With PHP 5.1++ compatibility in mind we don't use namespaces and do the autoloading manually
+require SAGE_DIR . 'src/inc/SageLogicException.php';
 require SAGE_DIR . 'src/DataStructure/SageCallerData.php';
 require SAGE_DIR . 'src/inc/SageDynamicFacade.php';
 require SAGE_DIR . 'src/DataStructure/SageParsedVariable.php';
@@ -274,7 +275,7 @@ class Sage
 
         // all the rest
         //        'SageParsersXml'                       => true,
-        'SageParsersObjectIterateable'         => true,
+        'SageParsersIterable'                  => true,
         'SageParsersClassStatics'              => true,
         'SageParsersColor'                     => true,
         'SageParsersJson'                      => true,

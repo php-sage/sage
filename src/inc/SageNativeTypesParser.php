@@ -5,24 +5,54 @@
  */
 class SageNativeTypesParser
 {
-    /**
-     * todo
-     * @var bool
-     */
+    /** todo */
     protected static $_placeFullStringInValue = false;
-    /** @var string */
-    private static $_marker;
+
+    /** @var string used to prevent recursion for arrays */
+    private static $arrayMarker = "\x00sage-array-marker";
 
     private static $dealingWithGlobals = false;
 
     /**
-     * @return ?SageParsedVariable
+     * @return ?SageParsedVariable null means 'stop processing further': e.g. recursion
      */
-    public static function parseArray(array &$variable)
+    public static function parse(&$variable)
+    {
+        $varType = gettype($variable);
+        if ($varType === 'unknown type') {
+            $varType = 'unknown';// PHP 5.4 inconsistency
+        }
+
+        switch ($varType) {
+            case 'array':
+                return self::parseArray($variable);
+            case 'object':
+                return self::parseObject($variable);
+            case 'boolean':
+                return self::parseBoolean($variable);
+            case 'double':
+                return self::parseDouble($variable);
+            case 'integer':
+                return self::parseInteger($variable);
+            case 'null':
+            case 'NULL':
+                return self::parseNull($variable);
+            case 'resource':
+                return self::parseResource($variable);
+            case 'string':
+                return self::parseString($variable);
+            case 'unknown':
+            default: // resource (closed) for example
+                return self::parseUnknown($variable);
+        }
+    }
+
+    /**
+     * @return SageParsedVariable
+     */
+    private static function parseArray(array &$variable)
     {
         $result = new SageParsedVariable();
-
-        isset(self::$_marker) or self::$_marker = "\x00" . uniqid();
 
         // naturally, $GLOBALS variable is an intertwined recursion nightmare, use black magic
         $globalsDetector = false;
@@ -45,22 +75,23 @@ class SageNativeTypesParser
         if ($result->size === 0) {
             return $result;
         }
-        if (array_key_exists(self::$_marker, $variable)) { // recursion; todo mayhaps show from where
+        if (array_key_exists(self::$arrayMarker, $variable)) { // recursion; todo mayhaps show from where
             if (self::$dealingWithGlobals) {
                 return SageParsedVariable::erroneous('Recursion');
             }
 
-            unset($variable[self::$_marker]);
-            $result->value = self::$_marker;
+            unset($variable[self::$arrayMarker]);
+            $result->value = self::$arrayMarker;
 
-            return null;
+            return $result; // todo test
         }
+
         if (self::isDepthLimit()) {
             return SageParsedVariable::erroneous('Depth too Great');
         }
 
-        $isSequential             = SageHelper::isArraySequential($variable);
-        $variable[self::$_marker] = true;
+        $isSequential                 = SageHelper::isArraySequential($variable);
+        $variable[self::$arrayMarker] = true;
 
         if ($result->size > 1 && ($arrayKeys = self::isArrayTabular($variable)) !== false) {
             // tabular array parse
@@ -71,11 +102,11 @@ class SageNativeTypesParser
                 // display strings in their full length
                 self::$_placeFullStringInValue = true;
 
-                if ($rowIndex === self::$_marker) {
+                if ($rowIndex === self::$arrayMarker) {
                     continue;
                 }
 
-                if (isset($row[self::$_marker])) {
+                if (isset($row[self::$arrayMarker])) {
                     $result->error = 'Recursion';
 
                     return null;
@@ -109,7 +140,7 @@ class SageNativeTypesParser
                         $processedVar = SageParser::parse($row[$key]);
                     }
 
-                    if ($processedVar->value === self::$_marker) {
+                    if ($processedVar->value === self::$arrayMarker) {
                         $result->error = 'Recursion';
 
                         return null;
@@ -137,16 +168,16 @@ class SageNativeTypesParser
                 new SageHtmlable($extendedValue . '</table>')
             );
         } else {
-            $extendedValue = array();
+            $result->extendedView = new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS);
 
             foreach ($variable as $key => & $val) {
-                if ($key === self::$_marker) {
+                if ($key === self::$arrayMarker) {
                     continue;
                 }
 
                 if (SageHelper::isKeyBlacklisted($key)) {
                     $parsedValue = SageParsedVariable::erroneous('Redacted');
-                } elseif (is_array($val) && array_key_exists(self::$_marker, $val)) {
+                } elseif (is_array($val) && array_key_exists(self::$arrayMarker, $val)) {
                     $parsedValue = SageParsedVariable::erroneous('Recursion');
                 } else {
                     $parsedValue = SageParser::parse($val);
@@ -160,37 +191,29 @@ class SageNativeTypesParser
                         ? $key
                         : "'" . $key . "'";
                 }
-                $extendedValue[] = $parsedValue;
+                $result->extendedView->addRow($parsedValue);
             }
-            $result->extendedView = new SageParsedVariableContents(
-                SageParsedVariableContents::CONTENT_TYPE_DUMP,
-                '',
-                $extendedValue
-            );
         }
 
         if ($globalsDetector) {
             self::$dealingWithGlobals = false;
         }
 
-        unset($variable[self::$_marker]);
+        unset($variable[self::$arrayMarker]);
 
         return $result;
     }
 
-    /** @var array<string, true> used to prevent recursion */
-    private static $objects = array();
-
     /**
-     * @return ?SageParsedVariable
+     * @return SageParsedVariable
      */
-    public static function parseObject(&$variable)
+    private static function parseObject(&$variable)
     {
         $result = new SageParsedVariable();
 
         $hash = self::getObjectHash($variable);
 
-        // still the best way to dump everything about an object: cast it to array!
+        // PHP: the best way to dump everything about an object: cast it to array!
         $castedArray = (array)$variable;
         $className   = get_class($variable);
 
@@ -210,26 +233,26 @@ class SageNativeTypesParser
                 $result->type = $className;
             }
         }
+        $result->type .= ' [#' . $hash . ']'; // todo improve this fast addition
 
         if (! isset($result->size)) {
             $result->size = count($castedArray);
         }
 
-        if (isset(self::$objects[$hash])) {
-            $result->value = "*RECURSION* ({$hash})";
+        if (isset(SageParser::$objects[$hash])) {
+            $result->error = "*RECURSION* [{$hash}]";
 
-            return null;
+            return $result;
         }
 
         if (self::isDepthLimit()) {
-            // todo provide solution
-            $result->error = 'Depth too Great';
+            $result->error = 'Depth too Great'; // todo suggest solution
 
-            return null;
+            return $result;
         }
 
-        self::$objects[$hash] = true;
-        $variableReflection   = new ReflectionObject($variable);
+        SageParser::$objects[$hash] = true;
+        $variableReflection         = new ReflectionObject($variable);
 
         // add link to definition of userland objects
         if (SageHelper::isHtmlMode() && $variableReflection->isUserDefined()) {
@@ -281,7 +304,6 @@ class SageNativeTypesParser
             $nestedVarData->name     = SageHelper::esc($key);
             $nestedVarData->access   = $access;
             $nestedVarData->operator = '->';
-
             $result->extendedView->addRow($nestedVarData);
 
             $result->size++;
@@ -300,8 +322,11 @@ class SageNativeTypesParser
 
                 $name = $propertyReflection->getName();
                 foreach ($result->extendedView->contents as $alreadyParsed) {
-                    if ($alreadyParsed->name === $name) {
-                        $alreadyParsed->access .= ' readonly';
+                    if ((string)$alreadyParsed->name === $name) {
+                        if (method_exists($propertyReflection, 'isReadOnly') && $propertyReflection->isReadOnly()) {
+                            $alreadyParsed->access .= ' readonly';
+                        }
+
                         continue 2;
                     }
                 }
@@ -345,7 +370,7 @@ class SageNativeTypesParser
         return $result;
     }
 
-    public static function parseBoolean(&$variable)
+    private static function parseBoolean(&$variable)
     {
         $result        = new SageParsedVariable();
         $result->type  = 'bool';
@@ -354,7 +379,7 @@ class SageNativeTypesParser
         return $result;
     }
 
-    public static function parseDouble(&$variable)
+    private static function parseDouble(&$variable)
     {
         $result        = new SageParsedVariable();
         $result->type  = 'float';
@@ -363,7 +388,7 @@ class SageNativeTypesParser
         return $result;
     }
 
-    public static function parseInteger(&$variable)
+    private static function parseInteger(&$variable)
     {
         $result        = new SageParsedVariable();
         $result->type  = 'integer';
@@ -372,7 +397,7 @@ class SageNativeTypesParser
         return $result;
     }
 
-    public static function parseNull(&$variable)
+    private static function parseNull(&$variable)
     {
         $result       = new SageParsedVariable();
         $result->type = 'NULL';
@@ -380,7 +405,7 @@ class SageNativeTypesParser
         return $result;
     }
 
-    public static function parseResource(&$variable)
+    private static function parseResource(&$variable)
     {
         $result = new SageParsedVariable();
 
@@ -408,7 +433,7 @@ class SageNativeTypesParser
     /**
      * @return ?SageParsedVariable
      */
-    public static function parseString(&$variable)
+    private static function parseString(&$variable)
     {
         $result = new SageParsedVariable();
 
@@ -464,7 +489,7 @@ class SageNativeTypesParser
         return $result;
     }
 
-    public static function parseUnknown(&$variable)
+    private static function parseUnknown(&$variable)
     {
         $result = new SageParsedVariable();
 
@@ -477,8 +502,8 @@ class SageNativeTypesParser
 
     private static function getObjectHash($variable)
     {
-        if (function_exists('spl_object_hash')) { // since PHP 5.2
-            return spl_object_hash($variable);
+        if (function_exists('spl_object_id')) { // since PHP 5.2
+            return spl_object_id($variable);
         }
 
         ob_start();
@@ -503,7 +528,7 @@ class SageNativeTypesParser
         $keys        = null;
         $closeEnough = false;
         foreach ($variable as $k => $row) {
-            if (isset(self::$_marker) && $k === self::$_marker) {
+            if (isset(self::$arrayMarker) && $k === self::$arrayMarker) {
                 continue;
             }
 

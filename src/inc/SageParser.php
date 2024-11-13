@@ -4,17 +4,19 @@
 class SageParser
 {
     public static $level = 0;
-    private static $objects; // todo is still needed?
+
+    /** @var array<string, true> used to prevent recursion */
+    public static $objects = array();
 
     /**
-     * @var array keep parsers from looping
+     * @var array keep parsers from looping todo?
      */
     private static $parsingAlternative = array();
 
-    public static function reset()
+    public static function reset() // todo test reset
     {
         self::$level   = 0;
-        self::$objects = null;
+        self::$objects = array();
     }
 
     /**
@@ -26,12 +28,15 @@ class SageParser
     public static function parse(&$variable, $name = null)
     {
         // save internal data to revert after dumping to properly handle recursions etc
-        $level = self::$level++;
+        $level   = self::$level++;
+        $objects = self::$objects;
 
         $parser = new self();
         $result = $parser->doParse($variable, $name);
 
-        self::$level = $level;
+        self::$level   = $level;
+        self::$objects = $objects;
+
         //        self::$level    = $revert['level'];
         //        self::$_objects = $revert['objects'];
 
@@ -73,7 +78,7 @@ class SageParser
         }
 
         if ($parseAsNative) {
-            $parsed = $this->parseNative($variable);
+            $parsed = SageNativeTypesParser::parse($variable);
             // base type parser returning null means "stop processing further": e.g. recursion
             if ($parsed) {
                 $result->mergeFrom($parsed);
@@ -83,38 +88,5 @@ class SageParser
         }
 
         return $result;
-    }
-
-    /**
-     * @return ?SageParsedVariable null means 'stop processing further': e.g. recursion
-     */
-    private function parseNative(&$variable)
-    {
-        $varType = gettype($variable);
-        if ($varType === 'unknown type') {
-            $varType = 'unknown';// PHP 5.4 inconsistency
-        }
-
-        switch ($varType) {
-            case 'array':
-                return SageNativeTypesParser::parseArray($variable);
-            case 'object':
-                return SageNativeTypesParser::parseObject($variable);
-            case 'boolean':
-                return SageNativeTypesParser::parseBoolean($variable);
-            case 'double':
-                return SageNativeTypesParser::parseDouble($variable);
-            case 'integer':
-                return SageNativeTypesParser::parseInteger($variable);
-            case 'null':
-                return SageNativeTypesParser::parseNull($variable);
-            case 'resource':
-                return SageNativeTypesParser::parseResource($variable);
-            case 'string':
-                return SageNativeTypesParser::parseString($variable);
-            case 'unknown':
-            default: // resource (closed) for example
-                return SageNativeTypesParser::parseUnknown($variable);
-        }
     }
 }

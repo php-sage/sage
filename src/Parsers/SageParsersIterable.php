@@ -1,7 +1,7 @@
 <?php
 
 /** @internal */
-class SageParsersObjectIterateable implements SageCustomParserInterface
+class SageParsersIterable implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {

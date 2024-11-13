@@ -4,19 +4,19 @@
 class SageParsedVariable
 {
     // basics:
-    /** @var string */
+    /** @var string|SageHtmlable */
     public $name;
-    /** @var string */
+    /** @var string|SageHtmlable */
     public $type;
-    /** @var string */
+    /** @var string|SageHtmlable */
     public $access;
-    /** @var string */
+    /** @var string|SageHtmlable */
     public $operator;
     /** @var int */
     public $size;
-    /** @var string short inline value */
+    /** @var string|SageHtmlable short inline value */
     public $value;
-    /** @var string for exceptions like "depth limit", "blacklisted key", "recursion" */
+    /** @var string|SageHtmlable for exceptions like "depth limit", "blacklisted key", "recursion" */
     public $error = '';
     /** @var SageParsedTraceStep[] special case: dumped variable is a trace, it has a special representation */
     public $traceSteps = array();
