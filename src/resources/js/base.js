@@ -150,7 +150,7 @@ if (typeof _sageInitialized === 'undefined') {
             // also open up child element if there's only one
             let parent = _sage.next(element);
             if (parent && parent.childElementCount === 1) {
-                parent = parent.children[0]; // reuse variable cause I can
+                parent = parent.children[0].children[0]; // reuse variable cause I can
 
                 // parent is checked in case of empty <pre> when array("\n") is dumped
                 if (parent && _sage.hasClass(parent, '_sage-parent')) {
