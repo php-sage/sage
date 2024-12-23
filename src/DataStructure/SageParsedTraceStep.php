@@ -89,13 +89,13 @@ class SageParsedTraceStep
         $params = $reflection ? $reflection->getParameters() : null;
 
         $names = array();
-        foreach ($step['args'] as $i => $arg) {
-            if (isset($params[$i])) {
-                $names[] = '$' . $params[$i]->name;
-            } elseif (is_string($i)) {
-                $names[] = '$' . $i;
-            } else {
-                $names[] = '#' . ($i + 1);
+        if ($params) {
+            foreach ($params as $param) {
+                $name = '$' . $param->name;
+                if (method_exists($param, 'isVariadic') && $param->isVariadic()) {
+                    $name = '...' . $name;
+                }
+                $names[] = $name;
             }
         }
 
@@ -180,15 +180,23 @@ class SageParsedTraceStep
 
     private function getArguments($step, $argumentNames)
     {
-        $result = array();
-        $i      = 0;
-        foreach ($this->sanitizeStepForProcessing($step) as $variable) {
-            $i++;
+        $result        = array();
+        $i             = 0;
+        $variadicIndex = 0;
+        $name          = '';
+        foreach ($this->getSanitizedArgs($step) as $argument) {
             $name = isset($argumentNames[$i]) ? $argumentNames[$i] : '';
+            // variadic parameters are always last
+            if (strpos($name, '...') === 0) {
+                $name .= '[' . $variadicIndex++ . ']';
+            } else {
+                $i++;
+            }
+
             if (SageHelper::isKeyBlacklisted($name)) {
                 $parsed = SageParsedVariable::erroneous('Redacted');
             } else {
-                $parsed           = SageParser::parse($variable, $name);
+                $parsed           = SageParser::parse($argument, $name);
                 $parsed->operator = substr($name, 0, 1) === '$' ? '=' : ':';
             }
 
@@ -198,7 +206,7 @@ class SageParsedTraceStep
         return $result;
     }
 
-    private function sanitizeStepForProcessing($step)
+    private function getSanitizedArgs($step)
     {
         if (
             ! empty($step['args'])

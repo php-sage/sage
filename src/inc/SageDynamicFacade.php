@@ -17,13 +17,13 @@ class SageDynamicFacade
     private static $saveAllOutputToThisVariable = null;
 
     /**
-     * Support ancient PHP versions
+     * Costructor for ancient PHP versions support
      */
     public function SageDynamicFacade()
     {
-        if (! in_array('SageDynamicFacade::*', Sage::$aliases, true)) {
-            Sage::$aliases[] = 'SageDynamicFacade::*';
-        }
+//        if (! in_array('SageDynamicFacade::*', Sage::$aliases, true)) {
+//            Sage::$aliases[] = 'SageDynamicFacade::*';
+//        }
     }
 
     public function __construct()

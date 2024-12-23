@@ -42,6 +42,7 @@ class SageParsedVariableContents
      * Will just dump whatever you pass as the single item as content
      */
     const CONTENT_TYPE_DUMP = 3;
+    // todo CONTENT_TYPE_TRACE
 
     /**
      * todo legacy constructor @param int $contentType
@@ -116,9 +117,9 @@ class SageParsedVariableContents
             throw new SageLogicException('Please use addRow for this type of view');
         }
 
-        if ($this->displayType === self::CONTENT_TYPE_DUMP) {
-            $content = SageParser::parse($content);
-        }
+//        if ($this->displayType === self::CONTENT_TYPE_DUMP) {
+//            $content = SageParser::parse($content);
+//        }
 
         $this->contents = $content;
 

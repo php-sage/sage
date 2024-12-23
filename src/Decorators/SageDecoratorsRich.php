@@ -118,6 +118,13 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         return $output;
     }
 
+    /**
+     * @param int                 $i
+     * @param SageParsedTraceStep $step
+     * @param bool                $pathsOnly
+     *
+     * @return string
+     */
     private function drawTraceStep($i, $step, $pathsOnly)
     {
         $isChildless = ! $step->sourceSnippet && ! $step->arguments && ! $step->object;
@@ -163,7 +170,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         }
 
         if (! $pathsOnly && $step->object) {
-            $output .= "<li{$firstTabClass}>Callee object [{$step->object->type}]</li>";
+            $output .= "<li{$firstTabClass}>Callee object [{$step->object->type} <s>{$step->object->hash}</s>]</li>";
         }
 
         $output .= '</ul><ul>';
@@ -283,8 +290,11 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         }
 
         if ($varData->type !== null) {
-            // type output is unescaped as it is set internally and contains links to user class
-            $output .= "<var>{$varData->type}</var> ";
+            $output .= '<var>' . SageHelper::esc($varData->type) . '</var> ';
+        }
+
+        if ($varData->hash !== null) {
+            $output .= '<s>' . SageHelper::esc($varData->hash) . '</s> ';
         }
 
         if ($varData->size !== null) {
@@ -332,8 +342,10 @@ class SageDecoratorsRich implements SageDecoratorsInterface
                 return $output;
             case SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS:
                 $output = '';
-                foreach ($variableContents->contents as $row) {
-                    $output .= $this->decorate($row);
+                if ($variableContents->contents) {
+                    foreach ($variableContents->contents as $row) {
+                        $output .= $this->decorate($row);
+                    }
                 }
 
                 return $output;

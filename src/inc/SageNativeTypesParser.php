@@ -233,7 +233,7 @@ class SageNativeTypesParser
                 $result->type = $className;
             }
         }
-        $result->type .= ' [#' . $hash . ']'; // todo improve this fast addition
+        $result->hash = '#' . $hash; // todo improve this fast addition
 
         if (! isset($result->size)) {
             $result->size = count($castedArray);

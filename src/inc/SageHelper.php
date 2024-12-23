@@ -132,7 +132,7 @@ class SageHelper
             return in_array($methodName, self::$aliasesRaw['functions'], true);
         }
 
-        if ($className === 'sage') {
+        if ($className === 'sage' || $className === 'sagedynamicfacade') {
             return true;
         }
 

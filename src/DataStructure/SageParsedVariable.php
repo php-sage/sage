@@ -9,6 +9,8 @@ class SageParsedVariable
     /** @var string|SageHtmlable */
     public $type;
     /** @var string|SageHtmlable */
+    public $hash;
+    /** @var string|SageHtmlable */
     public $access;
     /** @var string|SageHtmlable */
     public $operator;
@@ -73,6 +75,10 @@ class SageParsedVariable
 
         if (isset($from->type)) {
             $this->type = $from->type;
+        }
+
+        if (isset($from->hash)) {
+            $this->hash = $from->hash;
         }
 
         if (isset($from->access)) {

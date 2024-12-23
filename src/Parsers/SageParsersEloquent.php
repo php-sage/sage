@@ -43,7 +43,7 @@ class SageParsersEloquent implements SageCustomParserInterface
 
         $attributesDump = new SageParsedVariableContents(
             SageParsedVariableContents::CONTENT_TYPE_DUMP,
-            'Retrieved DB data from: ' . $reference,
+            'Retrieved DB rows from ' . $reference,
             $attributes
         );
 

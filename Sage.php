@@ -44,6 +44,7 @@ require SAGE_DIR . 'src/DataStructure/SageHtmlable.php';
 require SAGE_DIR . 'src/inc/SageParser.php';
 require SAGE_DIR . 'src/inc/SageNativeTypesParser.php';
 require SAGE_DIR . 'src/inc/SageHelper.php';
+require SAGE_DIR . 'src/inc/SageSqlFormatter.php';
 require SAGE_DIR . 'src/inc/shorthands.inc.php';
 require SAGE_DIR . 'src/Decorators/SageDecoratorsInterface.php';
 require SAGE_DIR . 'src/Decorators/SageDecoratorsRich.php';

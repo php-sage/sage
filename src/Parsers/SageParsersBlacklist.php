@@ -10,8 +10,8 @@ class SageParsersBlacklist implements SageCustomParserInterface
 
     public function parse(&$variable)
     {
-        // allow explicit, first level parameters
-        if (SageParser::$level === 1) {
+        // allow explicit, first level parameters, also it's immediate children
+        if (SageParser::$level <= 2) {
             return null;
         }
 

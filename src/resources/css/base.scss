@@ -52,6 +52,11 @@ $border: 1px solid $border-color;
     color: #ff8c00;
   }
 
+  s {
+    text-decoration: none;
+    color: #555;
+  }
+
   dt {
     background: $main-background;
     border: $border;
@@ -65,8 +70,6 @@ $border: 1px solid $border-color;
     &:hover {
       border-color: $border-color-hover;
     }
-
-
   }
 
   > dl dl {
