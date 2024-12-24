@@ -348,4 +348,17 @@ class SageHelper
 
         return '<pre>' . self::esc($string) . '</pre>';
     }
+
+    public static function getObjectHash($variable)
+    {
+        if (function_exists('spl_object_id')) { // since PHP 5.2
+            return '#' . spl_object_id($variable);
+        }
+
+        ob_start();
+        var_dump($variable);
+        preg_match('[#(\d+)]', ob_get_clean(), $match);
+
+        return $match[1];
+    }
 }

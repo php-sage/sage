@@ -66,7 +66,6 @@ class SageParser
             $parseResult = $parser->parse($variable);
 
             //            unset(self::$parsingAlternative[$parserClass]);
-
             if ($parseResult) {
                 $result->mergeFrom($parseResult);
 

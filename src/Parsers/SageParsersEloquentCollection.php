@@ -18,8 +18,9 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
         }
 
         $result       = new SageParsedVariable();
-        $result->type = get_class($variable);
+        $result->type = 'Illuminate\Database\Eloquent\Collection';
         $result->size = $variable->count();
+        $result->hash = SageHelper::getObjectHash($variable);
 
         $output = new SageParsedVariableContents(
             SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS,

@@ -208,7 +208,7 @@ class SageNativeTypesParser
     {
         $result = new SageParsedVariable();
 
-        $hash = self::getObjectHash($variable);
+        $hash = SageHelper::getObjectHash($variable);
 
         // PHP: the best way to dump everything about an object: cast it to array!
         $castedArray = (array)$variable;
@@ -230,7 +230,7 @@ class SageNativeTypesParser
                 $result->type = $className;
             }
         }
-        $result->hash = '#' . $hash; // todo improve this fast addition
+        $result->hash = $hash;
 
         if (! isset($result->size)) {
             $result->size = count($castedArray);
@@ -495,19 +495,6 @@ class SageNativeTypesParser
         $result->value = var_export($variable, true);
 
         return $result;
-    }
-
-    private static function getObjectHash($variable)
-    {
-        if (function_exists('spl_object_id')) { // since PHP 5.2
-            return spl_object_id($variable);
-        }
-
-        ob_start();
-        var_dump($variable);
-        preg_match('[#(\d+)]', ob_get_clean(), $match);
-
-        return $match[1];
     }
 
     /**
