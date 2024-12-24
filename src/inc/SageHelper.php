@@ -10,6 +10,9 @@ class SageHelper
 
     const MAX_STR_LENGTH = 80;
 
+    /** @var string used to prevent recursion for arrays */
+    const ARRAY_MARKER = "\x00sage-array-marker";
+
     public static $editors = array(
         'sublime'                => 'subl://open?url=file://%file&line=%line',
         'textmate'               => 'txmt://open?url=file://%file&line=%line',
@@ -152,7 +155,7 @@ class SageHelper
 
     public static function isKeyBlacklisted($key)
     {
-        return in_array(preg_replace('/\W/', '', $key), Sage::$keysBlacklist, true);
+        return Sage::$keysBlacklist && in_array(preg_replace('/\W/', '', $key), Sage::$keysBlacklist, true);
     }
 
     public static function substr($string, $start, $end, $encoding = null)

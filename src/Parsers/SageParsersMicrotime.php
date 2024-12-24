@@ -1,6 +1,6 @@
 <?php
 
-/** @internal */
+/** @internal {@see Sage::$enabledParsers} to enable/disable */
 class SageParsersMicrotime implements SageCustomParserInterface
 {
     private static $times = array();
@@ -54,6 +54,6 @@ class SageParsersMicrotime implements SageCustomParserInterface
         $result = new SageParsedVariable();
         $result->addAlternativeView($output);
 
-        return $output;
+        return $result;
     }
 }

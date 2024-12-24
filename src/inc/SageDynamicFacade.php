@@ -21,9 +21,9 @@ class SageDynamicFacade
      */
     public function SageDynamicFacade()
     {
-//        if (! in_array('SageDynamicFacade::*', Sage::$aliases, true)) {
-//            Sage::$aliases[] = 'SageDynamicFacade::*';
-//        }
+        //        if (! in_array('SageDynamicFacade::*', Sage::$aliases, true)) {
+        //            Sage::$aliases[] = 'SageDynamicFacade::*';
+        //        }
     }
 
     public function __construct()
@@ -251,6 +251,40 @@ class SageDynamicFacade
         } else {
             $this->saveOutputToThisVariable = &$variable;
         }
+
+        return $this;
+    }
+
+    /**
+     * Will save rich output to sage.html
+     *
+     * @param string $dirName __DIR__ by default
+     */
+    public function saveOutputAsFile($dirName = null)
+    {
+        if (! $this->isSettingDefaults) {# PROCEDURE: save sage settings
+            $stateBackup = Sage::saveState();
+            if ($this->configuredStateForOutput) {
+                Sage::saveState($this->configuredStateForOutput);
+            }
+        }
+        $saveTo = $dirName;
+        if ($saveTo === null) {
+            $file   = debug_backtrace(2)[0]['file'] ?? '';
+            $dir = dirname($file);
+            $saveTo = $dir;
+        }
+
+        if (is_dir($saveTo)) {
+            $saveTo = $saveTo . DIRECTORY_SEPARATOR . 'sage.html';
+        }
+        Sage::$outputFile = $saveTo;
+        Sage::enabled(Sage::MODE_RICH);
+
+        if (! $this->isSettingDefaults) {
+            $this->configuredStateForOutput = Sage::saveState();
+            Sage::saveState($stateBackup);
+        } # END PROCEDURE: save sage settings
 
         return $this;
     }

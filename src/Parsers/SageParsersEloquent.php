@@ -1,8 +1,6 @@
 <?php
 
-/**
- * @internal
- */
+/** @internal {@see Sage::$enabledParsers} to enable/disable */
 class SageParsersEloquent implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()

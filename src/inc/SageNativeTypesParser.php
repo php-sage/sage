@@ -8,9 +8,6 @@ class SageNativeTypesParser
     /** todo */
     protected static $_placeFullStringInValue = false;
 
-    /** @var string used to prevent recursion for arrays */
-    private static $arrayMarker = "\x00sage-array-marker";
-
     private static $dealingWithGlobals = false;
 
     /**
@@ -75,13 +72,13 @@ class SageNativeTypesParser
         if ($result->size === 0) {
             return $result;
         }
-        if (array_key_exists(self::$arrayMarker, $variable)) { // recursion; todo mayhaps show from where
+        if (array_key_exists(SageHelper::ARRAY_MARKER, $variable)) { // recursion; todo mayhaps show from where
             if (self::$dealingWithGlobals) {
                 return SageParsedVariable::erroneous('Recursion');
             }
 
-            unset($variable[self::$arrayMarker]);
-            $result->value = self::$arrayMarker;
+            unset($variable[SageHelper::ARRAY_MARKER]);
+            $result->value = SageHelper::ARRAY_MARKER;
 
             return $result; // todo test
         }
@@ -90,8 +87,8 @@ class SageNativeTypesParser
             return SageParsedVariable::erroneous('Depth too Great');
         }
 
-        $isSequential                 = SageHelper::isArraySequential($variable);
-        $variable[self::$arrayMarker] = true;
+        $isSequential                       = SageHelper::isArraySequential($variable);
+        $variable[SageHelper::ARRAY_MARKER] = true;
 
         if ($result->size > 1 && ($arrayKeys = self::isArrayTabular($variable)) !== false) {
             // tabular array parse
@@ -102,11 +99,11 @@ class SageNativeTypesParser
                 // display strings in their full length
                 self::$_placeFullStringInValue = true;
 
-                if ($rowIndex === self::$arrayMarker) {
+                if ($rowIndex === SageHelper::ARRAY_MARKER) {
                     continue;
                 }
 
-                if (isset($row[self::$arrayMarker])) {
+                if (isset($row[SageHelper::ARRAY_MARKER])) {
                     $result->error = 'Recursion';
 
                     return null;
@@ -140,7 +137,7 @@ class SageNativeTypesParser
                         $processedVar = SageParser::parse($row[$key]);
                     }
 
-                    if ($processedVar->value === self::$arrayMarker) {
+                    if ($processedVar->value === SageHelper::ARRAY_MARKER) {
                         $result->error = 'Recursion';
 
                         return null;
@@ -171,13 +168,13 @@ class SageNativeTypesParser
             $result->extendedView = new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS);
 
             foreach ($variable as $key => & $val) {
-                if ($key === self::$arrayMarker) {
+                if ($key === SageHelper::ARRAY_MARKER) {
                     continue;
                 }
 
                 if (SageHelper::isKeyBlacklisted($key)) {
                     $parsedValue = SageParsedVariable::erroneous('Redacted');
-                } elseif (is_array($val) && array_key_exists(self::$arrayMarker, $val)) {
+                } elseif (is_array($val) && array_key_exists(SageHelper::ARRAY_MARKER, $val)) {
                     $parsedValue = SageParsedVariable::erroneous('Recursion');
                 } else {
                     $parsedValue = SageParser::parse($val);
@@ -199,7 +196,7 @@ class SageNativeTypesParser
             self::$dealingWithGlobals = false;
         }
 
-        unset($variable[self::$arrayMarker]);
+        unset($variable[SageHelper::ARRAY_MARKER]);
 
         return $result;
     }
@@ -528,7 +525,7 @@ class SageNativeTypesParser
         $keys        = null;
         $closeEnough = false;
         foreach ($variable as $k => $row) {
-            if (isset(self::$arrayMarker) && $k === self::$arrayMarker) {
+            if ($k === SageHelper::ARRAY_MARKER) {
                 continue;
             }
 

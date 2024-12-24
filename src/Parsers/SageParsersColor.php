@@ -1,6 +1,6 @@
 <?php
 
-/** @internal */
+/** @internal {@see Sage::$enabledParsers} to enable/disable */
 class SageParsersColor implements SageCustomParserInterface
 {
     private static $colorNames = array(

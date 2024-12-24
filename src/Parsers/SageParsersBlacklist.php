@@ -1,6 +1,6 @@
 <?php
 
-/** @internal */
+/** @internal {@see Sage::$enabledParsers} to enable/disable */
 class SageParsersBlacklist implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()

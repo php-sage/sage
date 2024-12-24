@@ -65,7 +65,7 @@ class SageCallerData
     }
 
     /**
-     * @param null|string $key fetch specific element not the whole step eg.: file, function
+     * @param null|string $key fetch specific element not the whole step (file, line, function, args, object)
      *
      * @return ?array|string|int trace step where sage was called from
      */

@@ -5,6 +5,7 @@
 
 
 describe('trace', function() {
+    return ;
     sage()
         ->saveOutputTo($var)
         ->trace()

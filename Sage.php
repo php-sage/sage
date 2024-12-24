@@ -269,6 +269,7 @@ class Sage
         'SageParsersSplObjectStorage'          => true,
         'SageParsersTimestamp'                 => true,
         'SageParsersFilePath'                  => true,
+        'SageParsersEloquentCollection'        => true,
         // above this line are only those parsers that $replacesAllOtherParsers
 
         // now we run the blacklist
@@ -524,21 +525,22 @@ class Sage
         // now restore all on-the-fly settings and return
 
         if (self::$outputFile) {
+            $saveTo = self::$outputFile;
             try {
-                if (! isset(self::$_openedOutput[self::$outputFile])) {
-                    self::$_openedOutput[self::$outputFile] = fopen(self::$outputFile, 'w');
+                if (! isset(self::$_openedOutput[$saveTo])) {
                     $decorator->setAssetsNeeded($firstRunOldValue);
+                    self::$_openedOutput[$saveTo] = fopen($saveTo, 'w');
                 }
 
-                fwrite(self::$_openedOutput[self::$outputFile], $output);
+                fwrite(self::$_openedOutput[$saveTo], $output);
 
-                echo 'Sage -> ' . self::$outputFile . PHP_EOL;
+                echo 'Sage -> ' . $saveTo . PHP_EOL;
             } catch (Throwable $e) {
                 self::$outputFile = null;
-                $output           .= "Error: Sage can't write file to " . self::$outputFile;
+                $output           .= "Error: Sage can't write file to " . $saveTo;
             } catch (Exception $e) {
                 self::$outputFile = null;
-                $output           .= "Error: Sage can't write file to " . self::$outputFile;
+                $output           .= "Error: Sage can't write file to " . $saveTo;
             }
         }
 
@@ -551,7 +553,7 @@ class Sage
         }
 
         if (self::$outputFile) {
-            return self::STATUS_ERROR;
+            return;
         }
 
         echo $output;

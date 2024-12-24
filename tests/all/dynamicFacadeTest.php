@@ -85,6 +85,25 @@ describe('simplest()', function() {
     //    it('is exactly the same as the alias displayPlainText()', fn() => expect($a)->toEqual($b));
 });
 
+describe('file output test', function() {
+    sage()
+        ->saveOutputAsFile()
+        ->displayRichExpanded()
+        ->dump([1])
+    ;
+
+    $var = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'sage.html');
+
+    it('puts the dump in the variable', fn() => expect($var)->toBeString()->not()->toBeEmpty());
+    it('contains html', fn() => expect($var)->toContain('<script'));
+    it('contains expanded node', fn() => expect($var)->toContain(' _sage-show'));
+
+    ob_start();
+    sage(123);
+    $a = ob_get_clean();
+    it('does not prevent future dumps from echoing', fn() => expect($a)->toContain('123'));
+});
+
 describe('settings tests', function() {
     sage()
         ->saveOutputTo($var)
