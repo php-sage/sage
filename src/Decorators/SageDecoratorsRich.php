@@ -40,7 +40,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             $output .= '<span class="_sage-popup-trigger">&rarr;</span><nav></nav>';
         }
 
-        $output .= $this->drawHeader($varData) . $varData->value . '</dt>';
+        $output .= $this->drawHeader($varData) . '</dt>';
 
         if ($isExtendedPresent) {
             $output .= '<dd>';
@@ -298,6 +298,13 @@ class SageDecoratorsRich implements SageDecoratorsInterface
 
         if ($varData->size !== null && $varData->size !== '') {
             $output .= '(' . $varData->size . ') ';
+        }
+
+        $output .= $varData->value;
+
+        // todo
+        if ($varData->error !== null && $varData->error !== '') {
+            $output .= ' ' . $varData->error;
         }
 
         return $output;
