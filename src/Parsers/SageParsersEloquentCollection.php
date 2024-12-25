@@ -11,7 +11,8 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
     public function parse(&$variable)
     {
         if (
-            ! is_a($variable, '\Illuminate\Database\Eloquent\Collection')
+            ! SageHelper::isRichMode()
+            || ! is_a($variable, '\Illuminate\Database\Eloquent\Collection')
             || $variable->isEmpty()
         ) {
             return false;
@@ -22,18 +23,11 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
         $result->size = $variable->count();
         $result->hash = SageHelper::getObjectHash($variable);
 
-        $output = new SageParsedVariableContents(
-            SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS,
-            'Collection of ' . get_class($variable->first()) . "({$variable->count()})"
-        );
-
         $result->extendedView = new SageParsedVariableContents(
             SageParsedVariableContents::CONTENT_TYPE_STRING,
-            '',
+            null,
             $this->arrayToTable($variable)
         );
-
-        $result->addAlternativeView($output);
 
         return $result;
     }
@@ -78,11 +72,11 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
 
     private static function _decorateCell(SageParsedVariable $varData)
     {
-        if ($varData->error) {
+        if ($varData->error !== null) {
             return '<td class="_sage-empty"><u>' . $varData->error . '</u></td>';
         }
 
-        if ($varData->extendedView) {
+        if (isset($varData->extendedView)) {
             $decorator = new SageDecoratorsRich();
 
             return '<td>' . $decorator->decorate($varData) . '</td>';

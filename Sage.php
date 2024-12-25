@@ -359,7 +359,7 @@ class Sage
     const MODE_RICH = 'r';
     const MODE_TEXT_ONLY = 'w';
     const MODE_CLI = 'c';
-    const MODE_PLAIN = 'p';
+    const MODE_PLAIN_HTML = 'p';
 
     const THEME_ORIGINAL = 'original';
     const THEME_LIGHT = 'aante-light';
@@ -579,7 +579,7 @@ class Sage
             if (self::$simplifyDisplay) {
                 switch ($newMode) {
                     case self::MODE_RICH:
-                        $newMode = self::MODE_PLAIN;
+                        $newMode = self::MODE_PLAIN_HTML;
                         break;
                     case self::MODE_CLI:
                         $newMode = self::MODE_TEXT_ONLY;

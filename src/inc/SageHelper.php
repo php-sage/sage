@@ -63,7 +63,7 @@ class SageHelper
     {
         $enabledMode = Sage::enabled();
 
-        return $enabledMode === Sage::MODE_RICH || $enabledMode === Sage::MODE_PLAIN;
+        return $enabledMode === Sage::MODE_RICH || $enabledMode === Sage::MODE_PLAIN_HTML;
     }
 
     /**
@@ -107,6 +107,10 @@ class SageHelper
     {
         // Find common path with Sage dir
         self::$projectRootDir = '';
+
+        if (! $calledFromFile) {
+            return;
+        }
 
         $sagePathParts = explode('/', str_replace('\\', '/', SAGE_DIR));
         $filePathParts = explode('/', $calledFromFile);

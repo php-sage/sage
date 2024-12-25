@@ -19,7 +19,7 @@ $caret-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAA8CAYAAAC
   box-shadow: 0 0 3px 2px $variable-type-color-hover;
 }
 
-@import "../base";
+@import "_base";
 
 ._sage {
   dt {

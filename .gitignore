@@ -3,6 +3,7 @@
 /config.php
 /node_modules
 /vendor
+.dev-mode
 composer.lock
 package-lock.json
 *.map

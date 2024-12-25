@@ -16,7 +16,7 @@ $caret-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAA8CAMAAAC
   box-shadow: 0 0 3px 2px #5cb730;
 }
 
-@import "../base";
+@import "_base";
 
 ._sage {
   > dl > dt {

@@ -40,10 +40,12 @@ class SageParsersEloquent implements SageCustomParserInterface
         $reference = '`' . $variable->getConnection()->getDatabaseName() . '`.`' . $variable->getTable() . '`';
 
         $attributesDump = new SageParsedVariableContents(
-            SageParsedVariableContents::CONTENT_TYPE_DUMP,
-            'Retrieved DB rows from ' . $reference,
-            $attributes
+            SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS,
+            'Retrieved DB rows from ' . $reference
         );
+        foreach ($attributes as $key => $value) {
+            $attributesDump->addRow($value, $key);
+        }
 
         $result = new SageParsedVariable();
 

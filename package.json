@@ -1,20 +1,19 @@
 {
   "private": true,
   "devDependencies": {
-    "npm-watch": "^0",
-    "sass": "^1",
-    "uglify-js": "^3"
+    "sass": "*",
+    "uglify-js": "*"
   },
   "watch": {
-    "compile-js": "src/resources/base.js",
-    "compile-css": "src/resources/css/*.scss"
+    "compile-js": "src/resources/js/scripts.js",
+    "compile-themes": "src/resources/css/themes/*.scss",
+    "compile-plain-html-css": "src/resources/plain-html.scss"
   },
   "scripts": {
-    "sass-dev": "sass --watch --update --no-source-map --style=expanded src/resources/css/themes/:src/resources/compiled/",
-    "sass-dev-c": "sass --watch --update --no-source-map --style=compressed src/resources/css/themes/:src/resources/compiled/",
-    "compile-css": "sass --style=compressed --no-source-map src/resources/css/themes/:src/resources/compiled/",
-    "compile-js": "uglifyjs src/resources/js/base.js -cm --toplevel --mangle-props -o src/resources/compiled/sage.js",
+    "compile-themes": "sass --style=compressed --no-source-map src/resources/css/themes/:src/resources/compiled/",
+    "compile-plain-html-css": "sass --style=compressed --no-source-map src/resources/css/plain-html.scss:src/resources/compiled/plain-html.css",
+    "compile-js": "uglifyjs src/resources/js/scripts.js -cm --toplevel --mangle-props -o src/resources/compiled/sage.js",
     "watch": "npm-watch",
-    "build": "npm run compile-js; npm run compile-css"
+    "build": "npm run compile-js; npm run compile-themes; npm run compile-plain-html-css;"
   }
 }

@@ -12,16 +12,16 @@ class SageParsedVariable
     public $hash;
     /** @var string|SageHtmlable */
     public $access;
-    /** @var string|SageHtmlable */
+    /** @var string|SageHtmlable the '=>' for array, '->' for object, can be any string */
     public $operator;
     /** @var int */
     public $size;
     /** @var string|SageHtmlable short inline value */
     public $value;
     /** @var string|SageHtmlable for exceptions like "depth limit", "blacklisted key", "recursion" */
-    public $error = '';
+    public $error;
     /** @var SageParsedTraceStep[] special case: dumped variable is a trace, it has a special representation */
-    public $traceSteps = array();
+    public $traceSteps;
 
     /**
      * Detailed (i.e. not-inline) information about the variable.
@@ -69,49 +69,51 @@ class SageParsedVariable
 
     public function mergeFrom(self $from)
     {
-        if (isset($from->name)) {
+        if ($from->name !== null) {
             $this->name = $from->name;
         }
 
-        if (isset($from->type)) {
+        if ($from->type !== null) {
             $this->type = $from->type;
         }
 
-        if (isset($from->hash)) {
+        if ($from->hash !== null) {
             $this->hash = $from->hash;
         }
 
-        if (isset($from->access)) {
+        if ($from->access !== null) {
             $this->access = $from->access;
         }
 
-        if (isset($from->operator)) {
+        if ($from->operator !== null) {
             $this->operator = $from->operator;
         }
 
-        if (isset($from->size)) {
+        if ($from->size !== null) {
             $this->size = $from->size;
         }
 
-        if (isset($from->value)) {
+        if ($from->value !== null) {
             $this->value = $from->value;
         }
 
-        if ($from->error) {
+        if ($from->error !== null) {
             $this->error = $from->error;
         }
 
-        if ($from->traceSteps) {
+        if ($from->traceSteps !== null) {
             $this->traceSteps = $from->traceSteps;
         }
 
-        if (isset($from->extendedView)) {
+        if ($from->extendedView !== null) {
             $this->extendedView = $from->extendedView;
         }
 
         if ($from->alternativeViews) {
             $this->alternativeViews = array_merge($this->alternativeViews, $from->alternativeViews);
         }
+
+        return $this;
     }
 
     /**
@@ -120,7 +122,7 @@ class SageParsedVariable
     public function getAllRepresentations()
     {
         $allRepresentations = array();
-        if ($this->extendedView) {
+        if ($this->extendedView !== null) {
             $allRepresentations[] = $this->extendedView;
         }
 

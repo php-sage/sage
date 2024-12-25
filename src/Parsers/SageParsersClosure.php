@@ -21,7 +21,7 @@ class SageParsersClosure implements SageCustomParserInterface
 
         $result->extendedView = new SageParsedVariableContents(
             SageParsedVariableContents::CONTENT_TYPE_STRING,
-            'Source (beta!)',
+            'Source definition',
             $this->fetchSource($reflection)
         );
 
@@ -43,12 +43,6 @@ class SageParsersClosure implements SageCustomParserInterface
                 $internalsTab->addRow(SageParser::parse($item, '$' . $k));
             }
         }
-        // if (method_exists($reflection, 'getClosureUsedVariables') && $val = $reflection->getClosureUsedVariables()) {
-        //     foreach ($val as $k => $item) {
-        //         $internalsTab->addRow(SageParser::parse($item, $k . ' (use)'));
-        //     }
-        // }
-
         $result->addAlternativeView($internalsTab);
 
         if ($reflection->getFileName()) {
@@ -65,32 +59,6 @@ class SageParsersClosure implements SageCustomParserInterface
      */
     private function fetchSource($reflection)
     {
-        //        $src    = 'function (';
-        //        $params = array();
-        //
-        //        foreach ($reflection->getParameters() as $p) {
-        //            $string = $this->getParameterType($p);
-        //
-        //            if ($p->isPassedByReference()) {
-        //                $string .= '&';
-        //            }
-        //            $string .= '$' . $p->name;
-        //            if (method_exists($p, 'isVariadic') && $p->isVariadic()) {
-        //                $string = '...' . $string;
-        //            } elseif ($p->isOptional()) {
-        //                $string .= ' = ' . var_export($p->getDefaultValue(), true);
-        //            }
-        //            $params[] = $string;
-        //        }
-        //        $src .= implode(', ', $params) . ') ';
-        //
-        //        if (method_exists($reflection, 'getClosureUsedVariables') && $val = $reflection->getClosureUsedVariables()) {
-        //            $src .= 'use ($';
-        //            $src .= implode(', $', array_keys($val));
-        //            $src .= ') ';
-        //        }
-        //        $src .= '{' . PHP_EOL;
-
         $src         = '';
         $file        = new SplFileObject($reflection->getFileName());
         $startLine   = $reflection->getStartLine();
@@ -115,21 +83,8 @@ class SageParsersClosure implements SageCustomParserInterface
             $src .= $line;
         }
 
+        $src = rtrim($src, "\n");
+
         return new SageHtmlable(SageHelper::esc($src));
-    }
-
-    /**
-     * @param ReflectionParameter $param
-     *
-     * @return string
-     */
-    function getParameterType($param)
-    {
-        // eg. "Parameter #0 [ <required> string $string ]"
-        $toString = $param->__toString();
-
-        preg_match('/\[\s<\w+>\s(\w+)/', $toString, $matches);
-
-        return isset($matches[1]) ? $matches[1] : '';
     }
 }

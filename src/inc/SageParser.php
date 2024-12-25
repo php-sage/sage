@@ -80,7 +80,7 @@ class SageParser
             $parsed = SageNativeTypesParser::parse($variable);
             // base type parser returning null means "stop processing further": e.g. recursion
             if ($parsed) {
-                $result->mergeFrom($parsed);
+                $result = $parsed->mergeFrom($result);
             } else {
                 self::$level--;
             }

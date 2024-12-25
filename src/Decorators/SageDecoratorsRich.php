@@ -17,7 +17,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
 
     public function decorate(SageParsedVariable $varData)
     {
-        if ($varData->traceSteps) {
+        if ($varData->traceSteps !== null) {
             return $this->decorateTrace($varData);
         }
 
@@ -44,8 +44,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
 
         if ($isExtendedPresent) {
             $output .= '<dd>';
-        }
-        if ($isExtendedPresent) {
+
             if (count($allRepresentations) === 1 && $varData->extendedView !== null) {
                 // don't need tabs!
                 $output .= $this->drawAlternativeView(reset($allRepresentations));
@@ -297,7 +296,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             $output .= '<s>' . SageHelper::esc($varData->hash) . '</s> ';
         }
 
-        if ($varData->size !== null) {
+        if ($varData->size !== null && $varData->size !== '') {
             $output .= '(' . $varData->size . ') ';
         }
 
@@ -331,11 +330,11 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             case SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS:
                 $output       = '<pre>';
                 $maxKeyLength = 0;
-                foreach ($variableContents->contents as $key => $value) {
-                    $maxKeyLength = max($maxKeyLength, strlen($value));
+                foreach ($variableContents->contents as $k => $_) {
+                    $maxKeyLength = max($maxKeyLength, strlen($k));
                 }
                 foreach ($variableContents->contents as $key => $value) {
-                    $output .= str_pad($key, $maxKeyLength, ' ') . ': ' . $value;
+                    $output .= str_pad($key, $maxKeyLength) . ': ' . $value;
                 }
                 $output .= '</pre>';
 

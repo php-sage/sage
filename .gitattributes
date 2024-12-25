@@ -5,11 +5,11 @@
 
 # Exclude files from distribution via composer
 /.github/ export-ignore
-/resources/themes/ export-ignore
-/resources/base.js export-ignore
-/resources/base.less export-ignore
 /docker/ export-ignore
 /tests/ export-ignore
+/src/resources/themes/ export-ignore
+/src/resources/css/ export-ignore
+/src/resources/js/ export-ignore
 /.gitattributes export-ignore
 /.gitignore export-ignore
 /docker-compose.yml export-ignore

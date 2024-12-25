@@ -36,9 +36,11 @@ class SageParsersClassName implements SageCustomParserInterface
 
         $result = new SageParsedVariable();
         // produces link to userland class, eg.: "MyClass" string|class-name
-        $result->type = new SageHtmlable(
-            'string|'
-            . SageHelper::ideLink($reflector->getFileName(), $reflector->getStartLine(), 'class-name')
+        $result->type = "class-name|string";
+        $result->value = SageHelper::ideLink(
+            $reflector->getFileName(),
+            $reflector->getStartLine(),
+            '"' . $variable . '"'
         );
 
         return $result;

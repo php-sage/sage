@@ -20,10 +20,18 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
     }
 
     private static $_enableColors;
+    /**
+     * Enhance cli mode by marking each level with a different color so we can visually spot when we scrolled passed
+     * the current variable.
+     */
     private static $levelColors = array();
 
-    public function decorate(SageParsedVariable $varData, $level = 0)
+    public function decorate(SageParsedVariable $varData, $level = 0, $prefix = '')
     {
+        if ($varData->traceSteps) {
+            return $this->decorateTrace($varData);
+        }
+
         $output = '';
         if ($level === 0) {
             $name          = $varData->name ? $varData->name : '';
@@ -32,11 +40,11 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             $output .= $this->title($name);
         }
 
-        // make each level different-color
-        self::$levelColors = array_slice(self::$levelColors, 0, $level);
-        $s                 = '    ';
-        $space             = '';
+        $s     = '  ';
+        $space = $prefix;
         if (Sage::enabled() === Sage::MODE_CLI) {
+            self::$levelColors = array_slice(self::$levelColors, 0, $level);
+
             for ($i = 0; $i < $level; $i++) {
                 if (! array_key_exists($i, self::$levelColors)) {
                     self::$levelColors[$i] = rand(1, 231);
@@ -48,27 +56,42 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             $space = str_repeat($s, $level);
         }
 
-        $output .= $space . $this->drawHeader($varData);
+        $output .= $space . $this->drawRowHeader($varData);
 
-        if (isset($varData->extendedValue)) {
-            $output .= ' ' . ($varData->type === 'array' ? '[' : '(') . PHP_EOL;
+        if ($varData->extendedView !== null) {
+            $variableContents = $varData->extendedView;
+            $output           .= ' ' . ($varData->type === 'array' ? '[' : '(') . PHP_EOL;
 
-            if (is_array($varData->extendedValue)) {
-                foreach ($varData->extendedValue as $k => $v) {
-                    if (is_string($v)) {
-                        $output .= $space . $s
-                            . $this->colorize($k, 'key', false) . ': '
-                            . $this->colorize($v, 'value');
-                    } else {
-                        $output .= $this->decorate($v, $level + 1);
+            switch ($variableContents->displayType) {
+                case SageParsedVariableContents::CONTENT_TYPE_STRING:
+                    $output .= $this->value($variableContents->contents);
+                    break;
+                case SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS:
+                    $maxKeyLength = 0;
+                    foreach ($variableContents->contents as $row) {
+                        $maxKeyLength = max($maxKeyLength, strlen($row['name']));
                     }
-                }
-            } elseif (is_string($varData->extendedValue)) {
-                $output .= $space . $s . $this->colorize($varData->extendedValue, 'value');
-            } else {
-                // throw new RuntimeException();
-                // $output .= self::decorate($varData->extendedValue, $level + 1); // it's SageVariableData
+                    foreach ($variableContents->contents as $row) {
+                        $output .=
+                            $space . $s
+                            . $this->key(str_pad($row['name'], $maxKeyLength) . ':')
+                            . ' ' . $this->value($row['value']);
+                    }
+                    break;
+                case SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS:
+                    if ($variableContents->contents) {
+                        foreach ($variableContents->contents as $row) {
+                            $output .= $this->decorate($row, $level + 1, $prefix);
+                        }
+                    }
+                    break;
+                case SageParsedVariableContents::CONTENT_TYPE_DUMP:
+                    $output .= $this->decorate(SageParser::parse($variableContents->contents), $level + 1, $prefix);
+                    break;
+                default:
+                    throw new SageLogicException('unexpected variable content type');
             }
+
             $output .= $space . ($varData->type === 'array' ? ']' : ')');
         }
 
@@ -77,8 +100,12 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return $output;
     }
 
+    # SECTION: trace
+
     public function decorateTrace(SageParsedVariable $trace, $pathsOnly = false)
     {
+        $traceData = $trace->traceSteps;
+
         $lastStepNumber = count($traceData);
         $output         = $this->title($pathsOnly ? 'QUICK TRACE' : 'TRACE');
 
@@ -103,7 +130,11 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
                         );
                     }
                 } else {
-                    $output .= "...\n[{$blacklistedStepsInARow} steps skipped]\n...\n";
+                    $output .= "...\n[{$blacklistedStepsInARow} steps skipped]\n...\n"
+                        . $this->colorize(
+                            '────────────────────────────────────────────────────────────────────────────────',
+                            'header'
+                        );
                 }
 
                 $blacklistedStepsInARow = 0;
@@ -118,12 +149,75 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return $output;
     }
 
+    # SECTION: draw
+
+    private function drawTraceStep($stepNumber, $step, $pathsOnly, $lastStepNumber)
+    {
+        $output = '';
+
+        // ASCII art 🎨
+        $_________________ = '────────────────────────────────────────────────────────────────────────────────';
+        $____Arguments____ = '  ┌────────────────────────── Arguments ─────────────────────────────────┐';
+        $__Callee_Object__ = '  ┌───────────────────────── Callee Object ──────────────────────────────┐';
+        $L________________ = '  └──────────────────────────────────────────────────────────────────────┘';
+        $_________________ = $this->colorize($_________________, 'header');
+        $____Arguments____ = $this->colorize($____Arguments____, 'header');
+        $__Callee_Object__ = $this->colorize($__Callee_Object__, 'header');
+        $L________________ = $this->colorize($L________________, 'header');
+
+        $output .= str_pad($stepNumber++ . ': ', 4, ' ');
+        $output .= $this->colorize($step->fileLine, 'header');
+
+        if ($step->functionName) {
+            $output .= '    ' . $step->functionName;
+            $output .= PHP_EOL;
+        }
+
+        if (! $pathsOnly && $step->arguments) {
+            $output .= $____Arguments____;
+
+            foreach ($step->arguments as $argument) {
+                $output .= $this->decorate($argument, 2, '  ');
+            }
+
+            $output .= $L________________;
+        }
+
+        if (! $pathsOnly && $step->object) {
+            $output .= $__Callee_Object__;
+
+            $output .= $this->decorate($step->object, 2, '  ');
+
+            $output .= $L________________;
+        }
+
+        if ($stepNumber !== $lastStepNumber) {
+            $output .= $_________________;
+        }
+
+        return $output;
+    }
+
+    private function title($text)
+    {
+        $escaped          = SageHelper::esc($text);
+        $lengthDifference = strlen($escaped) - strlen($text);
+
+        $ret = '┌──────────────────────────────────────────────────────────────────────────────┐' . PHP_EOL;
+        if ($text) {
+            $ret .= '│' . str_pad($escaped, 78 + $lengthDifference, ' ', STR_PAD_BOTH) . '│' . PHP_EOL;
+        }
+        $ret .= '└──────────────────────────────────────────────────────────────────────────────┘';
+
+        return $this->colorize($ret, 'header');
+    }
+
     private function colorize($text, $type, $nlAfter = true)
     {
         $nl = $nlAfter ? PHP_EOL : '';
 
         switch (Sage::enabled()) {
-            case Sage::MODE_PLAIN:
+            case Sage::MODE_PLAIN_HTML:
                 if (! self::$_enableColors) {
                     return $text . $nl;
                 }
@@ -144,6 +238,9 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
                     case 'header':
                         $text = "<h1>{$text}</h1>";
                         break;
+                    case 'error':
+                        $text = "<em>{$text}</em>";
+                        break;
                 }
 
                 return $text . $nl;
@@ -163,7 +260,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
                  * Light Gray  0;37     White         1;37
                  *
                  * Format:
-                 *   \x1b[[light];[color];[font]m
+                 *   \x1b[[light;][color];[font]m
                  *  light: 1/0
                  *  color: 30-37
                  *  font: 1 - bold, 3 - italic, 4 - underline, 7 - invert, 9 - strikethrough
@@ -177,6 +274,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
                     'header' => "\x1b[38;5;75m",
                     'type'   => "\x1b[1m",
                     'value'  => "\x1b[31m",
+                    'error'  => "\x1b[1;35;4m",
                 );
 
                 return $optionsMap[$type] . $text . "\x1b[0m" . $nl;
@@ -186,23 +284,86 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         }
     }
 
-    private function title($text)
+    private function key($text, $nlAfter = false)
     {
-        $escaped          = SageHelper::esc($text);
-        $lengthDifference = strlen($escaped) - strlen($text);
+        return $this->colorize($text, 'key', $nlAfter);
+    }
 
-        $ret = '┌──────────────────────────────────────────────────────────────────────────────┐' . PHP_EOL;
-        if ($text) {
-            $ret .= '│' . str_pad($escaped, 78 + $lengthDifference, ' ', STR_PAD_BOTH) . '│' . PHP_EOL;
+    private function value($text, $nlAfter = true)
+    {
+        $n = strpos($text, "\n");
+        if ($n && $n !== strlen($text) - 1) {
+            $text = '"""' . "\n" . $text . "\n" . '"""';
         }
-        $ret .= '└──────────────────────────────────────────────────────────────────────────────┘';
 
-        return $this->colorize($ret, 'header');
+        return $this->colorize($text, 'value', $nlAfter);
+    }
+
+    private function drawRowHeader(SageParsedVariable $varData)
+    {
+        $output = '';
+
+        if ($varData->access) {
+            $output .= ' ' . $this->colorize(SageHelper::esc($varData->access), 'access', false);
+        }
+
+        if ($varData->name !== null && $varData->name !== '') {
+            $output .= ' ' . $this->key(SageHelper::esc($varData->name));
+        }
+
+        if ($varData->operator) {
+            $output .= ' ' . $varData->operator;
+        }
+
+        $type = $varData->type;
+        if ($varData->size !== null && $varData->size !== '') {
+            $type .= ' (' . $varData->size . ')';
+        }
+
+        $output .= ' ' . $this->colorize($type, 'type', false);
+
+        if ($varData->value !== null && $varData->value !== '') {
+            $output .= ' ' . $this->value($varData->value, false);
+        }
+
+        if ($varData->error !== null && $varData->error !== '') {
+            $output .= ' ' . $this->colorize($varData->error, 'error', false);
+        }
+
+        return ltrim($output);
+    }
+
+    # SECTION: init
+
+    public function init()
+    {
+        if (! Sage::$cliColors) {
+            self::$_enableColors = false;
+        } elseif (isset($_SERVER['NO_COLOR']) || getenv('NO_COLOR') !== false) {
+            self::$_enableColors = false;
+        } elseif (getenv('TERM_PROGRAM') === 'Hyper') {
+            self::$_enableColors = true;
+        } elseif (DIRECTORY_SEPARATOR === '\\') {
+            self::$_enableColors =
+                function_exists('sapi_windows_vt100_support')
+                || getenv('ANSICON') !== false
+                || getenv('ConEmuANSI') === 'ON'
+                || getenv('TERM') === 'xterm';
+        } else {
+            self::$_enableColors = true;
+        }
+
+        if (Sage::enabled() !== Sage::MODE_PLAIN_HTML) {
+            return '';
+        }
+
+        return '<style>' . file_get_contents(SAGE_DIR . 'src/resources/compiled/plain-html.css') . '</style>'
+            . '<script>window.onload=function(){document.querySelectorAll("._sage_plain a").forEach(el=>el.addEventListener("click",e=>{e.preventDefault();let X=new XMLHttpRequest;X.open("GET",e.target.href);X.send()}))}</script>';
     }
 
     public function wrapStart()
     {
-        if (Sage::enabled() === Sage::MODE_PLAIN) {
+        if (Sage::enabled() === Sage::MODE_PLAIN_HTML) {
             return '<pre class="_sage_plain">';
         }
 
@@ -212,7 +373,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
     public function wrapEnd($caller)
     {
         $lastLine     = '════════════════════════════════════════════════════════════════════════════════';
-        $lastChar     = Sage::enabled() === Sage::MODE_PLAIN ? '</pre>' : '';
+        $lastChar     = Sage::enabled() === Sage::MODE_PLAIN_HTML ? '</pre>' : '';
         $traceDisplay = '';
 
         if (! Sage::$displayCalledFrom) {
@@ -239,106 +400,4 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             . $lastChar;
     }
 
-    private function drawHeader(SageParsedVariable $varData)
-    {
-        $output = '';
-
-        if ($varData->access) {
-            $output .= ' ' . $this->colorize(SageHelper::esc($varData->access), 'access', false);
-        }
-
-        if ($varData->name !== null && $varData->name !== '') {
-            $output .= ' ' . $this->colorize(SageHelper::esc($varData->name), 'key', false);
-        }
-
-        if ($varData->operator) {
-            $output .= ' ' . $varData->operator;
-        }
-
-        $type = $varData->type;
-        if ($varData->size !== null) {
-            $type .= ' (' . $varData->size . ')';
-        }
-
-        $output .= ' ' . $this->colorize($type, 'type', false);
-
-        if ($varData->value !== null && $varData->value !== '') {
-            $output .= ' ' . $this->colorize($varData->value, 'value', false);
-        }
-
-        return ltrim($output);
-    }
-
-    public function init()
-    {
-        if (! Sage::$cliColors) {
-            self::$_enableColors = false;
-        } elseif (isset($_SERVER['NO_COLOR']) || getenv('NO_COLOR') !== false) {
-            self::$_enableColors = false;
-        } elseif (getenv('TERM_PROGRAM') === 'Hyper') {
-            self::$_enableColors = true;
-        } elseif (DIRECTORY_SEPARATOR === '\\') {
-            self::$_enableColors =
-                function_exists('sapi_windows_vt100_support')
-                || getenv('ANSICON') !== false
-                || getenv('ConEmuANSI') === 'ON'
-                || getenv('TERM') === 'xterm';
-        } else {
-            self::$_enableColors = true;
-        }
-
-        if (Sage::enabled() !== Sage::MODE_PLAIN) {
-            return '';
-        }
-
-        return '<style>._sage_plain{text-shadow: #eee 0 0 7px;}._sage_plain *{display: inline;margin: 0;font-size: 1em}._sage_plain h1{color:#5aF}._sage_plain var{color:#d11}._sage_plain dfn{color:#3d3}._sage_plain a{color: inherit;filter: brightness(0.85);}</style>'
-            . '<script>window.onload=function(){document.querySelectorAll("._sage_plain a").forEach(el=>el.addEventListener("click",e=>{e.preventDefault();let X=new XMLHttpRequest;X.open("GET",e.target.href);X.send()}))}</script>';
-    }
-
-    private function drawTraceStep($stepNumber, $step, $pathsOnly, $lastStepNumber)
-    {
-        $output = '';
-
-        // ASCII art 🎨
-        $_________________ = '────────────────────────────────────────────────────────────────────────────────';
-        $____Arguments____ = '    ┌────────────────────────── Arguments ─────────────────────────────────┐';
-        $__Callee_Object__ = '    ┌───────────────────────── Callee Object ──────────────────────────────┐';
-        $L________________ = '    └──────────────────────────────────────────────────────────────────────┘';
-        $_________________ = $this->colorize($_________________, 'header');
-        $____Arguments____ = $this->colorize($____Arguments____, 'header');
-        $__Callee_Object__ = $this->colorize($__Callee_Object__, 'header');
-        $L________________ = $this->colorize($L________________, 'header');
-
-        $output .= str_pad($stepNumber++ . ': ', 4, ' ');
-        $output .= $this->colorize($step->fileLine, 'header');
-
-        if ($step->functionName) {
-            $output .= '    ' . $step->functionName;
-            $output .= PHP_EOL;
-        }
-
-        if (! $pathsOnly && $step->arguments) {
-            $output .= $____Arguments____;
-
-            foreach ($step->arguments as $argument) {
-                $output .= $this->decorate($argument, 2);
-            }
-
-            $output .= $L________________;
-        }
-
-        if (! $pathsOnly && $step->object) {
-            $output .= $__Callee_Object__;
-
-            $output .= $this->decorate($step->object, 2);
-
-            $output .= $L________________;
-        }
-
-        if ($stepNumber !== $lastStepNumber) {
-            $output .= $_________________;
-        }
-
-        return $output;
-    }
 }

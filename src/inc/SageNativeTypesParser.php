@@ -143,7 +143,7 @@ class SageNativeTypesParser
                         return null;
                     }
 
-                    if ($processedVar->error) {
+                    if ($processedVar->error !== null) {
                         $parsedValue .= '<td class="_sage-empty"><u>' . $processedVar->error . '</u></td>';
                     } else {
                         $parsedValue .= self::_decorateCell($processedVar);
@@ -223,7 +223,7 @@ class SageNativeTypesParser
             $variable->setFlags(ArrayObject::STD_PROP_LIST);
         }
 
-        if (! isset($result->type)) {
+        if (! $result->type !== null) {
             if (strpos($className, "@anonymous\0") !== false) {
                 $result->type = 'Anonymous class';
             } else {
@@ -232,7 +232,7 @@ class SageNativeTypesParser
         }
         $result->hash = $hash;
 
-        if (! isset($result->size)) {
+        if (! $result->size !== null) {
             $result->size = count($castedArray);
         }
 
@@ -546,7 +546,7 @@ class SageNativeTypesParser
 
     private static function _decorateCell(SageParsedVariable $varData)
     {
-        if ($varData->extendedView) {
+        if (isset($varData->extendedView)) {
             $decorator = new SageDecoratorsRich();
 
             return '<td>' . $decorator->decorate($varData) . '</td>';

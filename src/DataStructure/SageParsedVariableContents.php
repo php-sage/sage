@@ -26,22 +26,22 @@ class SageParsedVariableContents
     /**
      * String, or html if you wrap the string in SageHtmlable
      */
-    const CONTENT_TYPE_STRING = 0;
+    const CONTENT_TYPE_STRING = 'string';
     /**
      * Will produce:
      *
      *   NameOfRow1: value
      *   row2      : value2
      */
-    const CONTENT_TYPE_PLAIN_TEXT_ROWS = 1;
+    const CONTENT_TYPE_PLAIN_TEXT_ROWS = 'plain-rows';
     /**
      * Will produce variable-dump rows
      */
-    const CONTENT_TYPE_RICH_ROWS = 2;
+    const CONTENT_TYPE_RICH_ROWS = 'rich-rows';
     /**
      * Will just dump whatever you pass as the single item as content
      */
-    const CONTENT_TYPE_DUMP = 3;
+    const CONTENT_TYPE_DUMP = 'dump';
     // todo CONTENT_TYPE_TRACE
 
     /**
@@ -81,7 +81,7 @@ class SageParsedVariableContents
      *
      * @return $this
      */
-    public function addRow($content, $name = '')
+    public function addRow($content, $name = '', $operator = ':')
     {
         if (! $this->canHaveRows()) {
             throw new SageLogicException('Cannot add rows to the current view type');
@@ -93,7 +93,8 @@ class SageParsedVariableContents
 
         if ($this->displayType === self::CONTENT_TYPE_RICH_ROWS) {
             if (! $content instanceof SageParsedVariable) {
-                $content = SageParser::parse($content, $name);
+                $content           = SageParser::parse($content, $name);
+                $content->operator = $operator;
             }
 
             $this->contents[] = $content;
@@ -117,9 +118,9 @@ class SageParsedVariableContents
             throw new SageLogicException('Please use addRow for this type of view');
         }
 
-//        if ($this->displayType === self::CONTENT_TYPE_DUMP) {
-//            $content = SageParser::parse($content);
-//        }
+        //        if ($this->displayType === self::CONTENT_TYPE_DUMP) {
+        //            $content = SageParser::parse($content);
+        //        }
 
         $this->contents = $content;
 

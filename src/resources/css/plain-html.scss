@@ -1,0 +1,31 @@
+pre._sage_plain {
+  * {
+    text-shadow: #eee 0 0 7px;
+    font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+    display: inline;
+    margin: 0;
+    line-height: 13px;
+    font-size: 13px;
+  }
+
+  h1 {
+    color: #5aF
+  }
+
+  var {
+    color: #d11
+  }
+
+  dfn {
+    color: #3d3
+  }
+
+  em {
+    color: #f0f
+  }
+
+  a {
+    color: inherit;
+    filter: brightness(0.85)
+  }
+}

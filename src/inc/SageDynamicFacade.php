@@ -131,7 +131,7 @@ class SageDynamicFacade
                 Sage::saveState($this->configuredStateForOutput);
             }
         }
-        Sage::enabled(Sage::MODE_PLAIN);
+        Sage::enabled(Sage::MODE_PLAIN_HTML);
         if (! $this->isSettingDefaults) {
             $this->configuredStateForOutput = Sage::saveState();
             Sage::saveState($stateBackup);

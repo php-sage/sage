@@ -10,8 +10,11 @@ class SageParsersBlacklist implements SageCustomParserInterface
 
     public function parse(&$variable)
     {
-        // allow explicit, first level parameters, also it's immediate children
-        if (SageParser::$level <= 2) {
+        // allow explicit, first level parameters
+        if (
+            SageParser::$level === 1
+            || (SageHelper::isRichMode() && SageParser::$level === 2)
+        ) {
             return null;
         }
 
@@ -33,7 +36,9 @@ class SageParsersBlacklist implements SageCustomParserInterface
         }
 
         $result       = new SageParsedVariable();
-        $result->type = $className . ' [skipped, dump object in top level to see contents]'; // todo ..or disable on the fly
+        $result->type = $className; // todo ..or disable on the fly
+
+        $result->error = '[skipped, dump object in top level to see contents]';
 
         return $result;
     }
