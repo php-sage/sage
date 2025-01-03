@@ -291,11 +291,11 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
     private function value($text, $nlAfter = true)
     {
-        $n = strpos($text, "\n");
-        if ($n && $n !== strlen($text) - 1) { // todo - test string and closure with source
-            //            $text = '"""' . "\n" . $text . "\n" . '"""';
-            $text = "\n" . $text;
-        }
+        //        $n = strpos($text, "\n");
+        //        if ($n && $n !== strlen($text) - 1) { // todo - test string and closure with source
+        //            $text = '"""' . "\n" . $text . "\n" . '"""';
+        //            $text = "\n" . $text;
+        //        }
 
         return $this->colorize($text, 'value', $nlAfter);
     }
