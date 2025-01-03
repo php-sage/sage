@@ -270,6 +270,7 @@ class Sage
         'SageParsersTimestamp'                 => true,
         'SageParsersFilePath'                  => true,
         'SageParsersEloquentCollection'        => true,
+        'SageParsersLaravelCollection'         => true,
         // above this line are only those parsers that $replacesAllOtherParsers
 
         // now we run the blacklist
@@ -507,7 +508,7 @@ class Sage
         foreach ($arguments as $k => $argument) {
             SageParser::$level = 0;
 
-            // self::getWhatToDump can return an array of prepared SageVariableData
+            // self::getWhatToDump can return an array of prepared SageParsedVariable
             if (! $argument instanceof SageParsedVariable) {
                 // when the dump arguments take long to generate output, user might have changed the file and
                 // Sage might not parse the arguments correctly, so check if names are set and while the
@@ -517,7 +518,7 @@ class Sage
                 $argument = SageParser::parse($argument, $name);
             }
 
-            $output .= $decorator->decorate($argument, $k);
+            $output .= $decorator->decorate($argument);
         }
 
         $output .= $decorator->wrapEnd($caller);

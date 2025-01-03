@@ -360,7 +360,7 @@ class SageNativeTypesParser
         }
 
         if (method_exists($variableReflection, 'isEnum') && $variableReflection->isEnum()) {
-            $result->size  = 'enum';
+            $result->subtype = 'enum';
             $result->value = '"' . $variable->name . '"';
         }
 
@@ -406,8 +406,9 @@ class SageNativeTypesParser
     {
         $result = new SageParsedVariable();
 
-        $resourceType = get_resource_type($variable);
-        $result->type = "resource ({$resourceType})";
+        $resourceType    = get_resource_type($variable);
+        $result->type    = 'resource';
+        $result->subtype = '(' . $resourceType . ')';
 
         if ($resourceType === 'stream' && $meta = stream_get_meta_data($variable)) {
             if (isset($meta['uri'])) {
@@ -434,10 +435,9 @@ class SageNativeTypesParser
     {
         $result = new SageParsedVariable();
 
-        if (preg_match('//u', $variable)) {
-            $result->type = 'string';
-        } else {
-            $result->type .= 'binary string';
+        $result->type = 'string';
+        if (! preg_match('//u', $variable)) {
+            $result->subtype .= '(binary)';
         }
 
         $encoding = SageHelper::detectEncoding($variable);

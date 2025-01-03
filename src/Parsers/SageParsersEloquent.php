@@ -11,7 +11,7 @@ class SageParsersEloquent implements SageCustomParserInterface
     public function parse(&$variable)
     {
         if (! SageHelper::php53orLater()) {
-            return false;
+            return null;
         }
 
         $isModel = is_a($variable, '\Illuminate\Database\Eloquent\Model');
@@ -20,7 +20,7 @@ class SageParsersEloquent implements SageCustomParserInterface
             ! $isModel
             && ! is_a($variable, '\Illuminate\Contracts\Database\Query\Builder')
         ) {
-            return false;
+            return null;
         }
 
         if ($isModel) {
@@ -44,7 +44,7 @@ class SageParsersEloquent implements SageCustomParserInterface
             'Retrieved DB rows from ' . $reference
         );
         foreach ($attributes as $key => $value) {
-            $attributesDump->addRow($value, $key);
+            $attributesDump->addRow($value, $key, '->');
         }
 
         $result = new SageParsedVariable();

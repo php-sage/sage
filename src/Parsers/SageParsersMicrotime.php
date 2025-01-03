@@ -17,7 +17,7 @@ class SageParsersMicrotime implements SageCustomParserInterface
             ! is_string($variable)
             || ! preg_match('/^0\.[\d]{8} [\d]{10}$/', $variable)
         ) {
-            return false;
+            return null;
         }
 
         list($usec, $sec) = explode(' ', $variable);
@@ -52,7 +52,7 @@ class SageParsersMicrotime implements SageCustomParserInterface
         $unit = array('B', 'KB', 'MB', 'GB', 'TB');
         $output->addRow(round($size / pow(1024, ($i = floor(log($size, 1024)))), 3) . $unit[$i], 'PHP memory usage');
         $result = new SageParsedVariable();
-        $result->addAlternativeView($output);
+        $result->extendedView = $output;
 
         return $result;
     }

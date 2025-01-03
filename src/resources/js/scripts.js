@@ -112,11 +112,7 @@ if (typeof _sageInitialized === 'undefined') {
         },
 
         hasClass: function (target, className = '_sage-show') {
-            if (!target.classList) {
-                return false;
-            }
-
-            return target.classList.contains(className);
+            return target.classList?.contains(className);
         },
 
         addClass: function (target, className = '_sage-show') {
@@ -343,7 +339,7 @@ if (typeof _sageInitialized === 'undefined') {
         if (tagName === 'DFN') {
             _sage.selectText(target);
             target = target.parentNode;
-        } else if (tagName === 'VAR') { // stupid workaround for misc elements
+        } else if (['VAR', 'S'].includes(tagName)) { // stupid workaround for misc elements
             target = target.parentNode;    // to not stop event from further propagating
             tagName = target.tagName;
         } else if (tagName === 'TH') {

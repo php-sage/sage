@@ -36,9 +36,9 @@ class SageParsersBlacklist implements SageCustomParserInterface
         }
 
         $result       = new SageParsedVariable();
-        $result->type = $className; // todo ..or disable on the fly
+        $result->type = $className;
 
-        $result->error = '[skipped, dump object in top level to see contents]';
+        $result->error = '[skipped, dump object in top level to see contents]';  // todo ..or disable on the fly
 
         return $result;
     }

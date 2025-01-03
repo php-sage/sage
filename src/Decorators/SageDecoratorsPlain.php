@@ -292,8 +292,9 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
     private function value($text, $nlAfter = true)
     {
         $n = strpos($text, "\n");
-        if ($n && $n !== strlen($text) - 1) {
-            $text = '"""' . "\n" . $text . "\n" . '"""';
+        if ($n && $n !== strlen($text) - 1) { // todo - test string and closure with source
+            //            $text = '"""' . "\n" . $text . "\n" . '"""';
+            $text = "\n" . $text;
         }
 
         return $this->colorize($text, 'value', $nlAfter);
@@ -316,6 +317,9 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         }
 
         $type = $varData->type;
+        if ($varData->subtype !== null && $varData->subtype !== '') {
+            $type .= ' ' . $varData->subtype;
+        }
         if ($varData->size !== null && $varData->size !== '') {
             $type .= ' (' . $varData->size . ')';
         }

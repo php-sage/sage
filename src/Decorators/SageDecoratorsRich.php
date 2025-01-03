@@ -276,7 +276,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
     private function drawHeader(SageParsedVariable $varData)
     {
         $output = '';
-        if ($varData->access !== null) {
+        if ($varData->access !== null && $varData->access !== '') {
             $output .= "<var>{$varData->access}</var> ";
         }
 
@@ -284,20 +284,26 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             $output .= '<dfn>' . SageHelper::esc($varData->name) . '</dfn> ';
         }
 
-        if ($varData->operator !== null) {
+        if ($varData->operator !== null && $varData->operator !== '') {
             $output .= $varData->operator . ' ';
         }
 
-        if ($varData->type !== null) {
-            $output .= '<var>' . SageHelper::esc($varData->type) . '</var> ';
+        if ($varData->type !== null && $varData->type !== '') {
+            $output .= '<var>' . SageHelper::esc($varData->type) . '</var>';
         }
 
-        if ($varData->hash !== null) {
+        if ($varData->subtype !== null && $varData->subtype !== '') {
+            $output .= '<s>' . SageHelper::esc($varData->subtype) . '</s>'; // todo separate style
+        }
+
+        $output .= ' ';
+
+        if ($varData->hash !== null && $varData->hash !== '') {
             $output .= '<s>' . SageHelper::esc($varData->hash) . '</s> ';
         }
 
         if ($varData->size !== null && $varData->size !== '') {
-            $output .= '(' . $varData->size . ') ';
+            $output .= '(' . SageHelper::esc($varData->size) . ') ';
         }
 
         $output .= $varData->value;
@@ -337,11 +343,11 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             case SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS:
                 $output       = '<pre>';
                 $maxKeyLength = 0;
-                foreach ($variableContents->contents as $k => $_) {
-                    $maxKeyLength = max($maxKeyLength, strlen($k));
+                foreach ($variableContents->contents as $row) {
+                    $maxKeyLength = max($maxKeyLength, strlen($row['name']));
                 }
-                foreach ($variableContents->contents as $key => $value) {
-                    $output .= str_pad($key, $maxKeyLength) . ': ' . $value;
+                foreach ($variableContents->contents as $row) {
+                    $output .= str_pad($row['name'], $maxKeyLength) . ': ' . $row['value'] . "\n";
                 }
                 $output .= '</pre>';
 

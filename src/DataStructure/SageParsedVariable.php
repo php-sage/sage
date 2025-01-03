@@ -9,6 +9,8 @@ class SageParsedVariable
     /** @var string|SageHtmlable */
     public $type;
     /** @var string|SageHtmlable */
+    public $subtype;
+    /** @var string|SageHtmlable */
     public $hash;
     /** @var string|SageHtmlable */
     public $access;
@@ -75,6 +77,10 @@ class SageParsedVariable
 
         if ($from->type !== null) {
             $this->type = $from->type;
+        }
+
+        if ($from->subtype !== null) {
+            $this->subtype = $from->subtype;
         }
 
         if ($from->hash !== null) {

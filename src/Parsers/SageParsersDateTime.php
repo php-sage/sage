@@ -11,7 +11,7 @@ class SageParsersDateTime implements SageCustomParserInterface
     public function parse(&$variable)
     {
         if (! $variable instanceof DateTimeInterface) {
-            return false;
+            return null;
         }
 
         $format = 'Y-m-d H:i:s';

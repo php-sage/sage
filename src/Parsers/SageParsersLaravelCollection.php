@@ -1,7 +1,9 @@
 <?php
 
 /** @internal {@see Sage::$enabledParsers} to enable/disable */
-class SageParsersEloquentCollection implements SageCustomParserInterface
+
+// todo it's a quick copy from eloquent collection, duplicates code, always displays as a table!
+class SageParsersLaravelCollection implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {
@@ -12,13 +14,13 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
     {
         if (
             ! SageHelper::isRichMode()
-            || ! is_a($variable, '\Illuminate\Database\Eloquent\Collection')
+            || ! is_a($variable, '\Illuminate\Support\Collection')
         ) {
             return null;
         }
 
         $result       = new SageParsedVariable();
-        $result->type = 'Illuminate\Database\Eloquent\Collection';
+        $result->type = 'Illuminate\Support\Collection';
         $result->size = $variable->count();
         $result->hash = SageHelper::getObjectHash($variable);
 
@@ -41,7 +43,7 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
 
         $out .= '<thead><tr>';
         $out .= '<th>#</th>';
-        foreach (array_keys($variable->first()->getAttributes()) as $key) {
+        foreach (array_keys((array)$variable->first()) as $key) {
             $out .= "<th>{$key}</th>";
         }
         $out .= '</tr></thead>';
@@ -54,7 +56,7 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
             $out .= '<tr>';
             $out .= '<td>' . ($rowIndex + 1) . '</td>';
 
-            foreach ($row->getAttributes() as $key => $value) {
+            foreach ($row as $key => $value) {
                 if (SageHelper::isKeyBlacklisted($key)) {
                     $processedVar = SageParsedVariable::erroneous('Redacted');
                 } else {
