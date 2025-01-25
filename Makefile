@@ -92,9 +92,20 @@ composer-update:
 	$(DOCKER) exec php composer update
 
 
+
+composer-install:
+	@$(DOCKER) up -d php
+	$(DOCKER) exec php composer install
+
+
 cu:
 	@# Help: Alias for `composer-update`
 	make composer-update
+
+
+cu:
+	@# Help: Alias for `composer-install`
+	make composer-install
 
 
 play:

@@ -30,7 +30,7 @@ if (typeof _sageInitialized === 'undefined') {
             while (i--) {
                 const sage = all[i]
 
-                if (!_sage.isPinningNeeded(sage)) {
+                if (! _sage.isPinningNeeded(sage)) {
                     return;
                 }
 
@@ -45,7 +45,7 @@ if (typeof _sageInitialized === 'undefined') {
 
                     const children = parent.nextElementSibling; // <dd>
 
-                    if (!_sage.isPinningNeeded(children)) {
+                    if (! _sage.isPinningNeeded(children)) {
                         return;
                     }
 
@@ -132,6 +132,14 @@ if (typeof _sageInitialized === 'undefined') {
             return element;
         },
 
+        toggleIfParent(element, hide) {
+            if (element && _sage.hasClass(element, '_sage-parent')) {
+                _sage.toggle(element, hide)
+                return true;
+            }
+            return false;
+        },
+
         toggle: function (element, hide) {
             if (typeof hide === 'undefined') {
                 hide = _sage.hasClass(element);
@@ -149,9 +157,7 @@ if (typeof _sageInitialized === 'undefined') {
                 parent = parent.children[0].children[0]; // reuse variable cause I can
 
                 // parent is checked in case of empty <pre> when array("\n") is dumped
-                if (parent && _sage.hasClass(parent, '_sage-parent')) {
-                    _sage.toggle(parent, hide)
-                }
+                _sage.toggleIfParent(parent, hide);
             }
         },
 
@@ -208,7 +214,15 @@ if (typeof _sageInitialized === 'undefined') {
 
             lis = target.parentNode.nextSibling.childNodes;
             for (let i = 0; i < lis.length; i++) {
-                lis[i].style.display = i === index ? 'block' : 'none';
+                el = lis[i];
+                el.style.display = i === index ? 'block' : 'none';
+
+                if (i === index) {
+                    // when opening tab also uncollapse if there's only one collapsed entry inside
+                    if (el.childElementCount === 1) {
+                        _sage.toggleIfParent(el.children[0].children[0], false)
+                    }
+                }
             }
         },
 
@@ -225,12 +239,12 @@ if (typeof _sageInitialized === 'undefined') {
                 }
 
                 el = el.parentNode;
-                if (!el || _sage.hasClass(el, '_sage')) {
+                if (! el || _sage.hasClass(el, '_sage')) {
                     break;
                 }
             }
 
-            return !!el;
+            return !! el;
         },
 
         fetchVisiblePluses: function () {
@@ -331,7 +345,7 @@ if (typeof _sageInitialized === 'undefined') {
         let target = e.target
             , tagName = target.tagName;
 
-        if (!_sage.isInsideSage(target)) {
+        if (! _sage.isInsideSage(target)) {
             return;
         }
 
@@ -343,7 +357,7 @@ if (typeof _sageInitialized === 'undefined') {
             target = target.parentNode;    // to not stop event from further propagating
             tagName = target.tagName;
         } else if (tagName === 'TH') {
-            if (!e.ctrlKey) {
+            if (! e.ctrlKey) {
                 _sage.sortTable(target.parentNode.parentNode.parentNode, target.cellIndex, target)
             }
             return false;
@@ -351,7 +365,7 @@ if (typeof _sageInitialized === 'undefined') {
 
         // switch tabs
         if (tagName === 'LI' && _sage.hasClass(target.parentNode, '_sage-tabs')) {
-            if (!_sage.hasClass(target, '_sage-active-tab')) {
+            if (! _sage.hasClass(target, '_sage-active-tab')) {
                 _sage.switchTab(target);
                 if (_sage.currentPlus !== -1) {
                     _sage.fetchVisiblePluses();
@@ -383,8 +397,7 @@ if (typeof _sageInitialized === 'undefined') {
 
             e.stopPropagation();
             return false;
-        } else if (_sage.hasClass(target, '_sage-parent')) {
-            _sage.toggle(target);
+        } else if (_sage.toggleIfParent(target)) {
             if (_sage.currentPlus !== -1) {
                 _sage.fetchVisiblePluses();
             }
@@ -398,7 +411,7 @@ if (typeof _sageInitialized === 'undefined') {
             if (_sageContainer.tagName === 'FOOTER') {
                 _sageContainer = _sageContainer.previousSibling;
             } else {
-                while (_sageContainer && !_sage.hasClass(_sageContainer, '_sage-parent')) {
+                while (_sageContainer && ! _sage.hasClass(_sageContainer, '_sage-parent')) {
                     _sageContainer = _sageContainer.parentNode;
                 }
             }
@@ -411,7 +424,7 @@ if (typeof _sageInitialized === 'undefined') {
 
     window.addEventListener('dblclick', function (e) {
         const target = e.target;
-        if (!_sage.isInsideSage(target)) {
+        if (! _sage.isInsideSage(target)) {
             return;
         }
 
@@ -560,7 +573,7 @@ if (typeof _sageInitialized === 'undefined') {
 
 // debug purposes only, removed in minified source
 function clg(i) {
-    if (!window.console) {
+    if (! window.console) {
         return;
     }
     const l = arguments.length;

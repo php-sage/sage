@@ -69,6 +69,15 @@ class SageDynamicFacade
         return call_user_func_array(array($this, 'dump'), $params); # PROCEDURE: dump
     }
 
+    public function dd($data = null)
+    {
+        $params = func_get_args();
+
+        call_user_func_array(array($this, 'dump'), $params); # PROCEDURE: dump
+
+        die;
+    }
+
     /**
      * Display trace
      */
@@ -125,17 +134,9 @@ class SageDynamicFacade
 
     public function displaySimpleHtml($data = null)
     {
-        if (! $this->isSettingDefaults) { # PROCEDURE: save sage settings
-            $stateBackup = Sage::saveState();
-            if ($this->configuredStateForOutput) {
-                Sage::saveState($this->configuredStateForOutput);
-            }
-        }
+        $stateBackup = $this->saveSettingsPt1();
         Sage::enabled(Sage::MODE_PLAIN_HTML);
-        if (! $this->isSettingDefaults) {
-            $this->configuredStateForOutput = Sage::saveState();
-            Sage::saveState($stateBackup);
-        } # END PROCEDURE: save sage settings
+        $this->saveSettingsPt2($stateBackup); # END PROCEDURE: save sage settings
 
         if (func_num_args()) {
             $params = func_get_args();
@@ -147,17 +148,9 @@ class SageDynamicFacade
 
     public function displayPlainText($data = null)
     {
-        if (! $this->isSettingDefaults) { # PROCEDURE: save sage settings
-            $stateBackup = Sage::saveState();
-            if ($this->configuredStateForOutput) {
-                Sage::saveState($this->configuredStateForOutput);
-            }
-        }
+        $stateBackup = $this->saveSettingsPt1();
         Sage::enabled(Sage::MODE_TEXT_ONLY);
-        if (! $this->isSettingDefaults) {
-            $this->configuredStateForOutput = Sage::saveState();
-            Sage::saveState($stateBackup);
-        } # END PROCEDURE: save sage settings
+        $this->saveSettingsPt2($stateBackup); # END PROCEDURE: save sage settings
 
         if (func_num_args()) {
             $params = func_get_args();
@@ -179,18 +172,10 @@ class SageDynamicFacade
      */
     public function displayRichExpanded($data = null) // todo what will func_num_args across PHP versions return?
     {
-        if (! $this->isSettingDefaults) { # PROCEDURE: save sage settings
-            $stateBackup = Sage::saveState();
-            if ($this->configuredStateForOutput) {
-                Sage::saveState($this->configuredStateForOutput);
-            }
-        }
+        $stateBackup             = $this->saveSettingsPt1();
         Sage::$expandedByDefault = true;
         Sage::enabled(Sage::MODE_RICH);
-        if (! $this->isSettingDefaults) {
-            $this->configuredStateForOutput = Sage::saveState();
-            Sage::saveState($stateBackup);
-        } # END PROCEDURE: save sage settings
+        $this->saveSettingsPt2($stateBackup);
 
         if (func_num_args()) {
             $params = func_get_args();
@@ -205,17 +190,9 @@ class SageDynamicFacade
      */
     public function displayRichHtml($data = null)
     {
-        if (! $this->isSettingDefaults) { # PROCEDURE: save sage settings
-            $stateBackup = Sage::saveState();
-            if ($this->configuredStateForOutput) {
-                Sage::saveState($this->configuredStateForOutput);
-            }
-        }
+        $stateBackup = $this->saveSettingsPt1();
         Sage::enabled(Sage::MODE_RICH);
-        if (! $this->isSettingDefaults) {
-            $this->configuredStateForOutput = Sage::saveState();
-            Sage::saveState($stateBackup);
-        } # END PROCEDURE: save sage settings
+        $this->saveSettingsPt2($stateBackup); # END PROCEDURE: save sage settings
 
         if (func_num_args()) {
             $params = func_get_args();
@@ -230,17 +207,9 @@ class SageDynamicFacade
      */
     public function saveOutputTo(&$variable)
     {
-        if (! $this->isSettingDefaults) {# PROCEDURE: save sage settings
-            $stateBackup = Sage::saveState();
-            if ($this->configuredStateForOutput) {
-                Sage::saveState($this->configuredStateForOutput);
-            }
-        }
+        $stateBackup        = $this->saveSettingsPt1();
         Sage::$returnOutput = true;
-        if (! $this->isSettingDefaults) {
-            $this->configuredStateForOutput = Sage::saveState();
-            Sage::saveState($stateBackup);
-        } # END PROCEDURE: save sage settings
+        $this->saveSettingsPt2($stateBackup); # END PROCEDURE: save sage settings
 
         if ($variable === null) {
             $variable = '';
@@ -262,16 +231,12 @@ class SageDynamicFacade
      */
     public function saveOutputAsFile($dirName = null)
     {
-        if (! $this->isSettingDefaults) {# PROCEDURE: save sage settings
-            $stateBackup = Sage::saveState();
-            if ($this->configuredStateForOutput) {
-                Sage::saveState($this->configuredStateForOutput);
-            }
-        }
+        $stateBackup = $this->saveSettingsPt1();
+
         $saveTo = $dirName;
         if ($saveTo === null) {
             $file   = debug_backtrace(2)[0]['file'] ?? '';
-            $dir = dirname($file);
+            $dir    = dirname($file);
             $saveTo = $dir;
         }
 
@@ -281,11 +246,56 @@ class SageDynamicFacade
         Sage::$outputFile = $saveTo;
         Sage::enabled(Sage::MODE_RICH);
 
+        $this->saveSettingsPt2($stateBackup); # END PROCEDURE: save sage settings
+
+        return $this;
+    }
+
+    /**
+     * Will save rich output to sage.html in directory of the file it was called from
+     */
+    public function writeToFileInCurrentDir($data = null)
+    {
+        $stateBackup = $this->saveSettingsPt1();
+
+        $file             = debug_backtrace(2)[0]['file'] ?? '';
+        $dir              = dirname($file);
+        Sage::$outputFile = $dir . DIRECTORY_SEPARATOR . 'sage.html';
+        Sage::enabled(Sage::MODE_RICH);
+
+        $this->saveSettingsPt2($stateBackup); # END PROCEDURE: save sage settings
+
+        if (func_num_args()) {
+            $params = func_get_args();
+            call_user_func_array(array($this, 'dump'), $params); # PROCEDURE: dump
+        }
+
+        return $this;
+    }
+
+    /**
+     * Change settings as needed and immediately run saveSettingsPt2($stateBackup)
+     *
+     * @return array|null
+     */
+    private function saveSettingsPt1()
+    {
+        $stateBackup = null;
+        if (! $this->isSettingDefaults) {# PROCEDURE: save sage settings
+            $stateBackup = Sage::saveState();
+            if ($this->configuredStateForOutput) {
+                Sage::saveState($this->configuredStateForOutput);
+            }
+        }
+
+        return $stateBackup;
+    }
+
+    private function saveSettingsPt2($stateBackup)
+    {
         if (! $this->isSettingDefaults) {
             $this->configuredStateForOutput = Sage::saveState();
             Sage::saveState($stateBackup);
         } # END PROCEDURE: save sage settings
-
-        return $this;
     }
 }

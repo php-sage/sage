@@ -3,6 +3,7 @@
 /config.php
 /node_modules
 /vendor
+sage.html
 .dev-mode
 composer.lock
 package-lock.json
