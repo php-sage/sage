@@ -318,7 +318,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
         $type = $varData->type;
         if ($varData->subtype !== null && $varData->subtype !== '') {
-            $type .= ' ' . $varData->subtype;
+            $type .= $varData->subtype;
         }
         if ($varData->size !== null && $varData->size !== '') {
             $type .= ' (' . $varData->size . ')';

@@ -44,7 +44,8 @@ class SageParsersEloquent implements SageCustomParserInterface
             'Retrieved DB rows from ' . $reference
         );
         foreach ($attributes as $key => $value) {
-            $attributesDump->addRow($value, $key, '->');
+            // the $value (from $model->getAttributes()) is before casting/mutating, we want the processed one.
+            $attributesDump->addRow($variable->$key, $key, '->');
         }
 
         $result = new SageParsedVariable();
@@ -55,12 +56,12 @@ class SageParsersEloquent implements SageCustomParserInterface
             $result->type = get_class($variable);
             $result->addAlternativeView($attributesDump);
 
-            foreach ($variable->relationsToArray() as $relationName => $attributes) {
+            foreach ($variable->relationsToArray() as $relationName => $relationAttributes) {
                 $result->addAlternativeView(
                     new SageParsedVariableContents(
                         SageParsedVariableContents::CONTENT_TYPE_DUMP,
                         'Loaded relation: ' . $relationName,
-                        $attributes
+                        $relationAttributes
                     )
                 );
             }

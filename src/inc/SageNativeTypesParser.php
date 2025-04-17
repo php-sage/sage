@@ -360,7 +360,7 @@ class SageNativeTypesParser
         }
 
         if (method_exists($variableReflection, 'isEnum') && $variableReflection->isEnum()) {
-            $result->subtype = 'enum';
+            $result->subtype = ' enum';
             $result->value = '"' . $variable->name . '"';
         }
 

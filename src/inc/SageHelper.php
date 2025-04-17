@@ -29,7 +29,7 @@ class SageHelper
         'atom'                   => 'atom://core/open/file?filename=%file&line=%line',
         'nova'                   => 'nova://core/open/file?filename=%file&line=%line',
         'netbeans'               => 'netbeans://open/?f=%file:%line',
-        'xdebug'                 => 'xdebug://%file@%line'
+        'xdebug'                 => 'xdebug://%file@%line',
     );
 
     /** @var array build from internal methods and {@see Sage::$aliases} */
@@ -89,7 +89,7 @@ class SageHelper
     {
         self::$aliasesRaw = array(
             'methods'   => array(),
-            'functions' => array()
+            'functions' => array(),
         );
 
         foreach (Sage::$aliases as $alias) {
@@ -286,13 +286,58 @@ class SageHelper
         return new SageHtmlable($value);
     }
 
+    public static function getDebugType($variable)
+    {
+        if (function_exists('get_debug_type')) {
+            return get_debug_type($variable);
+        }
+
+        switch (true) {
+            case $variable === null:
+                return 'null';
+            case is_bool($variable):
+                return 'bool';
+            case is_string($variable):
+                return 'string';
+            case is_array($variable):
+                return 'array';
+            case is_int($variable):
+                return 'int';
+            case is_float($variable):
+                return 'float';
+            case is_object($variable):
+                break;
+            case $variable instanceof __PHP_Incomplete_Class:
+                return '__PHP_Incomplete_Class';
+            default:
+                $type = @get_resource_type($variable);
+                if ($type === null) {
+                    return 'unknown';
+                }
+
+                if ($type === 'Unknown') {
+                    $type = 'closed';
+                }
+
+                return "resource ($type)";
+        }
+
+        $class = get_class($variable);
+
+        if (strpos($class, '@') === false) {
+            return $class;
+        }
+
+        return (get_parent_class($class) ?: key(class_implements($class)) ?: 'class') . '@anonymous';
+    }
+
     /**
      * Make all invisible characters visible. HTML-escape if needed.
      */
     private static function exposeInvisibleCharacters($value)
     {
         if (is_int($value)) {
-            return (string)$value;
+            return (string) $value;
         }
 
         if ($value === '') {
@@ -311,7 +356,7 @@ class SageHelper
                 "\t"   => "\t<u>\\t</u>",
                 "\r\n" => "<u>\\r\\n</u>\n",
                 "\n"   => "<u>\\n</u>\n",
-                "\r"   => "<u>\\r</u>"
+                "\r"   => "<u>\\r</u>",
             );
             $replaceTemplate = '<u>‹0x%d›</u>';
         } else {

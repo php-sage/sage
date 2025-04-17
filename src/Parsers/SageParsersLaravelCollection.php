@@ -25,7 +25,7 @@ class SageParsersLaravelCollection implements SageCustomParserInterface
         $result->hash = SageHelper::getObjectHash($variable);
 
         if ($variable->isNotEmpty()) {
-            $result->subtype = '<' . get_class($variable->first()) . '>';
+            $result->subtype = '<' . SageHelper::getDebugType($variable->first()) . '>';
 
             $result->extendedView = new SageParsedVariableContents(
                 SageParsedVariableContents::CONTENT_TYPE_STRING,
@@ -43,27 +43,33 @@ class SageParsersLaravelCollection implements SageCustomParserInterface
 
         $out .= '<thead><tr>';
         $out .= '<th>#</th>';
-        foreach (array_keys((array)$variable->first()) as $key) {
+        foreach (array_keys((array) $variable->first()) as $key) {
             $out .= "<th>{$key}</th>";
         }
         $out .= '</tr></thead>';
 
         $out .= '<tbody>';
-        foreach ($variable as $rowIndex => & $row) {
-            // display strings in their full length
+        foreach ($variable as $i => & $row) {
+            // display strings in their full length (todo)
             //            self::$_placeFullStringInValue = true;
 
-            $out .= '<tr>';
-            $out .= '<td>' . ($rowIndex + 1) . '</td>';
+            $out      .= '<tr>';
+            $rowIndex = is_int($i) ? $i + 1 : SageHelper::esc($i);
+            $out      .= '<td>' . $rowIndex . '</td>';
 
-            foreach ($row as $key => $value) {
-                if (SageHelper::isKeyBlacklisted($key)) {
-                    $processedVar = SageParsedVariable::erroneous('Redacted');
-                } else {
-                    $processedVar = SageParser::parse($value);
+            if (is_array($row) || $row instanceof Traversable) {
+                foreach ($row as $key => $value) {
+                    if (SageHelper::isKeyBlacklisted($key)) {
+                        $processedVar = SageParsedVariable::erroneous('Redacted');
+                    } else {
+                        $processedVar = SageParser::parse($value);
+                    }
+
+                    $out .= self::_decorateCell($processedVar);
                 }
-
-                $out .= self::_decorateCell($processedVar);
+            } else {
+                $processedVar = SageParser::parse($row);
+                $out          .= self::_decorateCell($processedVar);
             }
 
             $out .= '</tr>';
