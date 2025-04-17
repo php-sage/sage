@@ -20,8 +20,8 @@ class SageParser
     }
 
     /**
-     * @param mixed               $variable copy of user-provided variable
-     * @param string|SageHtmlable $name     todo escape by default, expect sageHtmlable otherwise
+     * @param mixed $variable copy of user-provided variable
+     * @param string|SageHtmlable $name todo escape by default, expect sageHtmlable otherwise
      *
      * @return SageParsedVariable
      */

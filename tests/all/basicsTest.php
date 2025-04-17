@@ -1,7 +1,7 @@
 <?php
 
-describe('the basics', function() {
-    it('dumps successfully', function() {
+describe('the basics', function () {
+    it('dumps successfully', function () {
         $n = 123;
         ob_start();
         sage($n);
@@ -11,8 +11,7 @@ describe('the basics', function() {
         ;
     });
 
-    it('shows trace successfully', function() {
-
+    it('shows trace successfully', function () {
         function raveren_abcdefgh5()
         {
             Sage::trace();

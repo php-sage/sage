@@ -162,7 +162,7 @@ class SageParsedTraceStep
 
                 $row = '<span>' . sprintf($format, $readingLine) . '</span> ' . $row;
 
-                if ($readingLine === (int)$line) {
+                if ($readingLine === (int) $line) {
                     // apply highlighting to this row
                     $row = '<div class="_sage-highlight">' . $row . '</div>';
                 } else {

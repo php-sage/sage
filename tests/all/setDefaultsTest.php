@@ -1,6 +1,6 @@
 <?php
 
-describe('set defaults', function() {
+describe('set defaults', function () {
     sage()
         ->saveOutputTo($a)
         ->setDefaults()

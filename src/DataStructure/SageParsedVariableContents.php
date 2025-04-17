@@ -48,7 +48,7 @@ class SageParsedVariableContents
      * todo legacy constructor @param int $contentType
      *
      * @param string $name
-     * @param mixed  $content
+     * @param mixed $content
      *
      * @see SageHtmlable
      */
@@ -76,7 +76,7 @@ class SageParsedVariableContents
     }
 
     /**
-     * @param mixed  $content
+     * @param mixed $content
      * @param string $name
      *
      * @return $this
@@ -125,14 +125,6 @@ class SageParsedVariableContents
         $this->contents = $content;
 
         return $this;
-    }
-
-    /**
-     * @return bool
-     */
-    public function isEmpty()
-    {
-        return $this->contents === null;
     }
 
     /**

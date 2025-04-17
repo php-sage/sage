@@ -49,7 +49,7 @@ class SageParsedVariable
 
     public function addAlternativeView(SageParsedVariableContents $alternative)
     {
-        if ($alternative->isEmpty()) {
+        if ($alternative->contents === null) {
             return;
         }
 

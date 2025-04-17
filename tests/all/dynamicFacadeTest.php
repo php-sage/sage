@@ -1,7 +1,7 @@
 <?php
 
-describe('new facade', function() {
-    it('works in the first place', function() {
+describe('new facade', function () {
+    it('works in the first place', function () {
         expect(sage())->toBeInstanceOf(SageDynamicFacade::class);
 
         ob_start();
@@ -11,7 +11,7 @@ describe('new facade', function() {
     });
 });
 
-describe('saving output to passed variable', function() {
+describe('saving output to passed variable', function () {
     ob_start();
     sage()
         ->saveOutputTo($var)
@@ -30,7 +30,7 @@ describe('saving output to passed variable', function() {
     it('does not prevent future dumps from echoing', fn() => expect($a)->not()->toBeEmpty());
 });
 
-describe('expandAll test', function() {
+describe('expandAll test', function () {
     sage()
         ->saveOutputTo($var)
         ->displayRichExpanded()
@@ -53,7 +53,7 @@ describe('expandAll test', function() {
     //    it('is exactly the same as the shorthand d()', fn() => expect($a)->toEqual($b));
 });
 
-describe('displaySimpleHtml()', function() {
+describe('displaySimpleHtml()', function () {
     ob_start();
     sage()->displaySimpleHtml(123);
     $a = ob_get_clean();
@@ -66,7 +66,7 @@ describe('displaySimpleHtml()', function() {
     );
 });
 
-describe('simplest()', function() {
+describe('simplest()', function () {
     ob_start();
     sage()->displaySimplest(123);
     $a = ob_get_clean();
@@ -85,7 +85,7 @@ describe('simplest()', function() {
     //    it('is exactly the same as the alias displayPlainText()', fn() => expect($a)->toEqual($b));
 });
 
-describe('file output test', function() {
+describe('file output test', function () {
     sage()
         ->saveOutputAsFile()
         ->displayRichExpanded()
@@ -104,7 +104,7 @@ describe('file output test', function() {
     it('does not prevent future dumps from echoing', fn() => expect($a)->toContain('123'));
 });
 
-describe('settings tests', function() {
+describe('settings tests', function () {
     sage()
         ->saveOutputTo($var)
         ->displayRichExpanded()

@@ -118,9 +118,9 @@ class SageDecoratorsRich implements SageDecoratorsInterface
     }
 
     /**
-     * @param int                 $i
+     * @param int $i
      * @param SageParsedTraceStep $step
-     * @param bool                $pathsOnly
+     * @param bool $pathsOnly
      *
      * @return string
      */

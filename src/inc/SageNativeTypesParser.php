@@ -111,7 +111,7 @@ class SageNativeTypesParser
 
                 $extendedValue .= '<tr>';
                 if ($isSequential) {
-                    $parsedValue = '<td>' . (((int)$rowIndex) + 1) . '</td>';
+                    $parsedValue = '<td>' . (((int) $rowIndex) + 1) . '</td>';
                 } else {
                     $parsedValue = self::_decorateCell(SageParser::parse($rowIndex));
                 }
@@ -211,7 +211,7 @@ class SageNativeTypesParser
         $hash = SageHelper::getObjectHash($variable);
 
         // PHP: the best way to dump everything about an object: cast it to array!
-        $castedArray = (array)$variable;
+        $castedArray = (array) $variable;
         $className   = get_class($variable);
 
         // ArrayObject (and maybe ArrayIterator, did not try yet) unsurprisingly consist of mainly dark magic.
@@ -270,7 +270,7 @@ class SageNativeTypesParser
             }
         }
 
-        // copy the object as an array as it provides more info than Reflection (depends)
+        // copy the object as an array as it sometimes provides more info than Reflection.
         foreach ($castedArray as $key => $value) {
             /* casting object to array:
              * integer properties are inaccessible;
@@ -318,13 +318,15 @@ class SageNativeTypesParser
                 }
 
                 $name = $propertyReflection->getName();
-                foreach ($result->extendedView->contents as $alreadyParsed) {
-                    if ((string)$alreadyParsed->name === $name) {
-                        if (method_exists($propertyReflection, 'isReadOnly') && $propertyReflection->isReadOnly()) {
-                            $alreadyParsed->access .= ' readonly';
-                        }
+                if ($result->extendedView->contents) {
+                    foreach ($result->extendedView->contents as $alreadyParsed) {
+                        if ((string) $alreadyParsed->name === $name) {
+                            if (method_exists($propertyReflection, 'isReadOnly') && $propertyReflection->isReadOnly()) {
+                                $alreadyParsed->access .= ' readonly';
+                            }
 
-                        continue 2;
+                            continue 2;
+                        }
                     }
                 }
 
@@ -361,7 +363,7 @@ class SageNativeTypesParser
 
         if (method_exists($variableReflection, 'isEnum') && $variableReflection->isEnum()) {
             $result->subtype = ' enum';
-            $result->value = '"' . $variable->name . '"';
+            $result->value   = '"' . $variable->name . '"';
         }
 
         return $result;

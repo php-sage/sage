@@ -1,11 +1,9 @@
 <?php
 
-
 // todo test closure parser, file parser
 
-
-describe('trace', function() {
-    return ;
+describe('trace', function () {
+    return;
     sage()
         ->saveOutputTo($var)
         ->trace()
