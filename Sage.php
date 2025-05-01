@@ -33,6 +33,8 @@ if (defined('SAGE_DIR')) {
 }
 define('SAGE_DIR', dirname(__FILE__) . '/');
 
+// Welcome to our autoloader!
+// J/K it's not an autoloader, we just include all of the files!
 // With PHP 5.1++ compatibility in mind we don't use namespaces and do the autoloading manually
 require SAGE_DIR . 'src/inc/SageLogicException.php';
 require SAGE_DIR . 'src/DataStructure/SageCallerData.php';
@@ -41,6 +43,7 @@ require SAGE_DIR . 'src/DataStructure/SageParsedVariable.php';
 require SAGE_DIR . 'src/DataStructure/SageParsedVariableContents.php';
 require SAGE_DIR . 'src/DataStructure/SageParsedTraceStep.php';
 require SAGE_DIR . 'src/DataStructure/SageHtmlable.php';
+require SAGE_DIR . 'src/DataStructure/SageTrace.php';
 require SAGE_DIR . 'src/inc/SageParser.php';
 require SAGE_DIR . 'src/inc/SageNativeTypesParser.php';
 require SAGE_DIR . 'src/inc/SageHelper.php';
@@ -250,8 +253,6 @@ class Sage
     );
 
     public static $keysBlacklist = array();
-
-    public static $minimumTraceStepsToShowFull = 1;
 
     /**
      * The ordering matters, each variable and its children are processed by each from top to bottom
@@ -743,13 +744,6 @@ class Sage
         }
     }
 
-    /**
-     * @param SageCallerData $caller
-     * @param array          $arguments
-     * @param array          $backtraceData
-     *
-     * @return array|array[]
-     */
     private function getWhatToDump(SageCallerData $caller, array $arguments, array $backtraceData)
     {
         if (count($arguments) === 0) {
@@ -774,21 +768,18 @@ class Sage
         }
 
         if (count($arguments) === 1) {
+            // Sage::dump(1) shorthand
             if ($caller->parameterNames === array('1') && $arguments[0] === 1) {
-                // Sage::dump(1) shorthand
-                return array($backtraceData);
+                $caller->parameterNames = array('Debug backtrace');
+
+                return array(SageTrace::full($backtraceData));
             }
 
+            // Sage::dump(2) shorthand
             if ($caller->parameterNames === array('2') && $arguments[0] === 2) {
-                $lightTrace = array();
-                foreach ($backtraceData as $step) {
-                    $lightTrace[] = array(
-                        'file' => array_key_exists('file', $step) ? $step['file'] : '',
-                        'line' => array_key_exists('line', $step) ? $step['line'] : '',
-                    );
-                }
+                $caller->parameterNames = array('Minimal trace (file & line only)');
 
-                return array($lightTrace);
+                return array(SageTrace::minimal($backtraceData));
             }
         }
 

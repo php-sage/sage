@@ -91,6 +91,14 @@ class SageDynamicFacade
     }
 
     /**
+     * Display paths-only trace
+     */
+    public function simpleTrace()
+    {
+        Sage::dump(2);
+    }
+
+    /**
      * Laravel helper. Will dump all DB queries from this point forward.
      */
     public function showEloquentQueries()

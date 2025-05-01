@@ -10,6 +10,15 @@ class SageParsersTrace implements SageCustomParserInterface
 
     public function parse(&$variable)
     {
+        // if we're explicitly passed a trace (i.e. something like Sage::dumpTrace() was invoked)...
+        if ($variable instanceof SageTrace) {
+            $result        = new SageParsedVariable();
+            $result->trace = $variable;
+
+            return $result;
+        }
+
+        // ...otherwise just check if the provided array is a trace
         if (! is_array($variable)) {
             return null;
         }
@@ -56,7 +65,7 @@ class SageParsersTrace implements SageCustomParserInterface
                 continue;
             }
 
-            $trace[] = $step;
+            $trace[] = SageParsedTraceStep::full($step);
         }
 
         if (! $fileFound) {
@@ -64,17 +73,11 @@ class SageParsersTrace implements SageCustomParserInterface
         }
 
         if ($lastStep) {
-            array_unshift($trace, $lastStep);
+            array_unshift($trace, SageParsedTraceStep::full($lastStep));
         }
 
-        // now parse the trace into a usable format
-        $output = array();
-        foreach ($trace as $i => $step) {
-            $output[] = new SageParsedTraceStep($step, $i);
-        }
-
-        $result             = new SageParsedVariable();
-        $result->traceSteps = $output;
+        $result        = new SageParsedVariable();
+        $result->trace = $trace;
 
         return $result;
     }

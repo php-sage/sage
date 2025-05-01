@@ -5,10 +5,10 @@
  */
 interface SageDecoratorsInterface
 {
+    /**
+     * @return string
+     */
     public function decorate(SageParsedVariable $varData);
-
-    /** @param SageParsedTraceStep[] $traceData */
-    public function decorateTrace(SageParsedVariable $trace, $pathsOnly = false);
 
     /**
      * called for each dump, opens the html tag

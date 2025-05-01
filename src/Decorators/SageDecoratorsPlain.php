@@ -28,16 +28,16 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
     public function decorate(SageParsedVariable $varData, $level = 0, $prefix = '')
     {
-        if ($varData->traceSteps) {
-            return $this->decorateTrace($varData);
-        }
-
         $output = '';
         if ($level === 0) {
             $name          = $varData->name ? $varData->name : '';
             $varData->name = null;
 
             $output .= $this->title($name);
+        }
+
+        if ($varData->trace) {
+            return $output . $this->decorateTrace($varData->trace);
         }
 
         $s     = '  ';
@@ -102,18 +102,15 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
     # SECTION: trace
 
-    public function decorateTrace(SageParsedVariable $trace, $pathsOnly = false)
+    private function decorateTrace(SageTrace $trace)
     {
-        $traceData = $trace->traceSteps;
-
-        $lastStepNumber = count($traceData);
-        $output         = $this->title($pathsOnly ? 'QUICK TRACE' : 'TRACE');
-
+        $lastStepNumber         = count($trace->steps);
         $blacklistedStepsInARow = 0;
-        foreach ($traceData as $stepNumber => $step) {
+        $output                 = '';
+        foreach ($trace->steps as $stepNumber => $step) {
             if (
-                $stepNumber >= Sage::$minimumTraceStepsToShowFull
-                && $step->isBlackListed
+                $step->isBlackListed
+                && $stepNumber !== 0
             ) {
                 $blacklistedStepsInARow++;
                 continue;
@@ -124,8 +121,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
                     for ($j = $blacklistedStepsInARow; $j > 0; $j--) {
                         $output .= $this->drawTraceStep(
                             $stepNumber - $j,
-                            $traceData[$stepNumber - $j],
-                            $pathsOnly,
+                            $trace[$stepNumber - $j],
                             $lastStepNumber
                         );
                     }
@@ -139,7 +135,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
                 $blacklistedStepsInARow = 0;
             }
-            $output .= $this->drawTraceStep($stepNumber, $step, $pathsOnly, $lastStepNumber);
+            $output .= $this->drawTraceStep($stepNumber, $step, $lastStepNumber);
         }
 
         if ($blacklistedStepsInARow > 1) {
@@ -151,7 +147,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
     # SECTION: draw
 
-    private function drawTraceStep($stepNumber, $step, $pathsOnly, $lastStepNumber)
+    private function drawTraceStep($stepNumber, $step, $lastStepNumber)
     {
         $output = '';
 
@@ -173,7 +169,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             $output .= PHP_EOL;
         }
 
-        if (! $pathsOnly && $step->arguments) {
+        if ($step->arguments) {
             $output .= $____Arguments____;
 
             foreach ($step->arguments as $argument) {
@@ -183,7 +179,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             $output .= $L________________;
         }
 
-        if (! $pathsOnly && $step->object) {
+        if ($step->object) {
             $output .= $__Callee_Object__;
 
             $output .= $this->decorate($step->object, 2, '  ');

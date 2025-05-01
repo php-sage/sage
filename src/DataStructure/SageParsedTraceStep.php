@@ -14,30 +14,37 @@ class SageParsedTraceStep
     /** @var SageParsedVariable|null */
     public $object = null;
 
-    public function SageTraceStep($step, $stepNumber)
+    public static function full($step)
     {
-        $this->fileLine      = $this->getFileAndLine($step);
-        $this->argumentNames = $this->getStepArgumentNames($step);
-        $this->functionName  = $this->getStepFunctionName($step, $this->argumentNames);
+        $self = new self();
 
-        if ($this->isStepBlacklisted($step, $stepNumber)) {
-            $this->isBlackListed = true;
+        $self->fileLine      = $self->getFileAndLine($step);
+        $self->argumentNames = $self->getStepArgumentNames($step);
+        $self->functionName  = $self->getStepFunctionName($step, $self->argumentNames);
 
-            return;
+        if ($self->isStepBlacklisted($step)) {
+            $self->isBlackListed = true;
+
+            return $self;
         }
 
         // todo it's possible to parse the object name out from the source!!!
-        $this->object        = $this->getObject($step);
-        $this->sourceSnippet = $this->getSourceSnippet($step);
-        $this->arguments     = $this->getArguments($step, $this->argumentNames);
+        $self->object        = $self->getObject($step);
+        $self->sourceSnippet = $self->getSourceSnippet($step);
+        $self->arguments     = $self->getArguments($step, $self->argumentNames);
+
+        return $self;
     }
 
-    public function __construct($step, $stepNumber)
+    public static function minimal($step)
     {
-        $this->SageTraceStep($step, $stepNumber);
+        $self           = new self();
+        $self->fileLine = $self->getFileAndLine($step);
+
+        return $self;
     }
 
-    private function isStepBlacklisted($step, $stepNumber)
+    private function isStepBlacklisted($step)
     {
         if (! Sage::$maxLevels) {
             return false;
@@ -183,7 +190,6 @@ class SageParsedTraceStep
         $result        = array();
         $i             = 0;
         $variadicIndex = 0;
-        $name          = '';
         foreach ($this->getSanitizedArgs($step) as $argument) {
             $name = isset($argumentNames[$i]) ? $argumentNames[$i] : '';
             // variadic parameters are always last

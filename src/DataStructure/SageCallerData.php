@@ -21,7 +21,7 @@ class SageCallerData
      */
     public static function process($backtraceData)
     {
-        $result                 = new self();
+        $self                   = new self();
         $insideTemplateDetected = null;
 
         // go from back of trace forward to find first occurrence of call to Sage or its wrappers
@@ -36,7 +36,7 @@ class SageCallerData
 
             if (isset($step['file'], $step['line'])) {
                 unset($step['object'], $step['args']);
-                array_unshift($result->miniTrace, $step);
+                array_unshift($self->miniTrace, $step);
             }
 
             if (SageHelper::stepIsInternal($step)) {
@@ -45,23 +45,23 @@ class SageCallerData
         }
 
         if (! isset($step['file']) || ! is_readable($step['file'])) {
-            return $result;
+            return $self;
         }
 
-        SageHelper::detectProjectRoot($result->getUserLandInvoker('file'));
+        SageHelper::detectProjectRoot($self->getUserLandInvoker('file'));
 
         if (SageHelper::php82orLater()) {
-            $result->solveForPhp82();
+            $self->solveForPhp82();
         } else {
-            $result->solveForEarlierVersions();
+            $self->solveForEarlierVersions();
         }
 
         if ($insideTemplateDetected) {
-            $result->miniTrace[1]['file'] = $insideTemplateDetected;
-            $result->miniTrace[1]['line'] = null;
+            $self->miniTrace[1]['file'] = $insideTemplateDetected;
+            $self->miniTrace[1]['line'] = null;
         }
 
-        return $result;
+        return $self;
     }
 
     /**

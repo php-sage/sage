@@ -22,8 +22,8 @@ class SageParsedVariable
     public $value;
     /** @var string|SageHtmlable for exceptions like "depth limit", "blacklisted key", "recursion" */
     public $error;
-    /** @var SageParsedTraceStep[] special case: dumped variable is a trace, it has a special representation */
-    public $traceSteps;
+    /** @var null|SageTrace special case: the variable is a debug backtrace, it has a special representation */
+    public $trace;
 
     /**
      * Detailed (i.e. not-inline) information about the variable.
@@ -107,8 +107,8 @@ class SageParsedVariable
             $this->error = $from->error;
         }
 
-        if ($from->traceSteps !== null) {
-            $this->traceSteps = $from->traceSteps;
+        if ($from->trace !== null) {
+            $this->trace = $from->trace;
         }
 
         if ($from->extendedView !== null) {
