@@ -23,7 +23,7 @@ class SageParsersTrace implements SageCustomParserInterface
             return null;
         }
 
-        $trace       = array();
+        $trace       = new SageTrace();
         $traceFields = array('file', 'line', 'args', 'class');
         $fileFound   = false; // file element must exist in one of the steps
         $lastStep    = array();
@@ -65,7 +65,7 @@ class SageParsersTrace implements SageCustomParserInterface
                 continue;
             }
 
-            $trace[] = SageParsedTraceStep::full($step);
+            $trace->steps[] = SageParsedTraceStep::full($step);
         }
 
         if (! $fileFound) {
@@ -73,7 +73,7 @@ class SageParsersTrace implements SageCustomParserInterface
         }
 
         if ($lastStep) {
-            array_unshift($trace, SageParsedTraceStep::full($lastStep));
+            array_unshift($trace->steps, SageParsedTraceStep::full($lastStep));
         }
 
         $result        = new SageParsedVariable();

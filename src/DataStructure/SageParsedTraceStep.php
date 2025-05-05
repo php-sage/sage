@@ -14,6 +14,11 @@ class SageParsedTraceStep
     /** @var SageParsedVariable|null */
     public $object = null;
 
+    /**
+     * @param array $step - individual step from internal debug backtrace array
+     *
+     * @return self
+     */
     public static function full($step)
     {
         $self = new self();
