@@ -20,7 +20,7 @@ class SageParsersClassStatics implements SageCustomParserInterface
         }
 
         $tab = new SageParsedVariableContents(
-            SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS,
+            SageParsedVariableContents::RICH_ROWS,
             'Static class properties (' . count($staticProperties) . ')'
         );
 
@@ -51,7 +51,7 @@ class SageParsersClassStatics implements SageCustomParserInterface
         }
 
         $result = new SageParsedVariable();
-        $result->addAlternativeView($tab);
+        $result->addExtended($tab);
 
         return $result;
     }

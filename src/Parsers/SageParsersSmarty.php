@@ -31,22 +31,22 @@ class SageParsersSmarty implements SageCustomParserInterface
             $globalAssigns[$name] = $var->value;
         }
 
-        $result->addAlternativeView(
+        $result->addExtended(
             new SageParsedVariableContents(
-                SageParsedVariableContents::CONTENT_TYPE_DUMP,
+                SageParsedVariableContents::DUMP,
                 'Assigned to view',
                 $assigned
             )
         );
-        $result->addAlternativeView(
+        $result->addExtended(
             new SageParsedVariableContents(
-                SageParsedVariableContents::CONTENT_TYPE_DUMP,
+                SageParsedVariableContents::DUMP,
                 'Assigned globally',
                 $globalAssigns
             )
         );
-        $result->addAlternativeView(
-            (new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS, 'Configuration'))
+        $result->addExtended(
+            (new SageParsedVariableContents(SageParsedVariableContents::PLAIN_TEXT_ROWS, 'Configuration'))
                 ->addRow(
                     'Compiled files stored in',
                     isset($variable->compile_dir)

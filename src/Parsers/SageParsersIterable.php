@@ -26,9 +26,9 @@ class SageParsersIterable implements SageCustomParserInterface
 
         $result = new SageParsedVariable();
 
-        $result->addAlternativeView(
+        $result->addExtended(
             new SageParsedVariableContents(
-                SageParsedVariableContents::CONTENT_TYPE_DUMP,
+                SageParsedVariableContents::DUMP,
                 "Iterator contents ({$size})",
                 $arrayCopy
             )

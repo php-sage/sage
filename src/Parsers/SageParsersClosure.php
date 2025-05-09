@@ -19,10 +19,9 @@ class SageParsersClosure implements SageCustomParserInterface
         $result       = new SageParsedVariable();
         $result->type = 'Closure';
 
-        $result->extendedView = new SageParsedVariableContents(
-            SageParsedVariableContents::CONTENT_TYPE_STRING,
-            'Source definition',
-            $this->fetchSource($reflection)
+        $result->addExtendedString(
+            $this->fetchSource($reflection),
+            'Source definition'
         );
 
         if (! SageHelper::isRichMode()) {
@@ -30,7 +29,7 @@ class SageParsersClosure implements SageCustomParserInterface
         }
 
         $internalsTab = new SageParsedVariableContents(
-            SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS,
+            SageParsedVariableContents::RICH_ROWS,
             'Closure Internals'
         );
 
@@ -43,7 +42,7 @@ class SageParsersClosure implements SageCustomParserInterface
                 $internalsTab->addRow(SageParser::parse($item, '$' . $k));
             }
         }
-        $result->addAlternativeView($internalsTab);
+        $result->addExtended($internalsTab);
 
         if ($reflection->getFileName()) {
             $result->value = SageHelper::ideLink($reflection->getFileName(), $reflection->getStartLine());

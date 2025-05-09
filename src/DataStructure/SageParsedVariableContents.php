@@ -4,7 +4,7 @@
 class SageParsedVariableContents
 {
     /** @var SageHtmlable|string */
-    public $name;
+    public $name = '';
 
     /**
      *  Depending on self::$displayType can be either:
@@ -19,33 +19,33 @@ class SageParsedVariableContents
     public $contents = null;
 
     /**
-     * @var self::CONTENT_TYPE_STRING|self::CONTENT_TYPE_PLAIN_TEXT_ROWS|self::CONTENT_TYPE_RICH_ROWS|self::CONTENT_TYPE_DUMP
+     * @var self::STRING|self::PLAIN_TEXT_ROWS|self::RICH_ROWS|self::DUMP
      */
     public $displayType;
 
     /**
      * String, or html if you wrap the string in SageHtmlable
      */
-    const CONTENT_TYPE_STRING = 'string';
+    const STRING = 'string';
     /**
      * Will produce:
      *
      *   NameOfRow1: value
      *   row2      : value2
      */
-    const CONTENT_TYPE_PLAIN_TEXT_ROWS = 'plain-rows';
+    const PLAIN_TEXT_ROWS = 'plain-rows';
     /**
      * Will produce variable-dump rows
      */
-    const CONTENT_TYPE_RICH_ROWS = 'rich-rows';
+    const RICH_ROWS = 'rich-rows';
     /**
      * Will just dump whatever you pass as the single item as content
      */
-    const CONTENT_TYPE_DUMP = 'dump';
+    const DUMP = 'dump';
     /**
      * Will dump whatever you pass but unwrap the topmost element
      */
-    const CONTENT_TYPE_DUMP_WITHOUT_TOP_PARENT = 'dump';
+    const DUMP_WITHOUT_TOP_PARENT = 'dump_unwrapped';
 
     /**
      * todo legacy constructor @param int $contentType
@@ -55,7 +55,7 @@ class SageParsedVariableContents
      *
      * @see SageHtmlable
      */
-    public function __construct($contentType, $name = 'Contents', $content = null)
+    public function __construct($contentType, $name = '', $content = null)
     {
         $this->displayType = $contentType;
         if ($name) {
@@ -94,14 +94,14 @@ class SageParsedVariableContents
             $this->contents = array();
         }
 
-        if ($this->displayType === self::CONTENT_TYPE_RICH_ROWS) {
+        if ($this->displayType === self::RICH_ROWS) {
             if (! $content instanceof SageParsedVariable) {
                 $content           = SageParser::parse($content, $name);
                 $content->operator = $operator;
             }
 
             $this->contents[] = $content;
-        } elseif ($this->displayType === self::CONTENT_TYPE_PLAIN_TEXT_ROWS) {
+        } elseif ($this->displayType === self::PLAIN_TEXT_ROWS) {
             if (! is_string($content)) {
                 throw new SageLogicException('Can only use text in this mode');
             }
@@ -135,10 +135,15 @@ class SageParsedVariableContents
         }
 
         if (
-            $this->displayType === self::CONTENT_TYPE_DUMP
-            || $this->displayType === self::CONTENT_TYPE_DUMP_WITHOUT_TOP_PARENT
+            $this->displayType === self::DUMP
+            || $this->displayType === self::DUMP_WITHOUT_TOP_PARENT
         ) {
             $content = SageParser::parse($content, $this->name);
+
+//            if ($this->displayType === self::DUMP_WITHOUT_TOP_PARENT) {
+//                // todo a mode to dump just the first extended view.
+//                $content = reset$content->alternativeViews;
+//            }
         }
 
         $this->contents = $content;
@@ -151,7 +156,7 @@ class SageParsedVariableContents
      */
     private function canHaveRows()
     {
-        return $this->displayType === self::CONTENT_TYPE_PLAIN_TEXT_ROWS
-            || $this->displayType === self::CONTENT_TYPE_RICH_ROWS;
+        return $this->displayType === self::PLAIN_TEXT_ROWS
+            || $this->displayType === self::RICH_ROWS;
     }
 }

@@ -26,23 +26,26 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
      */
     private static $levelColors = array();
 
-    public function decorate(SageParsedVariable $varData, $level = 0, $prefix = '')
+    public function decorate(SageParsedVariable $varData, $level = 0, $prefix = '', $skipHeader = false)
     {
         $output = '';
-        if ($level === 0) {
-            $name          = $varData->name ? $varData->name : '';
-            $varData->name = null;
+        if (! $skipHeader) {
+            if ($level === 0) {
+                $name          = $varData->name ? $varData->name : '';
+                $varData->name = null;
 
-            $output .= $this->title($name);
+                $output .= $this->title($name);
+            }
         }
 
         if ($varData->trace) {
             return $output . $this->decorateTrace($varData->trace);
         }
 
-        $s     = '  ';
+        // add level color stripe for CLI view
         $space = $prefix;
         if (Sage::enabled() === Sage::MODE_CLI) {
+            $s                 = '  ';
             self::$levelColors = array_slice(self::$levelColors, 0, $level);
 
             for ($i = 0; $i < $level; $i++) {
@@ -53,54 +56,67 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
                 $space .= "\x1b[38;5;{$color}m┆\x1b[0m   ";
             }
         } else {
+            $s     = '    ';
             $space = str_repeat($s, $level);
         }
 
-        $output .= $space . $this->drawRowHeader($varData);
+        if (! $skipHeader) {
+            $output .= $space . $this->drawHeader($varData);
+        }
 
-        if ($varData->extendedView !== null) {
-            $variableContents = $varData->extendedView;
-            $output           .= ' ' . ($varData->type === 'array' ? '[' : '(') . PHP_EOL;
+        // todo make sure there is max one extended representation if we're dumping in plain mode
+        $extendedView = reset($varData->alternativeViews);
+        if ($extendedView) {
+            if (! $skipHeader) {
+                $output .= ' ' . ($varData->type === 'array' ? '[' : '(') . PHP_EOL;
+            }
 
-            switch ($variableContents->displayType) {
-                case SageParsedVariableContents::CONTENT_TYPE_STRING:
-                    $output .= $this->value($variableContents->contents);
+            switch ($extendedView->displayType) {
+                case SageParsedVariableContents::STRING:
+                    $output .= $this->value($extendedView->contents);
                     break;
-                case SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS:
+                case SageParsedVariableContents::PLAIN_TEXT_ROWS:
                     $maxKeyLength = 0;
-                    foreach ($variableContents->contents as $row) {
+                    foreach ($extendedView->contents as $row) {
                         $maxKeyLength = max($maxKeyLength, strlen($row['name']));
                     }
-                    foreach ($variableContents->contents as $row) {
+                    foreach ($extendedView->contents as $row) {
                         $output .=
                             $space . $s
                             . $this->key(str_pad($row['name'], $maxKeyLength) . ':')
                             . ' ' . $this->value($row['value']);
                     }
                     break;
-                case SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS:
-                    if ($variableContents->contents) {
-                        foreach ($variableContents->contents as $row) {
+                case SageParsedVariableContents::RICH_ROWS:
+                    if ($extendedView->contents) {
+                        foreach ($extendedView->contents as $row) {
                             $output .= $this->decorate($row, $level + 1, $prefix);
                         }
                     }
                     break;
-                case SageParsedVariableContents::CONTENT_TYPE_DUMP:
-                    $output .= $this->decorate(SageParser::parse($variableContents->contents), $level + 1, $prefix);
+                case SageParsedVariableContents::DUMP:
+                    $output .= $this->decorate(SageParser::parse($extendedView->contents), $level + 1, $prefix);
+                    break;
+                case SageParsedVariableContents::DUMP_WITHOUT_TOP_PARENT:
+                    $output .= $this->decorate($extendedView->contents, $level, $prefix, true);
                     break;
                 default:
                     throw new SageLogicException('unexpected variable content type');
             }
 
-            $output .= $space . ($varData->type === 'array' ? ']' : ')');
+            if (! $skipHeader) {
+                $output .= $space . ($varData->type === 'array' ? ']' : ')');
+            }
         }
 
-        $output .= PHP_EOL;
+        if (! $skipHeader) {
+            $output .= PHP_EOL;
+        }
 
         return $output;
     }
 
-    # SECTION: trace
+    # region trace
 
     private function decorateTrace(SageTrace $trace)
     {
@@ -145,7 +161,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return $output;
     }
 
-    # SECTION: draw
+    # region draw
 
     private function drawTraceStep($stepNumber, $step, $lastStepNumber)
     {
@@ -192,6 +208,46 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         }
 
         return $output;
+    }
+
+    private function drawHeader(SageParsedVariable $varData)
+    {
+        $output = '';
+
+        if ($varData->access) {
+            $output .= ' ' . $this->colorize(SageHelper::esc($varData->access), 'access', false);
+        }
+
+        if ($varData->name !== null && $varData->name !== '') {
+            $output .= ' ' . $this->key(SageHelper::esc($varData->name));
+        }
+
+        if ($varData->operator) {
+            $output .= ' ' . $varData->operator;
+        }
+
+        $type = $varData->type;
+        if ($varData->subtype !== null && $varData->subtype !== '') {
+            $type .= $varData->subtype;
+        }
+        if ($varData->size !== null && $varData->size !== '') {
+            $type .= ' (' . $varData->size . ')';
+        }
+        if (! $varData->error && $varData->hash !== null && $varData->hash !== '') {
+            $type .= ' [' . $varData->hash . ']';
+        }
+
+        $output .= ' ' . $this->colorize($type, 'type', false);
+
+        if ($varData->value !== null && $varData->value !== '') {
+            $output .= ' ' . $this->value($varData->value, false);
+        }
+
+        if ($varData->error !== null && $varData->error !== '') {
+            $output .= ' ' . $this->colorize($varData->error, 'error', false);
+        }
+
+        return ltrim($output);
     }
 
     private function title($text)
@@ -296,44 +352,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return $this->colorize($text, 'value', $nlAfter);
     }
 
-    private function drawRowHeader(SageParsedVariable $varData)
-    {
-        $output = '';
-
-        if ($varData->access) {
-            $output .= ' ' . $this->colorize(SageHelper::esc($varData->access), 'access', false);
-        }
-
-        if ($varData->name !== null && $varData->name !== '') {
-            $output .= ' ' . $this->key(SageHelper::esc($varData->name));
-        }
-
-        if ($varData->operator) {
-            $output .= ' ' . $varData->operator;
-        }
-
-        $type = $varData->type;
-        if ($varData->subtype !== null && $varData->subtype !== '') {
-            $type .= $varData->subtype;
-        }
-        if ($varData->size !== null && $varData->size !== '') {
-            $type .= ' (' . $varData->size . ')';
-        }
-
-        $output .= ' ' . $this->colorize($type, 'type', false);
-
-        if ($varData->value !== null && $varData->value !== '') {
-            $output .= ' ' . $this->value($varData->value, false);
-        }
-
-        if ($varData->error !== null && $varData->error !== '') {
-            $output .= ' ' . $this->colorize($varData->error, 'error', false);
-        }
-
-        return ltrim($output);
-    }
-
-    # SECTION: init
+    # region init
 
     public function init()
     {

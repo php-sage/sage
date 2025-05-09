@@ -40,7 +40,7 @@ class SageParsersEloquent implements SageCustomParserInterface
         $reference = '`' . $variable->getConnection()->getDatabaseName() . '`.`' . $variable->getTable() . '`';
 
         $attributesDump = new SageParsedVariableContents(
-            SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS,
+            SageParsedVariableContents::RICH_ROWS,
             'Retrieved DB rows from ' . $reference
         );
         foreach ($attributes as $key => $value) {
@@ -54,12 +54,12 @@ class SageParsersEloquent implements SageCustomParserInterface
 
         if (SageHelper::isRichMode()) {
             $result->type = get_class($variable);
-            $result->addAlternativeView($attributesDump);
+            $result->addExtended($attributesDump);
 
             foreach ($variable->relationsToArray() as $relationName => $relationAttributes) {
-                $result->addAlternativeView(
+                $result->addExtended(
                     new SageParsedVariableContents(
-                        SageParsedVariableContents::CONTENT_TYPE_DUMP,
+                        SageParsedVariableContents::DUMP,
                         'Loaded relation: ' . $relationName,
                         $relationAttributes
                     )
@@ -69,8 +69,8 @@ class SageParsersEloquent implements SageCustomParserInterface
             return $result;
         }
 
-        $result->type         = get_class($variable) . '; ' . $reference . ' row data:';
-        $result->extendedView = $attributesDump;
+        $result->type = get_class($variable) . '; ' . $reference . ' row data:';
+        $result->addExtended($attributesDump);
 
         return $result;
     }
@@ -83,19 +83,10 @@ class SageParsersEloquent implements SageCustomParserInterface
         $result = new SageParsedVariable();
 
         $result->type = get_class($variable);
-        $queryDump    = new SageParsedVariableContents(
-            SageParsedVariableContents::CONTENT_TYPE_DUMP,
-            'Raw query',
-            SageSqlFormatter::format($variable->toRawSql(), false)
+        $result->addExtendedDump(
+            SageSqlFormatter::format($variable->toRawSql(), false),
+            'Raw query'
         );
-
-        if (SageHelper::isRichMode()) {
-            $result->addAlternativeView($queryDump);
-
-            return $result;
-        }
-
-        $result->extendedView = $queryDump;
 
         return $result;
     }

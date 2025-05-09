@@ -175,9 +175,9 @@ HTML;
         }
 
         $result = new SageParsedVariable();
-        $result->addAlternativeView(
+        $result->addExtended(
             new SageParsedVariableContents(
-                SageParsedVariableContents::CONTENT_TYPE_STRING,
+                SageParsedVariableContents::STRING,
                 'CSS color',
                 new SageHtmlable($value)
             )

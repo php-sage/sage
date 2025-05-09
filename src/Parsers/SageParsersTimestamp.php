@@ -17,9 +17,9 @@ class SageParsersTimestamp implements SageCustomParserInterface
         $var = strlen($variable) === 13 ? substr($variable, 0, -3) : $variable;
 
         $result = new SageParsedVariable();
-        $result->addAlternativeView(
+        $result->addExtended(
             new SageParsedVariableContents(
-                SageParsedVariableContents::CONTENT_TYPE_STRING,
+                SageParsedVariableContents::STRING,
                 'Timestamp',
                 @date('Y-m-d H:i:s', $var) // avoid dreaded "Timezone must be set" error
             )

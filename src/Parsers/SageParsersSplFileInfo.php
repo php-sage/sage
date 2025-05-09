@@ -26,7 +26,7 @@ class SageParsersSplFileInfo implements SageCustomParserInterface
     }
 
     /**
-     * @param SplFileInfo        $fileInfo
+     * @param SplFileInfo $fileInfo
      * @param SageParsedVariable $result
      *
      * @return SageParsedVariable
@@ -95,7 +95,7 @@ class SageParsersSplFileInfo implements SageCustomParserInterface
 
             if (SageHelper::isRichMode()) {
                 $tab = new SageParsedVariableContents(
-                    SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS,
+                    SageParsedVariableContents::PLAIN_TEXT_ROWS,
                     $name . " [{$size}]"
                 );
 
@@ -121,12 +121,12 @@ class SageParsersSplFileInfo implements SageCustomParserInterface
 
                 // todo add file preview for text files..?
 
-                $result->addAlternativeView($tab);
+                $result->addExtended($tab);
             } else {
-                $tab = new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS);
+                $tab = new SageParsedVariableContents(SageParsedVariableContents::PLAIN_TEXT_ROWS);
                 $tab->addRow($size, $name);
 
-                $result->extendedView = $tab;
+                $result->addExtended($tab);
             }
         } catch (Exception $e) {
             return null;

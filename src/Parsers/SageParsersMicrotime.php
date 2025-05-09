@@ -21,11 +21,11 @@ class SageParsersMicrotime implements SageCustomParserInterface
         }
 
         list($usec, $sec) = explode(' ', $variable);
-        $time          = (float)$usec + (float)$sec;
+        $time          = (float) $usec + (float) $sec;
         $size          = memory_get_usage(true);
         $numberOfCalls = count(self::$times);
         $output        = new SageParsedVariableContents(
-            SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS,
+            SageParsedVariableContents::PLAIN_TEXT_ROWS,
             'Benchmark'
         );
 
@@ -44,7 +44,7 @@ class SageParsersMicrotime implements SageCustomParserInterface
                 $output->addRow(round(array_sum(self::$laps) / $numberOfCalls, 4) . 's.', 'Average duration');
             }
         } else {
-            $output->addRow(@date('Y-m-d H:i:s', (int)$sec) . substr($usec, 1), 'Time (from microtime)');
+            $output->addRow(@date('Y-m-d H:i:s', (int) $sec) . substr($usec, 1), 'Time (from microtime)');
         }
 
         self::$times[] = $time;
@@ -52,7 +52,7 @@ class SageParsersMicrotime implements SageCustomParserInterface
         $unit = array('B', 'KB', 'MB', 'GB', 'TB');
         $output->addRow(round($size / pow(1024, ($i = floor(log($size, 1024)))), 3) . $unit[$i], 'PHP memory usage');
         $result = new SageParsedVariable();
-        $result->extendedView = $output;
+        $result->addExtended($output);
 
         return $result;
     }

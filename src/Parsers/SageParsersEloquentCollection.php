@@ -25,9 +25,7 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
         if ($variable->isNotEmpty()) {
             $result->subtype = '<' . get_class($variable->first()) . '>';
 
-            $result->extendedView = new SageParsedVariableContents(
-                SageParsedVariableContents::CONTENT_TYPE_STRING,
-                null,
+            $result->addExtendedString(
                 $this->arrayToTable($variable)
             );
         }
@@ -79,9 +77,10 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
             return '<td class="_sage-empty"><u>' . $varData->error . '</u></td>';
         }
 
-        if (isset($varData->extendedView)) {
+        if ($varData->alternativeViews) {
             $decorator = new SageDecoratorsRich();
 
+            // todo we don't care about non-essential representations here
             return '<td>' . $decorator->decorate($varData) . '</td>';
         }
 

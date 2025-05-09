@@ -26,22 +26,8 @@ class SageParsedVariable
     public $trace;
 
     /**
-     * Detailed (i.e. not-inline) information about the variable.
-     *
-     * The view is collapsed in Rich view, and if more alternative views exist, this one is put alongside them under
-     * UI as tabs.
-     *
-     * The name will be HIDDEN if no alternatives exist (so don't put important information in the name!)
-     *
-     * @var SageParsedVariableContents
-     */
-    public $extendedView;
-
-    /**
      * Holds alternative representations of the variable. For example, this would contain an array for a string
      * variable that's recognized as json.
-     *
-     * Each element is the same as $extendedView, but MUST have a name.
      *
      * @var SageParsedVariableContents[]
      */
@@ -55,14 +41,10 @@ class SageParsedVariable
      *
      * @return self
      */
-    public function addAlternativeString($contents = '', $name = 'Contents')
+    public function addExtendedString($contents = '', $name = '')
     {
-        if ($contents === null) {
-            return $this;
-        }
-
-        $this->addAlternativeView(
-            new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_STRING, $name, $contents)
+        $this->addExtended(
+            new SageParsedVariableContents(SageParsedVariableContents::STRING, $name, $contents)
         );
 
         return $this;
@@ -76,14 +58,10 @@ class SageParsedVariable
      *
      * @return self
      */
-    public function addAlternativeDumpedRows($contents = array(), $name = 'Contents')
+    public function addExtendedDumpedRows($contents = array(), $name = '')
     {
-        if ($contents === null) {
-            return $this;
-        }
-
-        $this->addAlternativeView(
-            new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS, $name, $contents)
+        $this->addExtended(
+            new SageParsedVariableContents(SageParsedVariableContents::RICH_ROWS, $name, $contents)
         );
 
         return $this;
@@ -97,14 +75,10 @@ class SageParsedVariable
      *
      * @return self
      */
-    public function addAlternativePlaintextRows($contents = array(), $name = 'Contents')
+    public function addExtendedPlaintextRows($contents = array(), $name = '')
     {
-        if ($contents === null) {
-            return $this;
-        }
-
-        $this->addAlternativeView(
-            new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS, $name, $contents)
+        $this->addExtended(
+            new SageParsedVariableContents(SageParsedVariableContents::PLAIN_TEXT_ROWS, $name, $contents)
         );
 
         return $this;
@@ -118,20 +92,33 @@ class SageParsedVariable
      *
      * @return self
      */
-    public function addAlternativeDump($contents = array(), $name = 'Contents')
+    public function addExtendedDump($contents = array(), $name = '')
     {
-        if ($contents === null) {
-            return $this;
-        }
-
-        $this->addAlternativeView(
-            new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_DUMP, $name, $contents)
+        $this->addExtended(
+            new SageParsedVariableContents(SageParsedVariableContents::DUMP, $name, $contents)
         );
 
         return $this;
     }
 
-    public function addAlternativeView(SageParsedVariableContents $alternative)
+    /**
+     * Will add an alternative representation to the variable (as a tab in Rich view).
+     *
+     * @param mixed $contents this will be dumped but unwraped from the topmost element
+     * @param string $name
+     *
+     * @return self
+     */
+    public function addExtendedUnwrappedDump($contents = array(), $name = '')
+    {
+        $this->addExtended(
+            new SageParsedVariableContents(SageParsedVariableContents::DUMP_WITHOUT_TOP_PARENT, $name, $contents)
+        );
+
+        return $this;
+    }
+
+    public function addExtended(SageParsedVariableContents $alternative)
     {
         if ($alternative->contents === null) {
             return;
@@ -195,27 +182,10 @@ class SageParsedVariable
             $this->trace = $from->trace;
         }
 
-        if ($from->extendedView !== null) {
-            $this->extendedView = $from->extendedView;
-        }
-
         if ($from->alternativeViews) {
             $this->alternativeViews = array_merge($this->alternativeViews, $from->alternativeViews);
         }
 
         return $this;
-    }
-
-    /**
-     * @return SageParsedVariableContents[]
-     */
-    public function getAllRepresentations()
-    {
-        $allRepresentations = array();
-        if ($this->extendedView !== null) {
-            $allRepresentations[] = $this->extendedView;
-        }
-
-        return array_merge($allRepresentations, $this->alternativeViews);
     }
 }

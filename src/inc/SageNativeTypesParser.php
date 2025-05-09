@@ -159,13 +159,13 @@ class SageNativeTypesParser
             }
             self::$_placeFullStringInValue = false;
 
-            $result->extendedView = new SageParsedVariableContents(
-                SageParsedVariableContents::CONTENT_TYPE_STRING,
+            $extendedView = new SageParsedVariableContents(
+                SageParsedVariableContents::STRING,
                 '',
                 new SageHtmlable($extendedValue . '</table>')
             );
         } else {
-            $result->extendedView = new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS);
+            $extendedView = new SageParsedVariableContents(SageParsedVariableContents::RICH_ROWS);
 
             foreach ($variable as $key => & $val) {
                 if ($key === SageHelper::ARRAY_MARKER) {
@@ -188,9 +188,10 @@ class SageNativeTypesParser
                         ? $key
                         : "'" . $key . "'";
                 }
-                $result->extendedView->addRow($parsedValue);
+                $extendedView->addRow($parsedValue);
             }
         }
+        $result->addExtended($extendedView);
 
         if ($globalsDetector) {
             self::$dealingWithGlobals = false;
@@ -261,7 +262,7 @@ class SageNativeTypesParser
         }
         $result->size = 0;
 
-        $result->extendedView = new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS);
+        $extendedView = new SageParsedVariableContents(SageParsedVariableContents::RICH_ROWS);
         static $publicProperties = array();
         if (! isset($publicProperties[$className])) {
             $reflectionClass = new ReflectionClass($className);
@@ -301,7 +302,7 @@ class SageNativeTypesParser
             $nestedVarData->name     = SageHelper::esc($key);
             $nestedVarData->access   = $access;
             $nestedVarData->operator = '->';
-            $result->extendedView->addRow($nestedVarData);
+            $extendedView->addRow($nestedVarData);
 
             $result->size++;
         }
@@ -318,8 +319,8 @@ class SageNativeTypesParser
                 }
 
                 $name = $propertyReflection->getName();
-                if ($result->extendedView->contents) {
-                    foreach ($result->extendedView->contents as $alreadyParsed) {
+                if ($extendedView->contents) {
+                    foreach ($extendedView->contents as $alreadyParsed) {
                         if ((string) $alreadyParsed->name === $name) {
                             if (method_exists($propertyReflection, 'isReadOnly') && $propertyReflection->isReadOnly()) {
                                 $alreadyParsed->access .= ' readonly';
@@ -352,10 +353,12 @@ class SageNativeTypesParser
 
                 $output->access   = $access;
                 $output->operator = '->';
-                $result->extendedView->addRow($output);
+                $extendedView->addRow($output);
                 $result->size++;
             }
         } while ($recursiveReflection = $recursiveReflection->getParentClass());
+
+        $result->addExtended($extendedView);
 
         if (isset($arrayObjectFlags)) {
             $variable->setFlags($arrayObjectFlags);
@@ -478,11 +481,7 @@ class SageNativeTypesParser
             $result->size > (SageHelper::MAX_STR_LENGTH + 8)
             || $variable !== preg_replace('/\s+/', ' ', $variable)
         ) {
-            $result->extendedView = new SageParsedVariableContents(
-                SageParsedVariableContents::CONTENT_TYPE_STRING,
-                '',
-                $variable
-            );
+            $result->addExtendedString($variable);
         }
 
         return $result;
@@ -548,9 +547,10 @@ class SageNativeTypesParser
 
     private static function _decorateCell(SageParsedVariable $varData)
     {
-        if (isset($varData->extendedView)) {
+        if ($varData->alternativeViews) {
             $decorator = new SageDecoratorsRich();
 
+            // todo we don't care about non-essential representations here
             return '<td>' . $decorator->decorate($varData) . '</td>';
         }
 

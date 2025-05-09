@@ -12,10 +12,7 @@ class SageParsersLaravelCollection implements SageCustomParserInterface
 
     public function parse(&$variable)
     {
-        if (
-            ! SageHelper::isRichMode()
-            || ! is_a($variable, '\Illuminate\Support\Collection')
-        ) {
+        if (! is_a($variable, '\Illuminate\Support\Collection')) {
             return null;
         }
 
@@ -25,96 +22,11 @@ class SageParsersLaravelCollection implements SageCustomParserInterface
         $result->hash = SageHelper::getObjectHash($variable);
 
         if ($variable->isNotEmpty()) {
+            // todo not necessary all items will be same as the first one
             $result->subtype = '<' . SageHelper::getDebugType($variable->first()) . '>';
-//            $result->addAlternativeDump($variable->toArray());
-            $result->extendedView = new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_DUMP_WITHOUT_TOP_PARENT, '', $variable->toArray());
+            $result->addExtendedUnwrappedDump($variable->toArray());
         }
 
         return $result;
-    }
-
-    private function arrayToTable($variable)
-    {
-        $out = '<table class="_sage-report">';
-
-        $out .= '<thead><tr>';
-        $out .= '<th>#</th>';
-        foreach (array_keys((array) $variable->first()) as $key) {
-            $out .= "<th>{$key}</th>";
-        }
-        $out .= '</tr></thead>';
-
-        $out .= '<tbody>';
-        foreach ($variable as $i => & $row) {
-            // display strings in their full length (todo)
-            //            self::$_placeFullStringInValue = true;
-
-            $out      .= '<tr>';
-            $rowIndex = is_int($i) ? $i + 1 : SageHelper::esc($i);
-            $out      .= '<td>' . $rowIndex . '</td>';
-
-            if (is_array($row) || $row instanceof Traversable) {
-                foreach ($row as $key => $value) {
-                    if (SageHelper::isKeyBlacklisted($key)) {
-                        $processedVar = SageParsedVariable::erroneous('Redacted');
-                    } else {
-                        $processedVar = SageParser::parse($value);
-                    }
-
-                    $out .= self::_decorateCell($processedVar);
-                }
-            } else {
-                $processedVar = SageParser::parse($row);
-                $out          .= self::_decorateCell($processedVar);
-            }
-
-            $out .= '</tr>';
-        }
-
-        $out .= '</tbody></table>';
-
-        return new SageHtmlable($out);
-        //        self::$_placeFullStringInValue = false;
-    }
-
-    private static function _decorateCell(SageParsedVariable $varData)
-    {
-        if ($varData->error !== null) {
-            return '<td class="_sage-empty"><u>' . $varData->error . '</u></td>';
-        }
-
-        if (isset($varData->extendedView)) {
-            $decorator = new SageDecoratorsRich();
-
-            return '<td>' . $decorator->decorate($varData) . '</td>';
-        }
-
-        $output = '<td';
-
-        if ($varData->value !== null) {
-            $output .= ' title="' . $varData->type;
-
-            if ($varData->size !== null) {
-                $output .= ' (' . $varData->size . ')';
-            }
-
-            $output .= '">' . $varData->value;
-        } else {
-            $output .= '>';
-
-            if ($varData->type !== 'NULL') {
-                $output .= '<u>' . $varData->type;
-
-                if ($varData->size !== null) {
-                    $output .= '(' . $varData->size . ')';
-                }
-
-                $output .= '</u>';
-            } else {
-                $output .= '<u>NULL</u>';
-            }
-        }
-
-        return $output . '</td>';
     }
 }

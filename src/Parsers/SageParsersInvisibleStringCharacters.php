@@ -19,18 +19,13 @@ class SageParsersInvisibleStringCharacters implements SageCustomParserInterface
         }
 
         $result = new SageParsedVariable();
-        $result->addAlternativeView(
-            new SageParsedVariableContents(
-                SageParsedVariableContents::CONTENT_TYPE_STRING,
-                'Hidden characters escaped',
-                $variable
-            )
+        $result->addExtendedString(
+            $variable,
+            'Hidden characters escaped'
         );
-
-        $result->extendedView = new SageParsedVariableContents(
-            SageParsedVariableContents::CONTENT_TYPE_STRING,
-            'Contents',
-            SageHelper::esc($variable, false)
+        $result->addExtendedString(
+            SageHelper::esc($variable, false),
+            'Contents'
         );
 
         return $result;

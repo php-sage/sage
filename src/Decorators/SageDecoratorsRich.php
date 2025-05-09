@@ -15,39 +15,46 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         self::$needsAssets = $on;
     }
 
-    public function decorate(SageParsedVariable $varData)
+    public function decorate(SageParsedVariable $varData, $skipHeader = false)
     {
         if ($varData->trace) {
             return $this->decorateTrace($varData->trace);
         }
-
-        $output = '<dl>';
-
-        $allRepresentations = $varData->getAllRepresentations();
+        $allRepresentations = $varData->alternativeViews;
         $isExtendedPresent  = count($allRepresentations) !== 0;
+        $output             = '';
 
-        if ($isExtendedPresent) {
-            $class = '_sage-parent';
-            if (Sage::$expandedByDefault) {
-                $class .= ' _sage-show';
+        if (! $skipHeader) {
+            $output .= '<dl>';
+
+            if ($isExtendedPresent) {
+                $class = '_sage-parent';
+                if (Sage::$expandedByDefault) {
+                    $class .= ' _sage-show';
+                }
+                $output .= '<dt class="' . $class . '">';
+            } else {
+                $output .= '<dt>';
             }
-            $output .= '<dt class="' . $class . '">';
-        } else {
-            $output .= '<dt>';
+
+            if ($isExtendedPresent) {
+                $output .= '<span class="_sage-popup-trigger">&rarr;</span><nav></nav>';
+            }
+
+            $output .= $this->drawHeader($varData);
         }
 
-        if ($isExtendedPresent) {
-            $output .= '<span class="_sage-popup-trigger">&rarr;</span><nav></nav>';
-        }
-
-        $output .= $this->drawHeader($varData) . '</dt>';
+        $output .= '</dt>';
 
         if ($isExtendedPresent) {
-            $output .= '<dd>';
+            if (! $skipHeader) {
+                $output .= '<dd>';
+            }
 
-            if (count($allRepresentations) === 1 && $varData->extendedView !== null) {
+            $firstTab = reset($allRepresentations);
+            if (count($allRepresentations) === 1 && $firstTab->name === '') {
                 // don't need tabs!
-                $output .= $this->drawAlternativeView(reset($allRepresentations));
+                $output .= $this->drawAlternativeView($firstTab);
             } else {
                 $output .= "<ul class=\"_sage-tabs\">";
 
@@ -55,7 +62,11 @@ class SageDecoratorsRich implements SageDecoratorsInterface
                 foreach ($allRepresentations as $alternative) {
                     $active  = $isFirst ? ' class="_sage-active-tab"' : '';
                     $isFirst = false;
-                    $output  .= "<li{$active}>" . SageHelper::esc($alternative->name) . '</li>';
+                    $name    = $alternative->name;
+                    if (! $name) {
+                        $name = 'Contents';
+                    }
+                    $output .= "<li{$active}>" . SageHelper::esc($name) . '</li>';
                 }
 
                 $output .= '</ul><ul>';
@@ -69,11 +80,14 @@ class SageDecoratorsRich implements SageDecoratorsInterface
                 $output .= '</ul>';
             }
         }
-        if ($isExtendedPresent) {
-            $output .= '</dd>';
-        }
 
-        $output .= "</dl>\n";
+        if (! $skipHeader) {
+            if ($isExtendedPresent) {
+                $output .= '</dd>';
+            }
+
+            $output .= "</dl>\n";
+        }
 
         return $output;
     }
@@ -329,9 +343,9 @@ class SageDecoratorsRich implements SageDecoratorsInterface
     private function drawAlternativeView(SageParsedVariableContents $variableContents)
     {
         switch ($variableContents->displayType) {
-            case SageParsedVariableContents::CONTENT_TYPE_STRING:
+            case SageParsedVariableContents::STRING:
                 return SageHelper::pre($variableContents->contents);
-            case SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS:
+            case SageParsedVariableContents::PLAIN_TEXT_ROWS:
                 $output       = '<pre>';
                 $maxKeyLength = 0;
                 foreach ($variableContents->contents as $row) {
@@ -343,7 +357,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
                 $output .= '</pre>';
 
                 return $output;
-            case SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS:
+            case SageParsedVariableContents::RICH_ROWS:
                 $output = '';
                 if ($variableContents->contents) {
                     foreach ($variableContents->contents as $row) {
@@ -352,10 +366,12 @@ class SageDecoratorsRich implements SageDecoratorsInterface
                 }
 
                 return $output;
-            case SageParsedVariableContents::CONTENT_TYPE_DUMP:
+            case SageParsedVariableContents::DUMP:
                 return $this->decorate($variableContents->contents);
+            case SageParsedVariableContents::DUMP_WITHOUT_TOP_PARENT:
+                return $this->decorate($variableContents->contents, true);
             default:
-                throw new SageLogicException('unexpected variable content type');
+                throw new SageLogicException('unexpected variable content type: ' . $variableContents->displayType);
         }
     }
 }
