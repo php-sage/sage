@@ -47,6 +47,90 @@ class SageParsedVariable
      */
     public $alternativeViews = array();
 
+    /**
+     * Will add an alternative representation to the variable (as a tab in Rich view).
+     *
+     * @param string $contents literal string (html) contents of the alternative.
+     * @param string $name
+     *
+     * @return self
+     */
+    public function addAlternativeString($contents = '', $name = 'Contents')
+    {
+        if ($contents === null) {
+            return $this;
+        }
+
+        $this->addAlternativeView(
+            new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_STRING, $name, $contents)
+        );
+
+        return $this;
+    }
+
+    /**
+     * Will add an alternative representation to the variable (as a tab in Rich view).
+     *
+     * @param array $contents each row of the array will be dumped and displayed as "$key: dump($value)"
+     * @param string $name
+     *
+     * @return self
+     */
+    public function addAlternativeDumpedRows($contents = array(), $name = 'Contents')
+    {
+        if ($contents === null) {
+            return $this;
+        }
+
+        $this->addAlternativeView(
+            new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_RICH_ROWS, $name, $contents)
+        );
+
+        return $this;
+    }
+
+    /**
+     * Will add an alternative representation to the variable (as a tab in Rich view).
+     *
+     * @param array<string, string> $contents the key => value rows will be output as plain text
+     * @param string $name
+     *
+     * @return self
+     */
+    public function addAlternativePlaintextRows($contents = array(), $name = 'Contents')
+    {
+        if ($contents === null) {
+            return $this;
+        }
+
+        $this->addAlternativeView(
+            new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_PLAIN_TEXT_ROWS, $name, $contents)
+        );
+
+        return $this;
+    }
+
+    /**
+     * Will add an alternative representation to the variable (as a tab in Rich view).
+     *
+     * @param mixed $contents this will be dumped.
+     * @param string $name
+     *
+     * @return self
+     */
+    public function addAlternativeDump($contents = array(), $name = 'Contents')
+    {
+        if ($contents === null) {
+            return $this;
+        }
+
+        $this->addAlternativeView(
+            new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_DUMP, $name, $contents)
+        );
+
+        return $this;
+    }
+
     public function addAlternativeView(SageParsedVariableContents $alternative)
     {
         if ($alternative->contents === null) {

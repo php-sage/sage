@@ -52,10 +52,10 @@ class SageDecoratorsRich implements SageDecoratorsInterface
                 $output .= "<ul class=\"_sage-tabs\">";
 
                 $isFirst = true;
-                foreach ($allRepresentations as $tab) {
+                foreach ($allRepresentations as $alternative) {
                     $active  = $isFirst ? ' class="_sage-active-tab"' : '';
                     $isFirst = false;
-                    $output  .= "<li{$active}>" . SageHelper::esc($tab->name) . '</li>';
+                    $output  .= "<li{$active}>" . SageHelper::esc($alternative->name) . '</li>';
                 }
 
                 $output .= '</ul><ul>';
@@ -353,7 +353,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
 
                 return $output;
             case SageParsedVariableContents::CONTENT_TYPE_DUMP:
-                return $this->decorate(SageParser::parse($variableContents->contents));
+                return $this->decorate($variableContents->contents);
             default:
                 throw new SageLogicException('unexpected variable content type');
         }

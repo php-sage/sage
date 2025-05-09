@@ -42,7 +42,10 @@ class SageParsedVariableContents
      * Will just dump whatever you pass as the single item as content
      */
     const CONTENT_TYPE_DUMP = 'dump';
-    // todo CONTENT_TYPE_TRACE
+    /**
+     * Will dump whatever you pass but unwrap the topmost element
+     */
+    const CONTENT_TYPE_DUMP_WITHOUT_TOP_PARENT = 'dump';
 
     /**
      * todo legacy constructor @param int $contentType
@@ -112,15 +115,31 @@ class SageParsedVariableContents
         return $this;
     }
 
+    /**
+     * @param mixed $content
+     *
+     * @return $this
+     */
     public function setContent($content)
     {
         if ($this->canHaveRows()) {
-            throw new SageLogicException('Please use addRow for this type of view');
+            if (! is_array($content)) {
+                throw new SageLogicException('Please use addRow for this type of view');
+            }
+
+            foreach ($content as $row) {
+                $this->addRow($row);
+            }
+
+            return $this;
         }
 
-        //        if ($this->displayType === self::CONTENT_TYPE_DUMP) {
-        //            $content = SageParser::parse($content);
-        //        }
+        if (
+            $this->displayType === self::CONTENT_TYPE_DUMP
+            || $this->displayType === self::CONTENT_TYPE_DUMP_WITHOUT_TOP_PARENT
+        ) {
+            $content = SageParser::parse($content, $this->name);
+        }
 
         $this->contents = $content;
 

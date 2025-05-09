@@ -26,12 +26,8 @@ class SageParsersLaravelCollection implements SageCustomParserInterface
 
         if ($variable->isNotEmpty()) {
             $result->subtype = '<' . SageHelper::getDebugType($variable->first()) . '>';
-
-            $result->extendedView = new SageParsedVariableContents(
-                SageParsedVariableContents::CONTENT_TYPE_STRING,
-                null,
-                $this->arrayToTable($variable)
-            );
+//            $result->addAlternativeDump($variable->toArray());
+            $result->extendedView = new SageParsedVariableContents(SageParsedVariableContents::CONTENT_TYPE_DUMP_WITHOUT_TOP_PARENT, '', $variable->toArray());
         }
 
         return $result;
