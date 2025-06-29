@@ -80,10 +80,13 @@ class SageParsersEloquent implements SageCustomParserInterface
      */
     private function parseQuery(&$variable)
     {
-        $result = new SageParsedVariable();
-
+        $result       = new SageParsedVariable();
         $result->type = get_class($variable);
-        $result->addExtendedDump(
+        $result->hash = SageHelper::getObjectHash($variable);
+
+        $query        = $variable->toRawSql();
+        $result->size = strlen($query);
+        $result->addExtendedString(
             SageSqlFormatter::format($variable->toRawSql(), false),
             'Raw query'
         );

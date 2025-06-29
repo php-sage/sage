@@ -34,7 +34,7 @@ if (defined('SAGE_DIR')) {
 define('SAGE_DIR', dirname(__FILE__) . '/');
 
 // Welcome to our autoloader!
-// J/K it's not an autoloader, we just include all of the files!
+// J/K it's not an autoloader, we just include all of the files (except the parsers)!
 // With PHP 5.1++ compatibility in mind we don't use namespaces and do the autoloading manually
 require SAGE_DIR . 'src/inc/SageLogicException.php';
 require SAGE_DIR . 'src/DataStructure/SageCallerData.php';
@@ -278,7 +278,7 @@ class Sage
         'SageParsersBlacklist'                 => true,
 
         // all the rest
-        //        'SageParsersXml'                       => true,
+        // SageParsersXml'                       => true,
         'SageParsersIterable'                  => true,
         'SageParsersClassStatics'              => true,
         'SageParsersColor'                     => true,

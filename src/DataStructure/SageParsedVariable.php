@@ -26,8 +26,8 @@ class SageParsedVariable
     public $trace;
 
     /**
-     * Holds alternative representations of the variable. For example, this would contain an array for a string
-     * variable that's recognized as json.
+     * Holds alternative representations of the variable. For example, this would display an array for a string
+     * that's recognized as json.
      *
      * @var SageParsedVariableContents[]
      */

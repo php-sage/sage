@@ -189,7 +189,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             $output .= $____Arguments____;
 
             foreach ($step->arguments as $argument) {
-                $output .= $this->decorate($argument, 2, '  ');
+                $output .= $this->decorate($argument, 1, '  ');
             }
 
             $output .= $L________________;

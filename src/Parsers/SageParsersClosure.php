@@ -58,10 +58,11 @@ class SageParsersClosure implements SageCustomParserInterface
      */
     private function fetchSource($reflection)
     {
-        $src         = '';
-        $file        = new SplFileObject($reflection->getFileName());
+        $filename    = $reflection->getFileName();
+        $file        = new SplFileObject($filename);
         $startLine   = $reflection->getStartLine();
         $endLine     = $reflection->getEndLine();
+        $src         = '# ' . SageHelper::shortenPath($filename) . ':' . $startLine . "\n";
         $currentLine = $startLine;
         $file->seek($startLine - 1);
         while (! $file->eof()) {

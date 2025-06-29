@@ -45,12 +45,12 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
         $out .= '</tr></thead>';
 
         $out .= '<tbody>';
-        foreach ($variable as $rowIndex => & $row) {
+        foreach ($variable as $rowIndex => $row) {
             // display strings in their full length
             //            self::$_placeFullStringInValue = true;
 
             $out .= '<tr>';
-            $out .= '<td>' . ($rowIndex + 1) . '</td>';
+            $out .= '<td>' . $rowIndex . '</td>';
 
             foreach ($row->getAttributes() as $key => $value) {
                 if (SageHelper::isKeyBlacklisted($key)) {

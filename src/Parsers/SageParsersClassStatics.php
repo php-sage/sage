@@ -10,6 +10,7 @@ class SageParsersClassStatics implements SageCustomParserInterface
 
     public function parse(&$variable)
     {
+        // todo breaks in PHP v8.4
         if (! SageHelper::isRichMode() || ! SageHelper::php53orLater() || ! is_object($variable)) {
             return null;
         }
