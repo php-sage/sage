@@ -283,6 +283,7 @@ class Sage
         'SageParsersClassStatics'              => true,
         'SageParsersColor'                     => true,
         'SageParsersJson'                      => true,
+        'SageParsersXml'                       => true,
         'SageParsersClassName'                 => true,
         'SageParsersMicrotime'                 => true,
         'SageParsersInvisibleStringCharacters' => true,
