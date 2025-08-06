@@ -19,11 +19,16 @@ class SageParsersXml implements SageCustomParserInterface
             return null;
         }
 
-        $dom                     = new DOMDocument();
-        $dom->preserveWhiteSpace = false;
-        $dom->formatOutput       = true;
+        $dom                      = new DOMDocument();
+        $dom->preserveWhiteSpace  = false;
+        $dom->formatOutput        = true;
+        $dom->strictErrorChecking = false;
 
-        if ($dom->loadXML($variable) === false) {
+        try {
+            if ($dom->loadXML($variable) === false) {
+                return null;
+            }
+        } catch (Exception $e) {
             return null;
         }
 
