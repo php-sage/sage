@@ -349,7 +349,7 @@ if (typeof _sageInitialized === 'undefined') {
             return;
         }
 
-        // auto-select name of variable
+        // region auto-select name of variable
         if (tagName === 'DFN') {
             _sage.selectText(target);
             target = target.parentNode;
@@ -363,7 +363,7 @@ if (typeof _sageInitialized === 'undefined') {
             return false;
         }
 
-        // switch tabs
+        // region switch tabs
         if (tagName === 'LI' && _sage.hasClass(target.parentNode, '_sage-tabs')) {
             if (! _sage.hasClass(target, '_sage-active-tab')) {
                 _sage.switchTab(target);
@@ -374,25 +374,23 @@ if (typeof _sageInitialized === 'undefined') {
             return false;
         }
 
-        // handle clicks on the navigation caret
+        // region clicks on the navigation caret
         if (tagName === 'NAV') {
+            target.title = 'asdddd'
+            console.log(`%c scripts.js:380\n target:`, 'color:#088;', target);
             // special case for nav in footer
             if (target.parentNode.tagName === 'FOOTER') {
                 target = target.parentNode;
                 _sage.toggle(target)
             } else {
-                // ensure doubleclick has different behaviour, see below
-                setTimeout(function () {
-                    const timer = parseInt(target._sageTimer, 10);
-                    if (timer > 0) {
-                        target._sageTimer--;
-                    } else {
-                        _sage.toggleChildren(target.parentNode); // <dt>
-                        if (_sage.currentPlus !== -1) {
-                            _sage.fetchVisiblePluses();
-                        }
+                if (e.ctrlKey) {
+                    _sage.toggleChildren(target.parentNode); // <dt>
+                    if (_sage.currentPlus !== -1) {
+                        _sage.fetchVisiblePluses();
                     }
-                }, 300);
+                } else {
+                    _sage.toggle(target.parentNode)
+                }
             }
 
             e.stopPropagation();
@@ -422,23 +420,7 @@ if (typeof _sageInitialized === 'undefined') {
         }
     }, false);
 
-    window.addEventListener('dblclick', function (e) {
-        const target = e.target;
-        if (! _sage.isInsideSage(target)) {
-            return;
-        }
-
-        if (target.tagName === 'NAV') {
-            target._sageTimer = 2;
-            _sage.toggleAll(_sage.hasClass(target));
-            if (_sage.currentPlus !== -1) {
-                _sage.fetchVisiblePluses();
-            }
-            e.stopPropagation();
-        }
-    }, false);
-
-    // keyboard navigation
+    // region keyboard navigation
     window.onkeydown = function (e) { // direct assignment is used to have priority over ex FAYT
         // todo use e.key https://www.toptal.com/developers/keycode
         const keyCode = e.keyCode;

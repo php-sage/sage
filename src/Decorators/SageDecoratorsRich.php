@@ -38,7 +38,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             }
 
             if ($isExtendedPresent) {
-                $output .= '<span class="_sage-popup-trigger">&rarr;</span><nav></nav>';
+                $output .= '<span class="_sage-popup-trigger">&rarr;</span><nav title="[Ctrl+click] Expand all children"></nav>';
             }
 
             $output .= $this->drawHeader($varData);

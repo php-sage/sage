@@ -13,6 +13,7 @@ class SageParsersXml implements SageCustomParserInterface
         if (! SageHelper::isRichMode()
             || ! SageHelper::php53orLater()
             || ! is_string($variable)
+            || ! $variable
             || ($variable[0] !== '<')
             || ! class_exists('DOMDocument')
         ) {
