@@ -29,11 +29,28 @@ class SageParsersXml implements SageCustomParserInterface
             if ($dom->loadXML($variable) === false) {
                 return null;
             }
-        } catch (Exception $e) {
-            return null;
-        }
 
-        $val = $dom->saveXML();
+            $val = $dom->saveXML();
+        } catch (Exception $e) {
+            if (strpos($e->getMessage(), 'XML declaration allowed only at the start of the document') !== false) {
+                try {
+                    $val = '';
+                    foreach (explode('<?xml', $variable) as $part) {
+                        if (trim($part) === '') {
+                            continue;
+                        }
+
+                        if ($dom->loadXML('<?xml ' . $part) === false) {
+                            return null;
+                        }
+
+                        $val .= "\n\n" . $dom->saveXML();
+                    }
+                } catch (Exception $e) {
+                    return null;
+                }
+            }
+        }
 
         if (! $val || $val === $variable) {
             return null;
