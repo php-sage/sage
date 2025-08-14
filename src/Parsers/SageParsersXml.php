@@ -25,6 +25,8 @@ class SageParsersXml implements SageCustomParserInterface
         $dom->formatOutput        = true;
         $dom->strictErrorChecking = false;
 
+        $val = null;
+
         try {
             if ($dom->loadXML($variable) === false) {
                 return null;
