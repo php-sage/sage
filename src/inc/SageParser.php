@@ -59,17 +59,16 @@ class SageParser
                 continue;
             }
 
-            //            // todo is this necessary anymore?
-            //            if (array_key_exists($parserClass, self::$parsingAlternative)) {
-            //                continue;
-            //            }
-            //            self::$parsingAlternative[$parserClass] = true;
+            if (array_key_exists($parserClass, self::$parsingAlternative)) {
+                continue;
+            }
+            self::$parsingAlternative[$parserClass] = true;
 
             /** @var SageCustomParserInterface $parser */
             $parser      = new $parserClass();
             $parseResult = $parser->parse($variable);
 
-            //            unset(self::$parsingAlternative[$parserClass]);
+            unset(self::$parsingAlternative[$parserClass]);
             if ($parseResult) {
                 $result->mergeFrom($parseResult);
 
