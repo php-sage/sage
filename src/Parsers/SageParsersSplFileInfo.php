@@ -121,12 +121,12 @@ class SageParsersSplFileInfo implements SageCustomParserInterface
 
                 // todo add file preview for text files..?
 
-                $result->addExtended($tab);
+                $result->addTabView($tab);
             } else {
                 $tab = new SageParsedVariableContents(SageParsedVariableContents::PLAIN_TEXT_ROWS);
                 $tab->addRow($size, $name);
 
-                $result->addExtended($tab);
+                $result->addTabView($tab);
             }
         } catch (Exception $e) {
             return null;

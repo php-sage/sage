@@ -54,10 +54,10 @@ class SageParsersEloquent implements SageCustomParserInterface
 
         if (SageHelper::isRichMode()) {
             $result->type = get_class($variable);
-            $result->addExtended($attributesDump);
+            $result->addTabView($attributesDump);
 
             foreach ($variable->relationsToArray() as $relationName => $relationAttributes) {
-                $result->addExtended(
+                $result->addTabView(
                     new SageParsedVariableContents(
                         SageParsedVariableContents::DUMP,
                         'Loaded relation: ' . $relationName,
@@ -70,7 +70,7 @@ class SageParsersEloquent implements SageCustomParserInterface
         }
 
         $result->type = get_class($variable) . '; ' . $reference . ' row data:';
-        $result->addExtended($attributesDump);
+        $result->addTabView($attributesDump);
 
         return $result;
     }
@@ -86,7 +86,7 @@ class SageParsersEloquent implements SageCustomParserInterface
 
         $query        = $variable->toRawSql();
         $result->size = strlen($query);
-        $result->addExtendedString(
+        $result->addTabView__String(
             SageSqlFormatter::format($variable->toRawSql(), false),
             'Raw query'
         );

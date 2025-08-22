@@ -41,9 +41,9 @@ class SageParsedVariable
      *
      * @return self
      */
-    public function addExtendedString($contents = '', $name = '')
+    public function addTabView__String($contents = '', $name = '')
     {
-        $this->addExtended(
+        $this->addTabView(
             new SageParsedVariableContents(SageParsedVariableContents::STRING, $name, $contents)
         );
 
@@ -53,14 +53,16 @@ class SageParsedVariable
     /**
      * Will add an alternative representation to the variable (as a tab in Rich view).
      *
+     * Each row of the array will be dumped and displayed in rows.
+     *
      * @param array $contents each row of the array will be dumped and displayed as "$key: dump($value)"
      * @param string $name
      *
      * @return self
      */
-    public function addExtendedDumpedRows($contents = array(), $name = '')
+    public function addTabView__DumpedRows($contents = array(), $name = '')
     {
-        $this->addExtended(
+        $this->addTabView(
             new SageParsedVariableContents(SageParsedVariableContents::RICH_ROWS, $name, $contents)
         );
 
@@ -70,14 +72,19 @@ class SageParsedVariable
     /**
      * Will add an alternative representation to the variable (as a tab in Rich view).
      *
+     * Will produce:
+     *
+     *   NameOfRow1: value
+     *   row2      : value2
+     *
      * @param array<string, string> $contents the key => value rows will be output as plain text
      * @param string $name
      *
      * @return self
      */
-    public function addExtendedPlaintextRows($contents = array(), $name = '')
+    public function addTabView__PlaintextRows($contents = array(), $name = '')
     {
-        $this->addExtended(
+        $this->addTabView(
             new SageParsedVariableContents(SageParsedVariableContents::PLAIN_TEXT_ROWS, $name, $contents)
         );
 
@@ -87,14 +94,16 @@ class SageParsedVariable
     /**
      * Will add an alternative representation to the variable (as a tab in Rich view).
      *
+     * Will just dump whatever you pass as the single item as content.
+     *
      * @param mixed $contents this will be dumped.
      * @param string $name
      *
      * @return self
      */
-    public function addExtendedDump($contents = array(), $name = '')
+    public function addTabView__Dump($contents, $name = '')
     {
-        $this->addExtended(
+        $this->addTabView(
             new SageParsedVariableContents(SageParsedVariableContents::DUMP, $name, $contents)
         );
 
@@ -104,21 +113,42 @@ class SageParsedVariable
     /**
      * Will add an alternative representation to the variable (as a tab in Rich view).
      *
-     * @param mixed $contents this will be dumped but unwraped from the topmost element
+     * Will just dump whatever you pass as the single item as content but unwrap the topmost element.
+     *
+     * @param mixed $contents this will be dumped but unwraped from the topmost element.
      * @param string $name
      *
      * @return self
      */
-    public function addExtendedUnwrappedDump($contents = array(), $name = '')
+    public function addTabView__UnwrappedDump($contents, $name = '')
     {
-        $this->addExtended(
+        $this->addTabView(
             new SageParsedVariableContents(SageParsedVariableContents::DUMP_WITHOUT_TOP_PARENT, $name, $contents)
         );
 
         return $this;
     }
 
-    public function addExtended(SageParsedVariableContents $alternative)
+    /**
+     * Will add an alternative representation to the variable (as a tab in Rich view).
+     *
+     * Will show as trace.
+     *
+     * @param SageTrace $contents this will be dumped but unwraped from the topmost element.
+     * @param string $name
+     *
+     * @return self
+     */
+    public function addTabView__Trace(SageTrace $contents, $name = '')
+    {
+        $this->addTabView(
+            new SageParsedVariableContents(SageParsedVariableContents::TRACE, $name, $contents)
+        );
+
+        return $this;
+    }
+
+    public function addTabView(SageParsedVariableContents $alternative)
     {
         if ($alternative->contents === null) {
             return;

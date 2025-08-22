@@ -424,11 +424,20 @@ class Sage
      */
     public static function trace($trace = null)
     {
-        if ($trace === null) {
-            $trace = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
+        try {
+            if ($trace === null) {
+                $trace = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
+            }
+
+            return self::dump($trace);
+        } catch (Throwable $e) {
+            if (file_exists(SAGE_DIR . '/.dev-mode')) {
+                dd($e);
+            }
+        } catch (Exception $e) {
         }
 
-        return self::dump($trace);
+        return self::STATUS_ERROR;
     }
 
     /**
@@ -437,7 +446,8 @@ class Sage
      * -----
      * Shorthand to display debug_backtrace():
      *   Sage::dump( 1 );
-     *   Sage::dump( debug_backtrace() ); // must be single parameter!
+     *   Sage::trace();
+     *   Sage::dump( debug_backtrace() ); // passed as single-parameter is displayed more nicely.
      *
      * @param mixed $data
      *
@@ -461,9 +471,6 @@ class Sage
         return self::STATUS_ERROR;
     }
 
-    /**
-     * @internal use Sage::dump() instead
-     */
     private function doDump($data = null)
     {
         $enabledMode = self::enabled();
@@ -760,6 +767,10 @@ class Sage
                 $caller->parameterNames = array('Minimal trace (file & line only)');
 
                 return array(SageTrace::minimal($backtraceData));
+            }
+
+            if (SageHelper::isValidTrace($arguments[0])) {
+                return array(SageTrace::full($arguments[0]));
             }
         }
 

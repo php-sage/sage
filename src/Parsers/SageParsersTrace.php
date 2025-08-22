@@ -23,61 +23,14 @@ class SageParsersTrace implements SageCustomParserInterface
             return null;
         }
 
-        $trace       = new SageTrace();
-        $traceFields = array('file', 'line', 'args', 'class');
-        $fileFound   = false; // file element must exist in one of the steps
-        $lastStep    = array();
-
-        // validate whether a trace was indeed passed
-        foreach ($variable as $step) {
-            if (! is_array($step) || ! isset($step['function'])) {
-                return null;
-            }
-            if (! $fileFound && isset($step['file']) && file_exists($step['file'])) {
-                $fileFound = true;
-            }
-
-            $valid = false;
-            foreach ($traceFields as $element) {
-                if (isset($step[$element])) {
-                    $valid = true;
-                    break;
-                }
-            }
-            if (! $valid) {
-                return null;
-            }
-
-            if ($step['function'] === 'spl_autoload_call') { // meaningless
-                continue;
-            }
-
-            if (SageHelper::stepIsInternal($step)) {
-                // take first step from the top that is not inside Sage already
-                if (isset($step['file'], $step['line'])) {
-                    $lastStep = array(
-                        'file'     => $step['file'],
-                        'line'     => $step['line'],
-                        'function' => '',
-                    );
-                }
-
-                continue;
-            }
-
-            $trace->steps[] = SageParsedTraceStep::full($step);
-        }
-
-        if (! $fileFound) {
+        if (! SageHelper::isValidTrace($variable)) {
             return null;
         }
 
-        if ($lastStep) {
-            array_unshift($trace->steps, SageParsedTraceStep::full($lastStep));
-        }
-
-        $result        = new SageParsedVariable();
-        $result->trace = $trace;
+        $result       = new SageParsedVariable();
+        $result->type = 'Trace';
+        $result->size = count($variable);
+        $result->addTabView__Trace(SageTrace::minimalWithRaw($variable));
 
         return $result;
     }

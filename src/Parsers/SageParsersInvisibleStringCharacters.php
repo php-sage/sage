@@ -19,11 +19,11 @@ class SageParsersInvisibleStringCharacters implements SageCustomParserInterface
         }
 
         $result = new SageParsedVariable();
-        $result->addExtendedString(
+        $result->addTabView__String(
             $variable,
             'Hidden characters escaped'
         );
-        $result->addExtendedString(
+        $result->addTabView__String(
             SageHelper::esc($variable, false),
             'Contents'
         );

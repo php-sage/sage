@@ -388,6 +388,7 @@ class SageHelper
         return $out;
     }
 
+    /** @return string */
     public static function pre($string)
     {
         // the browser does not render leading new line in <pre>
@@ -396,6 +397,51 @@ class SageHelper
         }
 
         return '<pre>' . self::esc($string) . '</pre>';
+    }
+
+    /**
+     * @param array $trace
+     *
+     * @return bool
+     */
+    public static function isValidTrace($trace)
+    {
+        if (! is_array($trace)) {
+            return false;
+        }
+
+        $traceFields = array('file', 'line', 'args', 'class');
+        $fileFound   = false; // "file" element must exist in one of the steps
+
+        // validate whether a trace was indeed passed
+        foreach ($trace as $step) {
+            if (! is_array($step) || ! isset($step['function'])) {
+                return false;
+            }
+            if (isset($step['class']) && ! isset($step['type'])) {
+                return false;
+            }
+            if (! $fileFound && isset($step['file']) && file_exists($step['file'])) {
+                $fileFound = true;
+            }
+
+            $valid = false;
+            foreach ($traceFields as $element) {
+                if (isset($step[$element])) {
+                    $valid = true;
+                    break;
+                }
+            }
+            if (! $valid) {
+                return false;
+            }
+        }
+
+        if (! $fileFound) {
+            return false;
+        }
+
+        return true;
     }
 
     public static function getObjectHash($variable)

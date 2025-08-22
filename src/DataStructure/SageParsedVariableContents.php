@@ -14,7 +14,7 @@ class SageParsedVariableContents
      *    plain text rows or full dump rows
      *  - mixed (if CONTENT_TYPE_DUMP) will be just dumped verbatim
      *
-     * @var string|SageHtmlable|SageParsedVariable[]|array{name: string, value: string}|mixed
+     * @var string|SageHtmlable|SageParsedVariable[]|SageTrace|array{name: string, value: string}|mixed
      */
     public $contents = null;
 
@@ -45,7 +45,11 @@ class SageParsedVariableContents
     /**
      * Will dump whatever you pass but unwrap the topmost element
      */
-    const DUMP_WITHOUT_TOP_PARENT = 'dump_unwrapped';
+    const DUMP_WITHOUT_TOP_PARENT = 'dump-unwrapped';
+    /**
+     * Will display passed trace
+     */
+    const TRACE = 'trave';
 
     /**
      * todo legacy constructor @param int $contentType

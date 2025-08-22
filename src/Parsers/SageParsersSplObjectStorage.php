@@ -27,7 +27,7 @@ class SageParsersSplObjectStorage implements SageCustomParserInterface
         }
 
         $result = new SageParsedVariable();
-        $result->addExtended(
+        $result->addTabView(
             new SageParsedVariableContents(
                 SageParsedVariableContents::DUMP,
                 "Object contents ({$count})",

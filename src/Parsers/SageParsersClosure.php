@@ -19,7 +19,7 @@ class SageParsersClosure implements SageCustomParserInterface
         $result       = new SageParsedVariable();
         $result->type = 'Closure';
 
-        $result->addExtendedString(
+        $result->addTabView__String(
             $this->fetchSource($reflection),
             'Source definition'
         );
@@ -42,7 +42,7 @@ class SageParsersClosure implements SageCustomParserInterface
                 $internalsTab->addRow(SageParser::parse($item, '$' . $k));
             }
         }
-        $result->addExtended($internalsTab);
+        $result->addTabView($internalsTab);
 
         if ($reflection->getFileName()) {
             $result->value = SageHelper::ideLink($reflection->getFileName(), $reflection->getStartLine());

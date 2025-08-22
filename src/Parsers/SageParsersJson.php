@@ -27,7 +27,7 @@ class SageParsersJson implements SageCustomParserInterface
         }
 
         $result = new SageParsedVariable();
-        $result->addExtended(
+        $result->addTabView(
             new SageParsedVariableContents(SageParsedVariableContents::DUMP, 'Json', $val)
         );
 

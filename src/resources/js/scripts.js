@@ -30,7 +30,7 @@ if (typeof _sageInitialized === 'undefined') {
             while (i--) {
                 const sage = all[i]
 
-                if (! _sage.isPinningNeeded(sage)) {
+                if (! _sage.isTopPinningNeeded(sage)) {
                     return;
                 }
 
@@ -45,7 +45,7 @@ if (typeof _sageInitialized === 'undefined') {
 
                     const children = parent.nextElementSibling; // <dd>
 
-                    if (! _sage.isPinningNeeded(children)) {
+                    if (! _sage.isTopPinningNeeded(children)) {
                         return;
                     }
 
@@ -72,7 +72,7 @@ if (typeof _sageInitialized === 'undefined') {
             }
         },
 
-        isPinningNeeded: function (el) {
+        isTopPinningNeeded: function (el) {
             const rect = el.getBoundingClientRect()
 
             if (rect.height === 0) {
@@ -153,7 +153,11 @@ if (typeof _sageInitialized === 'undefined') {
 
             // also open up child element if there's only one
             let parent = _sage.next(element);
-            if (parent && parent.childElementCount === 1) {
+            if (
+                parent
+                && parent.childElementCount === 1
+                && ! parent.childNodes[0].classList.contains('_sage-trace') // fix false positive for inline trace
+            ) {
                 parent = parent.children[0].children[0]; // reuse variable cause I can
 
                 // parent is checked in case of empty <pre> when array("\n") is dumped
@@ -376,8 +380,6 @@ if (typeof _sageInitialized === 'undefined') {
 
         // region clicks on the navigation caret
         if (tagName === 'NAV') {
-            target.title = 'asdddd'
-            console.log(`%c scripts.js:380\n target:`, 'color:#088;', target);
             // special case for nav in footer
             if (target.parentNode.tagName === 'FOOTER') {
                 target = target.parentNode;

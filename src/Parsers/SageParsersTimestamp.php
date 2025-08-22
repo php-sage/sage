@@ -17,7 +17,7 @@ class SageParsersTimestamp implements SageCustomParserInterface
         $var = strlen($variable) === 13 ? substr($variable, 0, -3) : $variable;
 
         $result = new SageParsedVariable();
-        $result->addExtended(
+        $result->addTabView(
             new SageParsedVariableContents(
                 SageParsedVariableContents::STRING,
                 'Timestamp',

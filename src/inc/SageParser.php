@@ -3,6 +3,7 @@
 /** @internal */
 class SageParser
 {
+    /** @var int */
     public static $level = 0;
 
     /** @var array<string, true> used to prevent recursion */
@@ -11,13 +12,7 @@ class SageParser
     /**
      * @var array keep parsers from looping todo?
      */
-    private static $parsingAlternative = array();
-
-    public static function reset() // todo test reset
-    {
-        self::$level   = 0;
-        self::$objects = array();
-    }
+    // private static $parsingAlternative = array();
 
     /**
      * @param mixed $variable copy of user-provided variable
@@ -41,9 +36,6 @@ class SageParser
         self::$level   = $level;
         self::$objects = $objects;
 
-        //        self::$level    = $revert['level'];
-        //        self::$_objects = $revert['objects'];
-
         return $result;
     }
 
@@ -54,21 +46,22 @@ class SageParser
 
         $parseAsNative = true;
 
+        $objects = self::$objects;
         foreach (Sage::$enabledParsers as $parserClass => $enabled) {
             if (! $enabled) {
                 continue;
             }
 
-            if (array_key_exists($parserClass, self::$parsingAlternative)) {
-                continue;
-            }
-            self::$parsingAlternative[$parserClass] = true;
+            // if (array_key_exists($parserClass, self::$parsingAlternative)) {
+            //     continue;
+            // }
+            // self::$parsingAlternative[$parserClass] = true;
 
             /** @var SageCustomParserInterface $parser */
             $parser      = new $parserClass();
             $parseResult = $parser->parse($variable);
 
-            unset(self::$parsingAlternative[$parserClass]);
+            // unset(self::$parsingAlternative[$parserClass]);
             if ($parseResult) {
                 $result->mergeFrom($parseResult);
 
@@ -78,10 +71,11 @@ class SageParser
                 }
             }
         }
+        self::$objects = $objects;
 
         if ($parseAsNative) {
             $parsed = SageNativeTypesParser::parse($variable);
-            // base type parser returning null means "stop processing further": e.g. recursion
+            // Native type parser returning null means "stop processing further": e.g. recursion
             if ($parsed) {
                 $result = $parsed->mergeFrom($result);
             } else {

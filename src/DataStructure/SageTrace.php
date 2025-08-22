@@ -5,17 +5,30 @@
  */
 class SageTrace
 {
+    /** @var SageParsedTraceStep[] */
     public $steps = array();
+    /** @var bool */
+    public $full = false;
 
+    /**
+     * Displayed with code snippet, steps are ignored according to blacklist.
+     *
+     * @param array $trace
+     *
+     * @return self
+     */
     public static function full($trace)
     {
-        $self = new self();
+        $self       = new self();
+        $self->full = true;
 
-        return $self->buildTrace($trace, true);
+        return $self->buildTrace($trace, 'full');
     }
 
     /**
-     * Only files and lines, ignores blacklist.
+     * Only files and lines, no blacklist.
+     *
+     * @param array $trace
      *
      * @return self
      */
@@ -23,10 +36,30 @@ class SageTrace
     {
         $self = new self();
 
-        return $self->buildTrace($trace, false);
+        return $self->buildTrace($trace, 'minimal');
     }
 
-    private function buildTrace($trace, $full)
+    /**
+     * Like minimal, but each line expands to reveal raw step data
+     *
+     * @param array $trace
+     *
+     * @return self
+     */
+    public static function minimalWithRaw($trace)
+    {
+        $self = new self();
+
+        return $self->buildTrace($trace, 'minimalWithRaw');
+    }
+
+    /**
+     * @param array $trace
+     * @param string $mode
+     *
+     * @return $this
+     */
+    private function buildTrace($trace, $mode)
     {
         $lastStep = array();
         foreach ($trace as $step) {
@@ -43,19 +76,31 @@ class SageTrace
                 continue;
             }
 
-            $this->steps[] = $full
-                ? SageParsedTraceStep::full($step)
-                : SageParsedTraceStep::minimal($step);
+            $this->steps[] = $this->parseStep($step, $mode);
         }
 
         if ($lastStep) {
-            $lastStep = $full
-                ? SageParsedTraceStep::full($lastStep)
-                : SageParsedTraceStep::minimal($lastStep);
-
-            array_unshift($this->steps, $lastStep);
+            array_unshift($this->steps, $this->parseStep($lastStep, $mode));
         }
 
         return $this;
+    }
+
+    /**
+     * @param array $step
+     * @param 'full'|'minimal'|'minimalWithRaw' $mode
+     *
+     * @return SageParsedTraceStep|void
+     */
+    private function parseStep($step, $mode)
+    {
+        switch ($mode) {
+            case 'full':
+                return SageParsedTraceStep::full($step);
+            case 'minimal':
+                return SageParsedTraceStep::minimal($step);
+            case 'minimalWithRaw':
+                return SageParsedTraceStep::minimalWithRaw($step);
+        }
     }
 }

@@ -8,6 +8,9 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 {
     protected static $needsAssets = true;
 
+    // todo disable it now, remove it someday
+    private static $onlySimpleTraces = true;
+
     // repeated methods due to the way old PHP versions handle static variables on dynamic classnames :)
     public function areAssetsNeeded()
     {
@@ -39,26 +42,11 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         }
 
         if ($varData->trace) {
-            return $output . $this->decorateTrace($varData->trace);
+            return $output . $this->decorateTrace($varData->trace, $level);
         }
 
         // add level color stripe for CLI view
-        $space = $prefix;
-        if (Sage::enabled() === Sage::MODE_CLI) {
-            $s                 = '  ';
-            self::$levelColors = array_slice(self::$levelColors, 0, $level);
-
-            for ($i = 0; $i < $level; $i++) {
-                if (! array_key_exists($i, self::$levelColors)) {
-                    self::$levelColors[$i] = rand(1, 231);
-                }
-                $color = self::$levelColors[$i];
-                $space .= "\x1b[38;5;{$color}m┆\x1b[0m   ";
-            }
-        } else {
-            $s     = '    ';
-            $space = str_repeat($s, $level);
-        }
+        $space = $prefix . $this->getIndentation($level);
 
         if (! $skipHeader) {
             $output .= $space . $this->drawHeader($varData);
@@ -82,7 +70,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
                     }
                     foreach ($extendedView->contents as $row) {
                         $output .=
-                            $space . $s
+                            $space . '  '
                             . $this->key(str_pad($row['name'], $maxKeyLength) . ':')
                             . ' ' . $this->value($row['value']);
                     }
@@ -99,6 +87,9 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
                     break;
                 case SageParsedVariableContents::DUMP_WITHOUT_TOP_PARENT:
                     $output .= $this->decorate($extendedView->contents, $level, $prefix, true);
+                    break;
+                case SageParsedVariableContents::TRACE:
+                    $output .= $this->decorateTrace($extendedView->contents, $level + 1);
                     break;
                 default:
                     throw new SageLogicException('unexpected variable content type');
@@ -118,14 +109,21 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
     # region trace
 
-    private function decorateTrace(SageTrace $trace)
+    /**
+     * @param SageTrace $trace
+     * @param string $lineIndentation
+     *
+     * @return string
+     */
+    private function decorateTrace(SageTrace $trace, $level)
     {
         $lastStepNumber         = count($trace->steps);
         $blacklistedStepsInARow = 0;
         $output                 = '';
         foreach ($trace->steps as $stepNumber => $step) {
             if (
-                $step->isBlackListed
+                ! self::$onlySimpleTraces
+                && $step->isBlackListed
                 && $stepNumber !== 0
             ) {
                 $blacklistedStepsInARow++;
@@ -138,20 +136,22 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
                         $output .= $this->drawTraceStep(
                             $stepNumber - $j,
                             $trace[$stepNumber - $j],
-                            $lastStepNumber
+                            $lastStepNumber,
+                            $level
                         );
                     }
                 } else {
-                    $output .= "...\n[{$blacklistedStepsInARow} steps skipped]\n...\n"
-                        . $this->colorize(
-                            '────────────────────────────────────────────────────────────────────────────────',
-                            'header'
-                        );
+                    $output .= $this->drawTraceStep(
+                        $stepNumber,
+                        "...\n[{$blacklistedStepsInARow} steps skipped]\n...\n",
+                        $lastStepNumber,
+                        $level
+                    );
                 }
 
                 $blacklistedStepsInARow = 0;
             }
-            $output .= $this->drawTraceStep($stepNumber, $step, $lastStepNumber);
+            $output .= $this->drawTraceStep($stepNumber, $step, $lastStepNumber, $level);
         }
 
         if ($blacklistedStepsInARow > 1) {
@@ -163,21 +163,39 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
     # region draw
 
-    private function drawTraceStep($stepNumber, $step, $lastStepNumber)
+    /**
+     * @param int $stepNumber
+     * @param SageParsedTraceStep|string $step
+     * @param int $lastStepNumber
+     * @param int $level
+     *
+     * @return string
+     */
+    private function drawTraceStep($stepNumber, $step, $lastStepNumber, $level)
     {
-        $output = '';
+        $output          = '';
+        $lineIndentation = $this->getIndentation($level);
 
         // ASCII art 🎨
         $_________________ = '────────────────────────────────────────────────────────────────────────────────';
         $____Arguments____ = '  ┌────────────────────────── Arguments ─────────────────────────────────┐';
         $__Callee_Object__ = '  ┌───────────────────────── Callee Object ──────────────────────────────┐';
         $L________________ = '  └──────────────────────────────────────────────────────────────────────┘';
-        $_________________ = $this->colorize($_________________, 'header');
-        $____Arguments____ = $this->colorize($____Arguments____, 'header');
-        $__Callee_Object__ = $this->colorize($__Callee_Object__, 'header');
-        $L________________ = $this->colorize($L________________, 'header');
 
-        $output .= str_pad($stepNumber++ . ': ', 4, ' ');
+        $_________________ = $this->colorize($lineIndentation . $_________________, 'header');
+        $____Arguments____ = $this->colorize($lineIndentation . $____Arguments____, 'header');
+        $__Callee_Object__ = $this->colorize($lineIndentation . $__Callee_Object__, 'header');
+        $L________________ = $this->colorize($lineIndentation . $L________________, 'header');
+
+        if (is_string($step)) {
+            $output .= $lineIndentation . $step;
+
+            $output .= $_________________;
+
+            return $output;
+        }
+
+        $output .= $lineIndentation . str_pad($stepNumber++ . ': ', 4, ' ');
         $output .= $this->colorize($step->fileLine, 'header');
 
         if ($step->functionName) {
@@ -185,20 +203,20 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             $output .= PHP_EOL;
         }
 
-        if ($step->arguments) {
+        if ($step->arguments && ! self::$onlySimpleTraces) {
             $output .= $____Arguments____;
 
             foreach ($step->arguments as $argument) {
-                $output .= $this->decorate($argument, 1, '  ');
+                $output .= $this->decorate($argument, $level, '  ');
             }
 
             $output .= $L________________;
         }
 
-        if ($step->object) {
+        if ($step->object && ! self::$onlySimpleTraces) {
             $output .= $__Callee_Object__;
 
-            $output .= $this->decorate($step->object, 2, '  ');
+            $output .= $this->decorate($step->object, $level + 1, '  ');
 
             $output .= $L________________;
         }
@@ -208,6 +226,33 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         }
 
         return $output;
+    }
+
+    /**
+     * @param int $level
+     *
+     * @return string
+     */
+    private function getIndentation($level)
+    {
+        if (Sage::enabled() === Sage::MODE_CLI) {
+            $space             = '';
+            $s                 = '  ';
+            self::$levelColors = array_slice(self::$levelColors, 0, $level);
+
+            for ($i = 0; $i < $level; $i++) {
+                if (! array_key_exists($i, self::$levelColors)) {
+                    self::$levelColors[$i] = rand(1, 231);
+                }
+                $color = self::$levelColors[$i];
+                $space .= "\x1b[38;5;{$color}m┆\x1b[0m" . $s;
+            }
+        } else {
+            $s     = '    ';
+            $space = str_repeat($s, $level);
+        }
+
+        return $space;
     }
 
     private function drawHeader(SageParsedVariable $varData)

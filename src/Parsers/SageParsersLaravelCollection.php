@@ -24,7 +24,7 @@ class SageParsersLaravelCollection implements SageCustomParserInterface
         if ($variable->isNotEmpty()) {
             // todo not necessary all items will be same as the first one
             $result->subtype = '<' . SageHelper::getDebugType($variable->first()) . '>';
-            $result->addExtendedUnwrappedDump($variable->toArray());
+            $result->addTabView__UnwrappedDump($variable->toArray());
         }
 
         return $result;

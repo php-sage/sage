@@ -9,7 +9,7 @@ class SageParsersArrayAsTable implements SageCustomParserInterface
         return true;
     }
 
-    public function parse(&$variable, $varData)
+    public function parse(&$variable)
     {
         // todo
     }

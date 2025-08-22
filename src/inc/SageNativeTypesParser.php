@@ -9,6 +9,7 @@ class SageNativeTypesParser
     protected static $_placeFullStringInValue = false;
 
     private static $dealingWithGlobals = false;
+    private static $propertyReflectionCache = array();
 
     /**
      * @return ?SageParsedVariable null means 'stop processing further': e.g. recursion
@@ -191,7 +192,7 @@ class SageNativeTypesParser
                 $extendedView->addRow($parsedValue);
             }
         }
-        $result->addExtended($extendedView);
+        $result->addTabView($extendedView);
 
         if ($globalsDetector) {
             self::$dealingWithGlobals = false;
@@ -238,7 +239,7 @@ class SageNativeTypesParser
         }
 
         if (isset(SageParser::$objects[$hash])) {
-            $result->error = "*RECURSION* [{$hash}]";
+            $result->error = "Recursion [{$hash}]";
 
             return $result;
         }
@@ -263,11 +264,11 @@ class SageNativeTypesParser
         $result->size = 0;
 
         $extendedView = new SageParsedVariableContents(SageParsedVariableContents::RICH_ROWS);
-        static $publicProperties = array();
-        if (! isset($publicProperties[$className])) {
+
+        if (! array_key_exists($className, self::$propertyReflectionCache)) {
             $reflectionClass = new ReflectionClass($className);
             foreach ($reflectionClass->getProperties(ReflectionProperty::IS_PUBLIC) as $prop) {
-                $publicProperties[$className][$prop->name] = true;
+                self::$propertyReflectionCache[$className][$prop->name] = true;
             }
         }
 
@@ -288,7 +289,10 @@ class SageNativeTypesParser
             } else {
                 $access = 'public';
 
-                if ($result->type !== 'stdClass' && ! isset($publicProperties[$className][$key])) {
+                if (
+                    $className !== 'stdClass'
+                    && ! isset(self::$propertyReflectionCache[$className][$key])
+                ) {
                     $access .= ' (dynamically added)';
                 }
             }
@@ -358,7 +362,7 @@ class SageNativeTypesParser
             }
         } while ($recursiveReflection = $recursiveReflection->getParentClass());
 
-        $result->addExtended($extendedView);
+        $result->addTabView($extendedView);
 
         if (isset($arrayObjectFlags)) {
             $variable->setFlags($arrayObjectFlags);
@@ -481,7 +485,7 @@ class SageNativeTypesParser
             $result->size > (SageHelper::MAX_STR_LENGTH + 8)
             || $variable !== preg_replace('/\s+/', ' ', $variable)
         ) {
-            $result->addExtendedString($variable);
+            $result->addTabView__String($variable);
         }
 
         return $result;

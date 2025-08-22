@@ -52,7 +52,7 @@ class SageParsersMicrotime implements SageCustomParserInterface
         $unit = array('B', 'KB', 'MB', 'GB', 'TB');
         $output->addRow(round($size / pow(1024, ($i = floor(log($size, 1024)))), 3) . $unit[$i], 'PHP memory usage');
         $result = new SageParsedVariable();
-        $result->addExtended($output);
+        $result->addTabView($output);
 
         return $result;
     }

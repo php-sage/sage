@@ -175,7 +175,7 @@ HTML;
         }
 
         $result = new SageParsedVariable();
-        $result->addExtended(
+        $result->addTabView(
             new SageParsedVariableContents(
                 SageParsedVariableContents::STRING,
                 'CSS color',

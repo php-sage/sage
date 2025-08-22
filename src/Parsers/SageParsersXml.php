@@ -59,7 +59,7 @@ class SageParsersXml implements SageCustomParserInterface
         }
 
         $result = new SageParsedVariable();
-        $result->addExtended(
+        $result->addTabView(
             new SageParsedVariableContents(SageParsedVariableContents::STRING, 'Formatted XML', $val)
         );
 

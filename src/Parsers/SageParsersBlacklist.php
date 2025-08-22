@@ -37,6 +37,7 @@ class SageParsersBlacklist implements SageCustomParserInterface
 
         $result       = new SageParsedVariable();
         $result->type = $className;
+        $result->hash = SageHelper::getObjectHash($variable);
 
         $result->error = '[skipped, dump object in top level to see contents]';  // todo ..or disable on the fly
 

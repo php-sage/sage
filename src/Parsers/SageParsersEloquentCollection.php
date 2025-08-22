@@ -25,7 +25,7 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
         if ($variable->isNotEmpty()) {
             $result->subtype = '<' . get_class($variable->first()) . '>';
 
-            $result->addExtendedString(
+            $result->addTabView__String(
                 $this->arrayToTable($variable)
             );
         }
