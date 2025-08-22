@@ -40,7 +40,13 @@ class SageTrace
     }
 
     /**
-     * Like minimal, but each line expands to reveal raw step data
+     * Like minimal, but each line expands to reveal raw step data.
+     *
+     * Used when a trace is dumped as non-first-class-citizen.
+     *
+     * Can't use full mode in that context because
+     * 1. It uses blacklist
+     * 2. It really really lags if not using blacklist - cause unknown :(
      *
      * @param array $trace
      *

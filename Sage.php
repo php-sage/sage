@@ -251,8 +251,7 @@ class Sage
      * @var class-string<SageParser>[]
      */
     public static $enabledParsers = array(
-        'SageParsersTrace' => true,
-
+        'SageParsersTrace'                     => true,
         'SageParsersSmarty'                    => true,
         'SageParsersSplFileInfo'               => true,
         'SageParsersClosure'                   => true,
@@ -263,6 +262,7 @@ class Sage
         'SageParsersFilePath'                  => true,
         'SageParsersEloquentCollection'        => true,
         'SageParsersLaravelCollection'         => true,
+        'SageParsersLaravelRequest'            => true,
         // above this line are only those parsers that $replacesAllOtherParsers
 
         // now we run the blacklist

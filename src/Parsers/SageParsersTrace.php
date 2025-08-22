@@ -5,7 +5,7 @@ class SageParsersTrace implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
     {
-        return true;
+        return false;
     }
 
     public function parse(&$variable)
@@ -30,7 +30,7 @@ class SageParsersTrace implements SageCustomParserInterface
         $result       = new SageParsedVariable();
         $result->type = 'Trace';
         $result->size = count($variable);
-        $result->addTabView__Trace(SageTrace::minimalWithRaw($variable));
+        $result->addTabView__Trace(SageTrace::minimalWithRaw($variable), 'Trace view');
 
         return $result;
     }

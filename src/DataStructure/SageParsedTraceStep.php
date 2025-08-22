@@ -13,7 +13,7 @@ class SageParsedTraceStep
     public $argumentNames = array();
     /** @var SageParsedVariable|null */
     public $object = null;
-    public $rawSource = array();
+    public $rawStep = array();
 
     /**
      * @param array $step - individual step from internal debug backtrace array
@@ -52,9 +52,9 @@ class SageParsedTraceStep
 
     public static function minimalWithRaw($step)
     {
-        $self            = new self();
-        $self->fileLine  = $self->getFileAndLine($step);
-        $self->rawSource = SageParser::parse($step);
+        $self           = new self();
+        $self->fileLine = $self->getFileAndLine($step);
+        $self->rawStep  = SageParser::parse($step);
 
         return $self;
     }

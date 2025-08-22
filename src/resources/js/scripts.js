@@ -5,6 +5,7 @@ if (typeof _sageInitialized === 'undefined') {
         currentPlus: -1, // currently selected caret
         pinnedParents: [], // fixed to top parents
 
+        // region FUNCTIONS
         debounce: (callback, wait = 100) => {
             let timeoutId;
             return (...args) => {
@@ -223,7 +224,10 @@ if (typeof _sageInitialized === 'undefined') {
 
                 if (i === index) {
                     // when opening tab also uncollapse if there's only one collapsed entry inside
-                    if (el.childElementCount === 1) {
+                    if (
+                        el.childElementCount === 1
+                        && ! el.childNodes[0].classList.contains('_sage-trace') // fix false positive for inline trace
+                    ) {
                         _sage.toggleIfParent(el.children[0].children[0], false)
                     }
                 }
