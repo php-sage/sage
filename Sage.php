@@ -230,15 +230,6 @@ class Sage
      */
     public static $aliases = array();
 
-    /*
-     *    region WIP
-     *    ██╗    ██╗██╗██████╗
-     *    ██║    ██║██║██╔══██╗
-     *    ██║ █╗ ██║██║██████╔╝
-     *    ██║███╗██║██║██╔═══╝
-     *    ╚███╔███╔╝██║██║
-     *     ╚══╝╚══╝ ╚═╝╚═╝
-     */
     /**
      * @var string[] Patterns of filename paths. Keys don't matter, but you can use them to unset a particular entry.
      */
@@ -370,19 +361,7 @@ class Sage
     const THEME_SOLARIZED_DARK = 'solarized-dark';
     const THEME_SOLARIZED = 'solarized';
 
-    /**
-     * Returned when disabled or error occurred.
-     *
-     * "5463" is "SAGE" in l33tspeak :)
-     *
-     * The return value has to be an int otherwise modifiers throw typesafe warinings, eg if we return null:
-     *
-     *    ~d(); // TypeError: Cannot perform bitwise not on null
-     *
-     * It's not zero because it doesn't matter, plus if you find this number somewhere in your logs or something - you
-     * know who to blame :))
-     */
-    const STATUS_ERROR = 5463;
+    const STATUS_ERROR = 'sage';
 
     /*
      *    region ENABLE
