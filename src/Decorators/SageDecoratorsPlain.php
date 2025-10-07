@@ -92,7 +92,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
                     $output .= $this->decorateTrace($extendedView->contents, $level + 1);
                     break;
                 default:
-                    throw new SageLogicException('unexpected variable content type');
+                    throw new SageLogicException('unexpected variable content type', $extendedView->displayType);
             }
 
             if (! $skipHeader) {

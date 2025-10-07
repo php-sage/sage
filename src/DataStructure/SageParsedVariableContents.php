@@ -91,7 +91,7 @@ class SageParsedVariableContents
     public function addRow($content, $name = '', $operator = ':')
     {
         if (! $this->canHaveRows()) {
-            throw new SageLogicException('Cannot add rows to the current view type');
+            throw new SageLogicException('Cannot add rows to the current view type', get_defined_vars());
         }
 
         if ($this->contents === null) {
@@ -107,7 +107,7 @@ class SageParsedVariableContents
             $this->contents[] = $content;
         } elseif ($this->displayType === self::PLAIN_TEXT_ROWS) {
             if (! is_string($content)) {
-                throw new SageLogicException('Can only use text in this mode');
+                throw new SageLogicException('Can only use text in this mode', $content);
             }
 
             $this->contents[] = array(
@@ -128,7 +128,7 @@ class SageParsedVariableContents
     {
         if ($this->canHaveRows()) {
             if (! is_array($content)) {
-                throw new SageLogicException('Please use addRow for this type of view');
+                throw new SageLogicException('Please use addRow for this type of view', $content);
             }
 
             foreach ($content as $row) {

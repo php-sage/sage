@@ -361,7 +361,7 @@ class Sage
     const THEME_SOLARIZED_DARK = 'solarized-dark';
     const THEME_SOLARIZED = 'solarized';
 
-    const STATUS_ERROR = 'sage';
+    const STATUS_ERROR = 'sage error :(';
 
     /*
      *    region ENABLE
@@ -587,7 +587,12 @@ class Sage
         return $decorator;
     }
 
-    private function initDecorator(SageDecoratorsPlain|SageDecoratorsRich $decorator): bool
+    /**
+     * @param SageDecoratorsPlain|SageDecoratorsRich $decorator
+     *
+     * @return bool
+     */
+    private function initDecorator($decorator)
     {
         $firstRunOldValue = $decorator->areAssetsNeeded();
 
@@ -758,19 +763,26 @@ class Sage
             // Sage::dump(1) shorthand
             if ($caller->parameterNames === array('1') && $arguments[0] === 1) {
                 $caller->parameterNames = array('Debug backtrace');
+                $parsedTrace            = new SageParsedVariable();
+                $parsedTrace->trace     = SageTrace::full($backtraceData);
 
-                return array(SageTrace::full($backtraceData));
+                return array($parsedTrace);
             }
 
             // Sage::dump(2) shorthand
             if ($caller->parameterNames === array('2') && $arguments[0] === 2) {
                 $caller->parameterNames = array('Minimal trace (file & line only)');
+                $parsedTrace            = new SageParsedVariable();
+                $parsedTrace->trace     = SageTrace::minimal($backtraceData);
 
-                return array(SageTrace::minimal($backtraceData));
+                return array($parsedTrace);
             }
 
             if (SageHelper::isValidTrace($arguments[0])) {
-                return array(SageTrace::full($arguments[0]));
+                $parsedTrace        = new SageParsedVariable();
+                $parsedTrace->trace = SageTrace::full($arguments[0]);
+
+                return array($parsedTrace);
             }
         }
 

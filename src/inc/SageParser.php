@@ -23,7 +23,7 @@ class SageParser
     public static function parse(&$variable, $name = null)
     {
         if ($variable instanceof SageParsedVariable) {
-            throw new SageLogicException('This is already parsed!');
+            throw new SageLogicException('This is already parsed!', $variable);
         }
 
         // save internal data to revert after dumping to properly handle recursions etc
