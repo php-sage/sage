@@ -239,7 +239,7 @@ class Sage
     );
 
     public static $classNameBlacklist = array(
-        'illuminate' => '/^Illuminate(?!.*(?:Exception|Collection))/'
+        'illuminate' => '/^Illuminate(?!.*(?:Exception|Collection|Expression))/'
         // 'symfony'    => '/^Symfony/'
     );
 
@@ -261,6 +261,7 @@ class Sage
         'SageParsersTimestamp'                 => true,
         'SageParsersFilePath'                  => true,
         'SageParsersEloquentCollection'        => true,
+        'SageParsersEloquentExpression'        => true,
         'SageParsersLaravelCollection'         => true,
         'SageParsersLaravelRequest'            => true,
         // above this line are only those parsers that $replacesAllOtherParsers
