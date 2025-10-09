@@ -181,14 +181,11 @@ class SageNativeTypesParser
                     $parsedValue = SageParser::parse($val);
                 }
 
-                if ($isSequential) {
-                    $parsedValue->name = null;
-                } else {
-                    $parsedValue->operator = '=>';
-                    $parsedValue->name     = is_int($key)
-                        ? $key
-                        : "'" . $key . "'";
-                }
+                $parsedValue->operator = '=>';
+                $parsedValue->name     = is_int($key)
+                    ? $key
+                    : "'" . $key . "'";
+
                 $extendedView->addRow($parsedValue);
             }
         }

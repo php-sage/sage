@@ -13,6 +13,7 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
         if (
             ! SageHelper::isRichMode()
             || ! is_a($variable, '\Illuminate\Database\Eloquent\Collection')
+            || $variable->count() < 3
         ) {
             return null;
         }
