@@ -131,8 +131,8 @@ class SageParsedVariableContents
                 throw new SageLogicException('Please use addRow for this type of view', $content);
             }
 
-            foreach ($content as $row) {
-                $this->addRow($row);
+            foreach ($content as $k => $row) {
+                $this->addRow($row, $k, '=>');
             }
 
             return $this;
@@ -144,10 +144,10 @@ class SageParsedVariableContents
         ) {
             $content = SageParser::parse($content, $this->name);
 
-//            if ($this->displayType === self::DUMP_WITHOUT_TOP_PARENT) {
-//                // todo a mode to dump just the first extended view.
-//                $content = reset$content->alternativeViews;
-//            }
+            // if ($this->displayType === self::DUMP_WITHOUT_TOP_PARENT) {
+            //     // todo a mode to dump just the first extended view.
+            //     $content = reset$content->alternativeViews;
+            // }
         }
 
         $this->contents = $content;

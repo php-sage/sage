@@ -366,8 +366,9 @@ class SageDecoratorsRich implements SageDecoratorsInterface
                 foreach ($variableContents->contents as $row) {
                     $maxKeyLength = max($maxKeyLength, strlen($row['name']));
                 }
-                foreach ($variableContents->contents as $row) {
-                    $output .= str_pad($row['name'], $maxKeyLength) . ': ' . $row['value'] . "\n";
+                foreach ($variableContents->contents as $k => $row) {
+                    $name   = $row['name'] ? $row['name'] : $k;
+                    $output .= str_pad($name, $maxKeyLength) . ': ' . $row['value'] . "\n";
                 }
                 $output .= '</pre>';
 

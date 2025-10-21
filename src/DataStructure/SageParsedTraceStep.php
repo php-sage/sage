@@ -44,8 +44,10 @@ class SageParsedTraceStep
 
     public static function minimal($step)
     {
-        $self           = new self();
-        $self->fileLine = $self->getFileAndLine($step);
+        $self                = new self();
+        $self->fileLine      = $self->getFileAndLine($step);
+        $self->argumentNames = $self->getStepArgumentNames($step);
+        $self->functionName  = $self->getStepFunctionName($step, $self->argumentNames);
 
         return $self;
     }

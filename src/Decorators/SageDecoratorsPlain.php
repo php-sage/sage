@@ -32,24 +32,25 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
     public function decorate(SageParsedVariable $varData, $level = 0, $prefix = '', $skipHeader = false)
     {
         $output = '';
+        $space  = $prefix . $this->getIndentation($level);
+
         if (! $skipHeader) {
             if ($level === 0) {
-                $name          = $varData->name ? $varData->name : '';
+                $output .= $this->drawBigTitle($varData->name);
+                // We'll put the name in the title, don't repeat it in the header
                 $varData->name = null;
+            }
 
-                $output .= $this->title($name);
+            $header = $this->drawHeader($varData);
+            $output .= $space . $header;
+
+            if ($header && $varData->trace) {
+                $output .= PHP_EOL;
             }
         }
 
         if ($varData->trace) {
-            return $output . $this->decorateTrace($varData->trace, $level);
-        }
-
-        // add level color stripe for CLI view
-        $space = $prefix . $this->getIndentation($level);
-
-        if (! $skipHeader) {
-            $output .= $space . $this->drawHeader($varData);
+            return $output . $this->decorateTrace($varData->trace, $level + 1);
         }
 
         // todo make sure there is max one extended representation if we're dumping in plain mode
@@ -110,14 +111,12 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
     # region trace
 
     /**
-     * @param SageTrace $trace
-     * @param string $lineIndentation
+     * @param int $level
      *
      * @return string
      */
     private function decorateTrace(SageTrace $trace, $level)
     {
-        $lastStepNumber         = count($trace->steps);
         $blacklistedStepsInARow = 0;
         $output                 = '';
         foreach ($trace->steps as $stepNumber => $step) {
@@ -136,7 +135,6 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
                         $output .= $this->drawTraceStep(
                             $stepNumber - $j,
                             $trace[$stepNumber - $j],
-                            $lastStepNumber,
                             $level
                         );
                     }
@@ -144,14 +142,13 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
                     $output .= $this->drawTraceStep(
                         $stepNumber,
                         "...\n[{$blacklistedStepsInARow} steps skipped]\n...\n",
-                        $lastStepNumber,
                         $level
                     );
                 }
 
                 $blacklistedStepsInARow = 0;
             }
-            $output .= $this->drawTraceStep($stepNumber, $step, $lastStepNumber, $level);
+            $output .= $this->drawTraceStep($stepNumber, $step, $level);
         }
 
         if ($blacklistedStepsInARow > 1) {
@@ -166,14 +163,17 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
     /**
      * @param int $stepNumber
      * @param SageParsedTraceStep|string $step
-     * @param int $lastStepNumber
      * @param int $level
      *
      * @return string
      */
-    private function drawTraceStep($stepNumber, $step, $lastStepNumber, $level)
+    private function drawTraceStep($stepNumber, $step, $level)
     {
-        $output          = '';
+        $output = '';
+        // Just looks better in all scenarios
+        if ($level === 1) {
+            $level = 0;
+        }
         $lineIndentation = $this->getIndentation($level);
 
         // ASCII art 🎨
@@ -187,6 +187,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         $__Callee_Object__ = $this->colorize($lineIndentation . $__Callee_Object__, 'header');
         $L________________ = $this->colorize($lineIndentation . $L________________, 'header');
 
+        // Hack to display "N steps skipped" instead of the step
         if (is_string($step)) {
             $output .= $lineIndentation . $step;
 
@@ -195,11 +196,15 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             return $output;
         }
 
-        $output .= $lineIndentation . str_pad($stepNumber++ . ': ', 4, ' ');
+        if ($stepNumber === 0) {
+            $output .= $_________________;
+        }
+
+        $output .= $lineIndentation . str_pad($stepNumber . ': ', 4, ' ');
         $output .= $this->colorize($step->fileLine, 'header');
 
         if ($step->functionName) {
-            $output .= '    ' . $step->functionName;
+            $output .= $lineIndentation . '    ' . $step->functionName;
             $output .= PHP_EOL;
         }
 
@@ -221,9 +226,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             $output .= $L________________;
         }
 
-        if ($stepNumber !== $lastStepNumber) {
-            $output .= $_________________;
-        }
+        $output .= $_________________;
 
         return $output;
     }
@@ -255,6 +258,9 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return $space;
     }
 
+    /**
+     * @return string
+     */
     private function drawHeader(SageParsedVariable $varData)
     {
         $output = '';
@@ -282,7 +288,9 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             $type .= ' [' . $varData->hash . ']';
         }
 
-        $output .= ' ' . $this->colorize($type, 'type', false);
+        if ($type) {
+            $output .= ' ' . $this->colorize($type, 'type', false);
+        }
 
         if ($varData->value !== null && $varData->value !== '') {
             $output .= ' ' . $this->value($varData->value, false);
@@ -295,7 +303,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return ltrim($output);
     }
 
-    private function title($text)
+    private function drawBigTitle($text)
     {
         $escaped          = SageHelper::esc($text);
         $lengthDifference = strlen($escaped) - strlen($text);

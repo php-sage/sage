@@ -377,7 +377,7 @@ class Sage
     /**
      * Enables or disables Sage, and forces display mode. Also returns currently active mode.
      *
-     * @param mixed $forceMode
+     * @param bool|Sage::MODE_* $forceMode
      *                        null or void - return current mode
      *                        false        - disable Sage
      *                        true         - enable Sage and allow it to auto-detect the best formatting
@@ -551,7 +551,73 @@ class Sage
         return self::STATUS_ERROR;
     }
 
+    /*
+     *    region HELPERS
+     *    ███╗   ███╗██╗███████╗ ██████╗    ██╗  ██╗███████╗██╗     ██████╗ ███████╗██████╗ ███████╗
+     *    ████╗ ████║██║██╔════╝██╔════╝    ██║  ██║██╔════╝██║     ██╔══██╗██╔════╝██╔══██╗██╔════╝
+     *    ██╔████╔██║██║███████╗██║         ███████║█████╗  ██║     ██████╔╝█████╗  ██████╔╝███████╗
+     *    ██║╚██╔╝██║██║╚════██║██║         ██╔══██║██╔══╝  ██║     ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║
+     *    ██║ ╚═╝ ██║██║███████║╚██████╗    ██║  ██║███████╗███████╗██║     ███████╗██║  ██║███████║
+     *    ╚═╝     ╚═╝╚═╝╚══════╝ ╚═════╝    ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝
+     *
+     */
+
+    private function getWhatToDump(SageCallerData $caller, array $arguments, array $backtraceData)
+    {
+        if (count($arguments) === 0) {
+            $tmp            = microtime();
+            $varData        = SageParser::parse($tmp, '');
+            $varData->type  = null;
+            $varData->name  = 'Sage called with no arguments';
+            $varData->value = null;
+            $varData->size  = null;
+            if ($caller->getUserLandInvoker('file')) {
+                if ($caller->getUserLandInvoker('class') && $caller->getUserLandInvoker('type')) {
+                    $name = $caller->getUserLandInvoker('class')
+                        . $caller->getUserLandInvoker('type')
+                        . $caller->getUserLandInvoker('function');
+                } else {
+                    $name = $caller->getUserLandInvoker('function');
+                }
+                $varData->name = $name . '( no parameters )';
+            }
+
+            return array($varData);
+        }
+
+        if (count($arguments) === 1) {
+            // Sage::dump(1) shorthand
+            if ($caller->parameterNames === array('1') && $arguments[0] === 1) {
+                $parsedTrace        = new SageParsedVariable();
+                $parsedTrace->trace = SageTrace::full($backtraceData);
+                $parsedTrace->name  = 'Debug backtrace';
+
+                return array($parsedTrace);
+            }
+
+            // Sage::dump(2) shorthand
+            if ($caller->parameterNames === array('2') && $arguments[0] === 2) {
+                $parsedTrace        = new SageParsedVariable();
+                $parsedTrace->trace = SageTrace::minimal($backtraceData);
+                $parsedTrace->name  = 'Debug backtrace (only paths)';
+
+                return array($parsedTrace);
+            }
+
+            if (SageHelper::isValidTrace($arguments[0])) {
+                $parsedTrace        = new SageParsedVariable();
+                $parsedTrace->trace = SageTrace::full($arguments[0]);
+
+                return array($parsedTrace);
+            }
+        }
+
+        return $arguments;
+    }
+
     /**
+     * @param bool|Sage::MODE_* $enabledMode
+     *
      * @return SageDecoratorsPlain|SageDecoratorsRich
      */
     private function detectDisplayMode($enabledMode)
@@ -616,17 +682,6 @@ class Sage
 
         return $firstRunOldValue;
     }
-
-    /*
-     *    region HELPERS
-     *    ███╗   ███╗██╗███████╗ ██████╗    ██╗  ██╗███████╗██╗     ██████╗ ███████╗██████╗ ███████╗
-     *    ████╗ ████║██║██╔════╝██╔════╝    ██║  ██║██╔════╝██║     ██╔══██╗██╔════╝██╔══██╗██╔════╝
-     *    ██╔████╔██║██║███████╗██║         ███████║█████╗  ██║     ██████╔╝█████╗  ██████╔╝███████╗
-     *    ██║╚██╔╝██║██║╚════██║██║         ██╔══██║██╔══╝  ██║     ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║
-     *    ██║ ╚═╝ ██║██║███████║╚██████╗    ██║  ██║███████╗███████╗██║     ███████╗██║  ██║███████║
-     *    ╚═╝     ╚═╝╚═╝╚══════╝ ╚═════╝    ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝
-     *
-     */
 
     public static function traceWithoutArgs()
     {
@@ -735,59 +790,6 @@ class Sage
 
             self::$$name = $value;
         }
-    }
-
-    private function getWhatToDump(SageCallerData $caller, array $arguments, array $backtraceData)
-    {
-        if (count($arguments) === 0) {
-            $tmp            = microtime();
-            $varData        = SageParser::parse($tmp, '');
-            $varData->type  = null;
-            $varData->name  = 'Sage called with no arguments';
-            $varData->value = null;
-            $varData->size  = null;
-            if ($caller->getUserLandInvoker('file')) {
-                if ($caller->getUserLandInvoker('class') && $caller->getUserLandInvoker('type')) {
-                    $name = $caller->getUserLandInvoker('class')
-                        . $caller->getUserLandInvoker('type')
-                        . $caller->getUserLandInvoker('function');
-                } else {
-                    $name = $caller->getUserLandInvoker('function');
-                }
-                $varData->name = $name . '( no parameters )';
-            }
-
-            return array($varData);
-        }
-
-        if (count($arguments) === 1) {
-            // Sage::dump(1) shorthand
-            if ($caller->parameterNames === array('1') && $arguments[0] === 1) {
-                $caller->parameterNames = array('Debug backtrace');
-                $parsedTrace            = new SageParsedVariable();
-                $parsedTrace->trace     = SageTrace::full($backtraceData);
-
-                return array($parsedTrace);
-            }
-
-            // Sage::dump(2) shorthand
-            if ($caller->parameterNames === array('2') && $arguments[0] === 2) {
-                $caller->parameterNames = array('Minimal trace (file & line only)');
-                $parsedTrace            = new SageParsedVariable();
-                $parsedTrace->trace     = SageTrace::minimal($backtraceData);
-
-                return array($parsedTrace);
-            }
-
-            if (SageHelper::isValidTrace($arguments[0])) {
-                $parsedTrace        = new SageParsedVariable();
-                $parsedTrace->trace = SageTrace::full($arguments[0]);
-
-                return array($parsedTrace);
-            }
-        }
-
-        return $arguments;
     }
 }
 

@@ -13,22 +13,29 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
         if (
             ! SageHelper::isRichMode()
             || ! is_a($variable, '\Illuminate\Database\Eloquent\Collection')
-            || $variable->count() < 3
         ) {
             return null;
         }
 
         $result       = new SageParsedVariable();
         $result->type = 'Illuminate\Database\Eloquent\Collection';
-        $result->size = $variable->count();
+        $size         = $variable->count();
+        $result->size = $size;
         $result->hash = SageHelper::getObjectHash($variable);
 
         if ($variable->isNotEmpty()) {
             $result->subtype = '<' . get_class($variable->first()) . '>';
 
-            $result->addTabView__String(
-                $this->arrayToTable($variable)
+            $result->addTabView__DumpedRows(
+                $variable->all()
             );
+
+            if ($size > 3 && $size < 1000) {
+                $result->addTabView__String(
+                    $this->arrayToTable($variable),
+                    'As table'
+                );
+            }
         }
 
         return $result;
