@@ -20,8 +20,8 @@ class SageParsersInvisibleStringCharacters implements SageCustomParserInterface
 
         $result = new SageParsedVariable();
         $result->addTabView__String(
-            $variable,
-            'Hidden characters escaped'
+            SageHelper::esc($variable, false),
+            'Original (hidden characters not escaped)'
         );
 
         return $result;

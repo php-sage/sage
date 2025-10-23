@@ -115,5 +115,5 @@ play:
 serve:
 	make up
 	@echo "go to ----> http://localhost:18181 <-----"
-	$(DOCKER) exec php php -S 0.0.0.0:18181 /fake-root/playground.php
+	$(DOCKER) exec php php -S 0.0.0.0:18181 playground.php
 

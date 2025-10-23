@@ -106,7 +106,7 @@ class SageParsedVariableContents
 
             $this->contents[] = $content;
         } elseif ($this->displayType === self::PLAIN_TEXT_ROWS) {
-            if (! is_string($content)) {
+            if (! is_string($content) && ! $content instanceof SageHtmlable) {
                 throw new SageLogicException('Can only use text in this mode', $content);
             }
 

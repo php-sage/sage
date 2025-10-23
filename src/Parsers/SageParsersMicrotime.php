@@ -15,7 +15,7 @@ class SageParsersMicrotime implements SageCustomParserInterface
     {
         if (
             ! is_string($variable)
-            || ! preg_match('/^0\.[\d]{8} [\d]{10}$/', $variable)
+            || ! preg_match('/^0\.\d{8} \d{10}$/', $variable)
         ) {
             return null;
         }
@@ -33,15 +33,15 @@ class SageParsersMicrotime implements SageCustomParserInterface
             $lap          = $time - end(self::$times);
             self::$laps[] = $lap;
 
-            $sinceLast = round($lap, 4) . 's.';
+            $sinceLast = $this->formatSeconds($lap);
             if (SageHelper::isRichMode()) {
                 $sinceLast = new SageHtmlable('<b class="_sage-microtime">' . $sinceLast . '</b>');
             }
-            $output->addRow($sinceLast . 's.', 'Since last such call');
+            $output->addRow($sinceLast, 'Since last such call');
 
             if ($numberOfCalls > 1) {
-                $output->addRow(round($time - self::$times[0], 4) . 's.', 'Since start');
-                $output->addRow(round(array_sum(self::$laps) / $numberOfCalls, 4) . 's.', 'Average duration');
+                $output->addRow($this->formatSeconds($time - self::$times[0]), 'Since start');
+                $output->addRow($this->formatSeconds(array_sum(self::$laps) / $numberOfCalls), 'Average duration');
             }
         } else {
             $output->addRow(@date('Y-m-d H:i:s', (int) $sec) . substr($usec, 1), 'Time (from microtime)');
@@ -56,4 +56,25 @@ class SageParsersMicrotime implements SageCustomParserInterface
 
         return $result;
     }
+
+    private function formatSeconds($seconds)
+    {
+        $hours   = floor($seconds / 3600);
+        $minutes = floor(((int) $seconds % 3600) / 60);
+        $secs    = fmod($seconds, 60);
+
+        $parts = array();
+        if ($hours > 0) {
+            $parts[] = "{$hours}h";
+        }
+        if ($minutes > 0) {
+            $parts[] = "{$minutes}m";
+        }
+        if ($secs > 0 || ! $parts) {
+            $parts[] = round($secs, 4) . 's';
+        }
+
+        return implode(' ', $parts);
+    }
+
 }
