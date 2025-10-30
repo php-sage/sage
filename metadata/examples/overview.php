@@ -128,43 +128,43 @@ class UserManager
 
 $user = new User();
 $user->setAdditionalData(array(
-        'last_login'             => new DateTime(),
-        'current_unix_timestamp' => time(),
-        'random_rgb_color_code'  => '#FF9900',
-        'impressions'            => 60,
-        'nickname'               => 'Someuser',
-    )
+                'last_login'             => new DateTime(),
+                'current_unix_timestamp' => time(),
+                'random_rgb_color_code'  => '#FF9900',
+                'impressions'            => 60,
+                'nickname'               => 'Someuser',
+        )
 );
 $user->setCreatedDate(new DateTime('2013-10-10'));
 $userManager = new UserManager();
 
 for ($i = 1; $i < 6; $i++) {
     $tabularData[] = array(
-        'date'        => "2013-01-0{$i}",
-        'allowed'     => $i % 3 == 0,
-        'action'      => "action {$i}",
-        'clicks'      => rand(100, 50000),
-        'impressions' => rand(10000, 500000),
+            'date'        => "2013-01-0{$i}",
+            'allowed'     => $i % 3 == 0,
+            'action'      => "action {$i}",
+            'clicks'      => rand(100, 50000),
+            'impressions' => rand(10000, 500000),
     );
 
-//    if ($i % 2 == 0) {
-//        unset($tabularData[$i - 1]['clicks']);
-//    }
+    //    if ($i % 2 == 0) {
+    //        unset($tabularData[$i - 1]['clicks']);
+    //    }
 }
 
 $nestedArray = array();
 
 for ($i = 1; $i < 6; $i++) {
     $nestedArray["user group {$i}"] = array(
-        "user {$i}" => array(
-            'name'    => "Name {$i}",
-            'surname' => "Surname {$i}"
-        ),
+            "user {$i}" => array(
+                    'name'    => "Name {$i}",
+                    'surname' => "Surname {$i}"
+            ),
 
-        'data' => array(
-            'conversions' => rand(100, 5000),
-            'spent'       => array('currency' => 'EUR', 'amount' => rand(10000, 500000))
-        ),
+            'data' => array(
+                    'conversions' => rand(100, 5000),
+                    'spent'       => array('currency' => 'EUR', 'amount' => rand(10000, 500000))
+            ),
     );
 }
 ?>

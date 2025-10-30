@@ -62,7 +62,7 @@ class SageParsersEloquentCollection implements SageCustomParserInterface
 
             foreach ($row->getAttributes() as $key => $value) {
                 if (SageHelper::isKeyBlacklisted($key)) {
-                    $processedVar = SageParsedVariable::erroneous('Redacted');
+                    $processedVar = SageParsedVariable::erroneous(SageHelper::trans('key_blacklisted'));
                 } else {
                     $processedVar = SageParser::parse($value);
                 }

@@ -133,7 +133,7 @@ class SageNativeTypesParser
                     }
 
                     if (SageHelper::isKeyBlacklisted($key)) {
-                        $processedVar = SageParsedVariable::erroneous('Redacted');
+                        $processedVar = SageParsedVariable::erroneous(SageHelper::trans('key_blacklisted'));
                     } else {
                         $processedVar = SageParser::parse($row[$key]);
                     }
@@ -174,9 +174,9 @@ class SageNativeTypesParser
                 }
 
                 if (SageHelper::isKeyBlacklisted($key)) {
-                    $parsedValue = SageParsedVariable::erroneous('Redacted');
+                    $parsedValue = SageParsedVariable::erroneous(SageHelper::trans('key_blacklisted'));
                 } elseif (is_array($val) && array_key_exists(SageHelper::ARRAY_MARKER, $val)) {
-                    $parsedValue = SageParsedVariable::erroneous('Recursion');
+                    $parsedValue = SageParsedVariable::erroneous(SageHelper::trans('key_blacklisted'));
                 } else {
                     $parsedValue = SageParser::parse($val);
                 }
@@ -295,7 +295,7 @@ class SageNativeTypesParser
             }
 
             if (SageHelper::isKeyBlacklisted($key)) {
-                $nestedVarData = SageParsedVariable::erroneous('Redacted');
+                $nestedVarData = SageParsedVariable::erroneous(SageHelper::trans('key_blacklisted'));
             } else {
                 $nestedVarData = SageParser::parse($value);
             }

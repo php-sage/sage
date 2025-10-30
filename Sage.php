@@ -107,110 +107,78 @@ class Sage
      *             ini_get('xdebug.file_link_format') ?: 'phpstorm-remote'
      *
      */
-    public static $editor;
+    public static $editor = 'phpstorm-remote';
 
     /**
      * @var string the full path (not URL) to your project folder on your remote dev server, be this Homestead, Docker,
      *             or in the cloud.
-     *
-     * Default:
-     *             null
      */
-    public static $fileLinkServerPath;
+    public static $fileLinkServerPath = null;
 
     /**
      * @var string the full path (not URL) to your project on your local machine, the way your IDE or editor accesses
      *             the files.
-     *
-     * Default:
-     *             null
      */
-    public static $fileLinkLocalPath;
+    public static $fileLinkLocalPath = null;
 
     /**
-     * @var bool whether to display where Sage was called from
-     *
-     * Default:
-     *           true
+     * @var bool whether to display where Sage was called from.
      */
-    public static $displayCalledFrom;
+    public static $displayCalledFrom = true;
 
     /**
-     * @var int max array/object levels to go deep, set to zero/false to disable
-     *
-     * Default:
-     *          7
+     * @var int max array/object levels to go deep, set to zero/false to disable.
      */
-    public static $maxLevels;
+    public static $maxLevels = 7;
 
     /**
      * @var string theme for rich view
      *
-     * Example:
+     * Possible values:
      *             Sage::$theme = Sage::THEME_ORIGINAL;
+     *             Sage::$theme = Sage::THEME_ORIGINAL_LIGHT;
      *             Sage::$theme = Sage::THEME_LIGHT;
      *             Sage::$theme = Sage::THEME_SOLARIZED;
      *             Sage::$theme = Sage::THEME_SOLARIZED_DARK;
-     *
-     * Default:
-     *             Sage::THEME_ORIGINAL
      */
-    public static $theme;
+    public static $theme = Sage::THEME_ORIGINAL;
 
     /**
      * @var bool draw rich output already expanded without having to click
-     *
-     * Default:
-     *           false
      */
-    public static $expandedByDefault;
+    public static $expandedByDefault = false;
 
     /**
      * @var bool enable detection when running in command line and adjust output format accordingly.
-     *
-     * Default:
-     *           true
      */
-    public static $cliDetection;
+    public static $cliDetection = true;
 
     /**
      * @var bool in addition to above setting, enable detection when Sage is run in *UNIX* command line.
      * Attempts to add coloring, but if seen as plain text, the color information is visible as gibberish
-     *
-     * Default:
-     *           true
      */
-    public static $cliColors;
+    public static $cliColors = true;
 
     /**
-     * @var array possible alternative char encodings in order of probability,
-     *
-     * Default:
-     *           array(
-     *               'UTF-8',
-     *               'Windows-1252', // Western; includes iso-8859-1, replace this with windows-1251 if you use Russian
-     *               'euc-jp',       // Japanese
-     *           );
+     * @var array possible alternative char encodings in order of probability
      */
-    public static $charEncodings;
+    public static $charEncodings = array(
+        'UTF-8',
+        'Windows-1252', // Western; includes iso-8859-1, replace this with windows-1251 if you use Russian
+        'euc-jp'       // Japanese
+    );
 
     /**
      * @var bool|string Sage returns output instead of echo.
      *
      * If true, the return has scripts+css always included, if set to a string, only first time per "group".
-     *
-     * Default:
-     *           false
      */
-    public static $returnOutput;
+    public static $returnOutput = false;
 
     /**
      * @var string Write output to this file instead of echoing it. If it ends in `.html` forces output in html mode.
-     *
-     * Default:
-     *           false
      */
-    public static $outputFile;
+    public static $outputFile = false;
 
     /**
      * @var array Add new custom Sage wrapper names. Needed for nice backtraces, variable name detection and modifiers.
@@ -224,9 +192,6 @@ class Sage
      *                d(...func_get_args());
      *            }
      *            Sage::$aliases = 'doom_dump';
-     *
-     * Default:
-     *            array()
      */
     public static $aliases = array();
 
@@ -241,6 +206,11 @@ class Sage
     public static $classNameBlacklist = array(
         'illuminate' => '/^Illuminate(?!.*(?:Exception|Collection|Expression))/'
         // 'symfony'    => '/^Symfony/'
+    );
+
+    // todo more strings
+    public static $translations = array(
+        'key_blacklisted' => 'Redacted'
     );
 
     public static $keysBlacklist = array();
@@ -281,6 +251,8 @@ class Sage
         'SageParsersInvisibleStringCharacters' => true,
     );
 
+    # region SAVE STATE
+
     public static function saveState($state = array())
     {
         $rich  = new SageDecoratorsRich();
@@ -304,11 +276,12 @@ class Sage
             self::$traceBlacklist     = $state['traceBlacklist'];
             self::$classNameBlacklist = $state['classNameBlacklist'];
             self::$enabledParsers     = $state['enabledParsers'];
+            self::$translations       = $state['translations'];
 
             $rich->setAssetsNeeded($state['SageDecoratorsRich::firstRun']);
             $plain->setAssetsNeeded($state['SageDecoratorsPlain::firstRun']);
 
-            return;
+            return array();
         }
 
         return array(
@@ -329,6 +302,7 @@ class Sage
             'traceBlacklist'                => self::$traceBlacklist,
             'classNameBlacklist'            => self::$classNameBlacklist,
             'enabledParsers'                => self::$enabledParsers,
+            'translations'                  => self::$translations,
             'SageDecoratorsRich::firstRun'  => $rich->areAssetsNeeded(),
             'SageDecoratorsPlain::firstRun' => $plain->areAssetsNeeded()
         );
@@ -426,10 +400,7 @@ class Sage
     public static function trace($trace = null)
     {
         try {
-            if ($trace === null) {
-                $trace = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
-            }
-
+            /** @see self::getWhatToDump() */
             return self::dump($trace);
         } catch (Throwable $e) {
             if (file_exists(SAGE_DIR . '/.dev-mode')) {
@@ -564,6 +535,19 @@ class Sage
 
     private function getWhatToDump(SageCallerData $caller, array $arguments, array $backtraceData)
     {
+        /** @see self::trace() */
+        if ($caller->sageMethodCalled === 'trace') {
+            $parsedTrace        = new SageParsedVariable();
+            $parsedTrace->trace = SageTrace::full(
+                $arguments === array(null)
+                    ? $backtraceData
+                    : $arguments[0]
+            );
+            $parsedTrace->name  = 'Debug backtrace';
+
+            return array($parsedTrace);
+        }
+
         if (count($arguments) === 0) {
             $tmp            = microtime();
             $varData        = SageParser::parse($tmp, '');

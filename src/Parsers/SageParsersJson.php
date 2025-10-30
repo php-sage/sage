@@ -15,12 +15,17 @@ class SageParsersJson implements SageCustomParserInterface
             || ! is_string($variable)
             || ! isset($variable[0])
             || ($variable[0] !== '{' && $variable[0] !== '[')
-            || ($json = json_decode($variable, true)) === null
         ) {
             return null;
         }
 
-        $val = (array)$json;
+        $json = json_decode($variable, true);
+
+        if ($json === null) {
+            return null;
+        }
+
+        $val = (array) $json;
 
         if (! $val) {
             return null;

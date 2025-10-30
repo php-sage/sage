@@ -217,7 +217,7 @@ class SageParsedTraceStep
             }
 
             if (SageHelper::isKeyBlacklisted($name)) {
-                $parsed = SageParsedVariable::erroneous('Redacted');
+                $parsed = SageParsedVariable::erroneous(SageHelper::trans('key_blacklisted'));
             } else {
                 $parsed           = SageParser::parse($argument, $name);
                 $parsed->operator = substr($name, 0, 1) === '$' ? '=' : ':';

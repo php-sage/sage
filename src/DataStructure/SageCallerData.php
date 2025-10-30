@@ -13,6 +13,7 @@ class SageCallerData
      * @var array $miniTrace full trace up to sage without arguments and objects
      */
     public $miniTrace = array();
+    public $sageMethodCalled = '';
 
     /**
      * Fetches the public properties defined above.
@@ -40,6 +41,7 @@ class SageCallerData
             }
 
             if (SageHelper::stepIsInternal($step)) {
+                $self->sageMethodCalled = strtolower($step['function']);
                 break;
             }
         }

@@ -53,7 +53,7 @@
       "@build:resources",
       "@build:php"
     ],
-    "build:php": "php .github/build/build.php",
+    "build:php": "php metadata/build/build.php",
     "build:resources": "npm run build"
   }
 }

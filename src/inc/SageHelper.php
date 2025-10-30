@@ -286,6 +286,11 @@ class SageHelper
         return new SageHtmlable($value);
     }
 
+    public static function trans($key)
+    {
+        return array_key_exists($key, Sage::$translations) ? Sage::$translations[$key] : $key;
+    }
+
     public static function getDebugType($variable)
     {
         if (function_exists('get_debug_type')) {

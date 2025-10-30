@@ -16,8 +16,10 @@ class SageDynamicFacade
     /** @var string Same but globally */
     private static $saveAllOutputToThisVariable = null;
 
+    private $alreadyDumped = false;
+
     /**
-     * Costructor for ancient PHP versions support
+     * Constructor for ancient PHP versions support
      */
     public function SageDynamicFacade()
     {
@@ -31,9 +33,13 @@ class SageDynamicFacade
         $this->SageDynamicFacade();
     }
 
+    # region Dump
+
     public function dump($data = null)
     {
         $params = func_get_args();
+
+        $this->alreadyDumped = true;
 
         if ($this->configuredStateForOutput) {
             $stateBackup = Sage::saveState();
@@ -46,7 +52,7 @@ class SageDynamicFacade
             if (self::$saveAllOutputToThisVariable !== null) {
                 self::$saveAllOutputToThisVariable .= $output;
             } elseif ($this->saveOutputToThisVariable !== null) {
-                $this->saveOutputToThisVariable = $output;
+                $this->saveOutputToThisVariable .= $output;
             }
         } else {
             call_user_func_array(array('Sage', 'dump'), $params); # PROCEDURE: dump
@@ -55,6 +61,30 @@ class SageDynamicFacade
         if ($this->configuredStateForOutput) {
             Sage::saveState($stateBackup);
         }
+
+        return $this;
+    }
+
+    /**
+     * @param array $ignoreKeys
+     * @param mixed $data any number of parameters
+     *
+     * @return $this
+     */
+    public function dumpWithKeyBlacklist($ignoreKeys, $data = null)
+    {
+        $params = func_get_args();
+        unset($params[0]);
+
+        $stateBackup                           = $this->saveSettingsPt1();
+        Sage::$enabledParsers                  = array();
+        Sage::$keysBlacklist                   = $ignoreKeys;
+        Sage::$translations['key_blacklisted'] = 'Skipped';
+        $this->saveSettingsPt2($stateBackup);
+
+        call_user_func_array(array($this, 'dump'), $params); # PROCEDURE: dump
+
+        Sage::saveState($stateBackup);
 
         return $this;
     }
@@ -71,6 +101,10 @@ class SageDynamicFacade
 
     public function dd($data = null)
     {
+        if ($this->alreadyDumped && func_num_args() === 0) {
+            die;
+        }
+
         $params = func_get_args();
 
         call_user_func_array(array($this, 'dump'), $params); # PROCEDURE: dump
@@ -78,11 +112,20 @@ class SageDynamicFacade
         die;
     }
 
+    public function saged($data = null)
+    {
+        call_user_func_array(array($this, 'dd'), func_get_args()); # PROCEDURE: dump
+    }
+
+    # region Trace
+
     /**
      * Display trace
      */
     public function trace($onlyFilePaths = false)
     {
+        $this->alreadyDumped = true;
+
         if ($onlyFilePaths) {
             Sage::dump(2);
         } else {
@@ -95,18 +138,12 @@ class SageDynamicFacade
      */
     public function simpleTrace()
     {
+        $this->alreadyDumped = true;
+
         Sage::dump(2);
     }
 
-    /**
-     * Laravel helper. Will dump all DB queries from this point forward.
-     */
-    public function showEloquentQueries()
-    {
-        Sage::showEloquentQueries();
-
-        return $this;
-    }
+    # region Settings
 
     /**
      * Makes all changes to Sage configuration persist for all future instances.
@@ -147,8 +184,7 @@ class SageDynamicFacade
         $this->saveSettingsPt2($stateBackup); # END PROCEDURE: save sage settings
 
         if (func_num_args()) {
-            $params = func_get_args();
-            call_user_func_array(array($this, 'dump'), $params); # PROCEDURE: dump
+            call_user_func_array(array($this, 'dump'), func_get_args()); # PROCEDURE: dump
         }
 
         return $this;
@@ -170,24 +206,33 @@ class SageDynamicFacade
 
     public function displaySimplest($data = null)
     {
-        $params = func_get_args();
+        if ($this->alreadyDumped) {
+            $this->dump('Sage usage warning: Your code called displaySimplest() AFTER the dump!');
 
-        return call_user_func_array(array($this, 'displayPlainText'), $params);
+            return $this;
+        }
+
+        return call_user_func_array(array($this, 'displayPlainText'), func_get_args());
     }
 
     /**
      * Makes the output be RICH-HTML and all nodes will be expanded.
      */
-    public function displayRichExpanded($data = null) // todo what will func_num_args across PHP versions return?
+    public function displayRichExpanded($data = null)
     {
+        if ($this->alreadyDumped) {
+            $this->dump('Sage usage warning: Your code called displayRichExpanded() AFTER the dump!');
+
+            return $this;
+        }
+
         $stateBackup             = $this->saveSettingsPt1();
         Sage::$expandedByDefault = true;
         Sage::enabled(Sage::MODE_RICH);
         $this->saveSettingsPt2($stateBackup);
 
         if (func_num_args()) {
-            $params = func_get_args();
-            call_user_func_array(array($this, 'dump'), $params); # PROCEDURE: dump
+            call_user_func_array(array($this, 'dump'), func_get_args()); # PROCEDURE: dump
         }
 
         return $this;
@@ -209,6 +254,18 @@ class SageDynamicFacade
 
         return $this;
     }
+
+    /**
+     * Laravel helper. Will dump all DB queries from this point forward.
+     */
+    public function showEloquentQueries()
+    {
+        Sage::showEloquentQueries();
+
+        return $this;
+    }
+
+    # region Save output
 
     /**
      * Sage output will not be echoed, but stored into the passed variable by reference.
@@ -243,9 +300,10 @@ class SageDynamicFacade
 
         $saveTo = $dirName;
         if ($saveTo === null) {
-            $file   = debug_backtrace(2)[0]['file'] ?? '';
-            $dir    = dirname($file);
-            $saveTo = $dir;
+            $debugBacktrace = debug_backtrace(2, 1);
+            $file           = isset($debugBacktrace[0]['file']) ? $debugBacktrace[0]['file'] : '';
+            $dir            = dirname($file);
+            $saveTo         = $dir;
         }
 
         if (is_dir($saveTo)) {
@@ -266,7 +324,8 @@ class SageDynamicFacade
     {
         $stateBackup = $this->saveSettingsPt1();
 
-        $file             = debug_backtrace(2)[0]['file'] ?? '';
+        $debugBacktrace   = debug_backtrace(2, 1);
+        $file             = isset($debugBacktrace[0]['file']) ? $debugBacktrace[0]['file'] : '';
         $dir              = dirname($file);
         Sage::$outputFile = $dir . DIRECTORY_SEPARATOR . 'sage.html';
         Sage::enabled(Sage::MODE_RICH);
@@ -281,8 +340,27 @@ class SageDynamicFacade
         return $this;
     }
 
+    # region Settings management
+
     /**
-     * Change settings as needed and immediately run saveSettingsPt2($stateBackup)
+     * This will "magically" preserve setting for the entire chained()->call() and revert when chain invocation is over.
+     *
+     * 1. Run this
+     * 2. Change settings as needed
+     * 3. Run saveSettingsPt2($stateBackup)
+     * 4. Dump ard/or return.
+     *
+     * Example:
+     * ```
+     *  $stateBackup = $this->saveSettingsPt1();
+     *  Sage::enabled(Sage::MODE_PLAIN_HTML);
+     *  $this->saveSettingsPt2($stateBackup);
+     *
+     *  call_user_func_array(array($this, 'dump'), func_get_args());
+     * ```
+     *
+     * No need to do anything else.
+     *
      *
      * @return array|null
      */

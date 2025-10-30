@@ -8,7 +8,7 @@ However, it's much, *much* more.
 
 ---
 
-![](.github/img/main-screenshot.png)
+![](metadata/img/main-screenshot.png)
 
 Sage is designed to exceed expectations, it intelligently handles everything that you throw at it and displays in the best possible way. 
 
@@ -60,11 +60,11 @@ sage(1); // shortcut for dumping trace
 
 ### Simple dump:
 
-![simple mode example](.github/img/simple-mode.png)
+![simple mode example](metadata/img/simple-mode.png)
 
 ### Debug backtrace:
 
-![Trace view](.github/img/trace.png)
+![Trace view](metadata/img/trace.png)
 
 ## Guarantees ✅
 
@@ -319,7 +319,7 @@ sd('Get off my lawn!'); // no effect
 * Sage can provide a plain-text version of its output and does so automatically when invoked via PHP running in command
   line mode.
 
-  ![](.github/img/cli-output.png)
+  ![](metadata/img/cli-output.png)
 
 * Double clicking the `[+]` sign in the output will expand/collapse ALL nodes; **triple clicking** a big block of text
   will select it all.
@@ -327,7 +327,7 @@ sd('Get off my lawn!'); // no effect
   comparison.
 * Sage supports themes:
 
-  ![](.github/img/theme-preview.png)
+  ![](metadata/img/theme-preview.png)
 
   For customization instructions read the section below.
 * If a variable is an object, its classname can be clicked to open the class in your IDE.
@@ -354,7 +354,7 @@ sleep( 2 );
 sd( microtime(), 'final call, after sleep(2)' );
 ```
 
-![](.github/img/profiling.png)
+![](metadata/img/profiling.png)
 
 ---
 
@@ -367,7 +367,7 @@ sd( microtime(), 'final call, after sleep(2)' );
   it!).
 * **Debug backtraces** with full insight of arguments, callee objects and more.
 * Custom display for a lot of recognized types:
-  ![custom types](.github/img/alternative-view.png)
+  ![custom types](metadata/img/alternative-view.png)
 * Has text-only, plain and rich views, has several visual themes - created by a professional designer.
 * A huge number of usability enhancements - like the (clickable) **call trace** in the footer of each output.
 * Supports convenience modifiers, for example `@sage($var);` will return instead of outputting, `-sage($var);`

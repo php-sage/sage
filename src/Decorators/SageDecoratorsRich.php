@@ -329,7 +329,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
 
         // todo
         if ($varData->error !== null && $varData->error !== '') {
-            $output .= ' ' . $varData->error;
+            $output .= ' <u>' . $varData->error . '</u>';
         }
 
         return $output;
