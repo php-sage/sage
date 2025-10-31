@@ -233,6 +233,7 @@ class SageParsedTraceStep
     {
         if (
             ! empty($step['args'])
+            && empty($step['class'])
             && in_array($step['function'], array('include', 'include_once', 'require', 'require_once'), true)
         ) {
             // sanitize the included file path
