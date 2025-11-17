@@ -51,6 +51,7 @@ class SageParsersEloquent implements SageCustomParserInterface
         $result = new SageParsedVariable();
 
         $result->size = count($attributes);
+        $result->hash = SageHelper::getObjectHash($variable);
 
         if (SageHelper::isRichMode()) {
             $result->type = get_class($variable);

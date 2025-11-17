@@ -204,7 +204,7 @@ class Sage
     );
 
     public static $classNameBlacklist = array(
-        'illuminate' => '/^Illuminate(?!.*(?:Exception|Collection|Expression))/'
+        'illuminate' => '/^Illuminate(?!.*(?:Exception|Collection|Expression|Response))/',
         // 'symfony'    => '/^Symfony/'
     );
 
