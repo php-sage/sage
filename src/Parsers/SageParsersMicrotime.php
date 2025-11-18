@@ -76,5 +76,4 @@ class SageParsersMicrotime implements SageCustomParserInterface
 
         return implode(' ', $parts);
     }
-
 }

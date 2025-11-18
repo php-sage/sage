@@ -221,27 +221,28 @@ class Sage
      * @var class-string<SageParser>[]
      */
     public static $enabledParsers = array(
-        'SageParsersTrace'                     => true,
+        // first all parsers that replacesAllOtherParsers() === true:
         'SageParsersSmarty'                    => true,
         'SageParsersSplFileInfo'               => true,
         'SageParsersClosure'                   => true,
         'SageParsersEloquent'                  => true,
         'SageParsersDateTime'                  => true,
-        'SageParsersSplObjectStorage'          => true,
-        'SageParsersTimestamp'                 => true,
-        'SageParsersFilePath'                  => true,
         'SageParsersEloquentCollection'        => true,
         'SageParsersEloquentExpression'        => true,
         'SageParsersLaravelCollection'         => true,
         'SageParsersLaravelRequest'            => true,
-        // above this line are only those parsers that $replacesAllOtherParsers
 
         // now we run the blacklist
         'SageParsersBlacklist'                 => true,
 
         // all the rest
         // SageParsersXml'                       => true,
+        'SageParsersTrace'                     => true,
         'SageParsersIterable'                  => true,
+        'SageParsersPsrStreamInterface'        => true,
+        'SageParsersSplObjectStorage'          => true,
+        'SageParsersFilePath'                  => true,
+        'SageParsersTimestamp'                 => true,
         'SageParsersClassStatics'              => true,
         'SageParsersColor'                     => true,
         'SageParsersJson'                      => true,

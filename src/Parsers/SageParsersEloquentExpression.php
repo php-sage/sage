@@ -21,10 +21,7 @@ class SageParsersEloquentExpression implements SageCustomParserInterface
         $property->setAccessible(true);
         $value = $property->getValue($variable);
 
-        $result       = new SageParsedVariable();
-        $result->type = 'Illuminate\Database\Query\Expression';
-        $result->hash = SageHelper::getObjectHash($variable);
-        $result->size = 1;
+        $result = new SageParsedVariable();
         $result->addTabView__String(
             SageSqlFormatter::format($value, false),
             'Formatted expression'
