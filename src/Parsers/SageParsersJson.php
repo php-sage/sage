@@ -25,16 +25,12 @@ class SageParsersJson implements SageCustomParserInterface
             return null;
         }
 
-        $val = (array) $json;
-
-        if (! $val) {
+        if (! is_array($json)) {
             return null;
         }
 
         $result = new SageParsedVariable();
-        $result->addTabView(
-            new SageParsedVariableContents(SageParsedVariableContents::DUMP, 'Json', $val)
-        );
+        $result->addTabView__UnwrappedDump($json, 'Json');
 
         return $result;
     }

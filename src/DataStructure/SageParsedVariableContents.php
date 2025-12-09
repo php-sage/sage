@@ -55,18 +55,18 @@ class SageParsedVariableContents
      * todo legacy constructor @param int $contentType
      *
      * @param string $name
-     * @param mixed $content
+     * @param mixed $contents
      *
      * @see SageHtmlable
      */
-    public function __construct($contentType, $name = '', $content = null)
+    public function __construct($contentType, $name = '', $contents = null)
     {
         $this->displayType = $contentType;
         if ($name) {
             $this->setName($name);
         }
-        if ($content) {
-            $this->setContent($content);
+        if ($contents) {
+            $this->setContents($contents);
         }
     }
 
@@ -124,7 +124,7 @@ class SageParsedVariableContents
      *
      * @return $this
      */
-    public function setContent($content)
+    public function setContents($content)
     {
         if ($this->canHaveRows()) {
             if (! is_array($content)) {
@@ -143,11 +143,6 @@ class SageParsedVariableContents
             || $this->displayType === self::DUMP_WITHOUT_TOP_PARENT
         ) {
             $content = SageParser::parse($content, $this->name);
-
-            // if ($this->displayType === self::DUMP_WITHOUT_TOP_PARENT) {
-            //     // todo a mode to dump just the first extended view.
-            //     $content = reset$content->alternativeViews;
-            // }
         }
 
         $this->contents = $content;
