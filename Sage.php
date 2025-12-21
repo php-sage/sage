@@ -471,10 +471,7 @@ class Sage
 
             // self::getWhatToDump can return an array of prepared SageParsedVariable
             if (! $argument instanceof SageParsedVariable) {
-                // when the dump arguments take long to generate output, user might have changed the file and
-                // Sage might not parse the arguments correctly, so check if names are set and while the
-                // displayed names might be wrong, at least don't throw an error
-                $name = $this->getParameterName($caller, $k);
+                $name = $caller->getParameterName($k);
 
                 $argument = SageParser::parse($argument, $name);
             }
@@ -681,22 +678,6 @@ class Sage
 
             require SAGE_DIR . 'src/inc/eloquentListener.inc.php';
         }
-    }
-
-    private function getParameterName(SageCallerData $caller, $k)
-    {
-        $name = array_key_exists($k, $caller->parameterNames)
-            ? $caller->parameterNames[$k]
-            : '???';
-
-        if (strlen($name) > 60) {
-            $name =
-                SageHelper::substr($name, 0, 27)
-                . '...'
-                . SageHelper::substr($name, -28, null);
-        }
-
-        return $name;
     }
 
     /*

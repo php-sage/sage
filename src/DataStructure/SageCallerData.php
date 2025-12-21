@@ -85,6 +85,25 @@ class SageCallerData
         return null;
     }
 
+    public function getParameterName($parameterIndex)
+    {
+        // when the dump arguments take long to generate output, user might have changed the file and
+        // Sage might not parse the arguments correctly, so check if names are set and while the
+        // displayed names might be wrong, at least don't throw an error
+        $name = array_key_exists($parameterIndex, $this->parameterNames)
+            ? $this->parameterNames[$parameterIndex]
+            : '???';
+
+        if (strlen($name) > 60) {
+            $name =
+                SageHelper::substr($name, 0, 27)
+                . '...'
+                . SageHelper::substr($name, -28, null);
+        }
+
+        return $name;
+    }
+
     private function solveForPhp82()
     {
         $this->solveForEarlierVersions();

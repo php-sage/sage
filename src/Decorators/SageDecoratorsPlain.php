@@ -266,7 +266,11 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         $output = '';
 
         if ($varData->access) {
-            $output .= ' ' . $this->colorize(SageHelper::esc($varData->access), 'access', false);
+            $output .= ' ' . $this->colorize(
+                    SageHelper::esc($varData->access),
+                    'access',
+                    false
+                );
         }
 
         if ($varData->name !== null && $varData->name !== '') {

@@ -469,13 +469,12 @@ class SageNativeTypesParser
         if ($result->size > (SageHelper::MAX_STR_LENGTH + 8)) {
             $result->value =
                 '"'
-                . SageHelper::esc(
-                    SageHelper::substr($variable, 0, SageHelper::MAX_STR_LENGTH, $encoding),
-                    false
+                . SageHelper::escapeVisibleChars(
+                    SageHelper::substr($variable, 0, SageHelper::MAX_STR_LENGTH, $encoding)
                 )
                 . '&hellip;"';
         } else {
-            $result->value = '"' . SageHelper::esc($variable, false) . '"';
+            $result->value = '"' . SageHelper::escapeVisibleChars($variable) . '"';
         }
 
         if (

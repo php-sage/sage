@@ -269,21 +269,35 @@ class SageHelper
         return new SageHtmlable("<a href=\"{$ideLink}\">{$linkText}</a>");
     }
 
-    public static function esc($value, $exposeInvisibleCharacters = true)
+    /**
+     * same as {@see SageHelper::esc()} but keeps invisible characters
+     */
+    public static function escapeVisibleChars($value)
     {
         if ($value instanceof SageHtmlable) {
             return $value;
         }
 
-        $value = self::isHtmlMode()
-            ? htmlspecialchars($value, ENT_NOQUOTES, 'UTF-8')
-            : $value;
+        return new SageHtmlable(
+            self::isHtmlMode() ? htmlspecialchars($value, ENT_NOQUOTES, 'UTF-8') : $value
+        );
+    }
 
-        if ($exposeInvisibleCharacters) {
-            $value = self::exposeInvisibleCharacters($value);
+    public static function esc($value)
+    {
+        if ($value instanceof SageHtmlable) {
+            return $value;
         }
 
-        return new SageHtmlable($value);
+        if (self::isHtmlMode()) {
+            $escaped = htmlspecialchars($value, ENT_NOQUOTES, 'UTF-8');
+            if ($value !== '' && $escaped === '') {
+                return new SageHtmlable('‹binary data›');
+            }
+            $value = $escaped;
+        }
+
+        return new SageHtmlable(self::exposeInvisibleCharacters($value));
     }
 
     public static function trans($key)
@@ -336,9 +350,6 @@ class SageHelper
         return (get_parent_class($class) ?: key(class_implements($class)) ?: 'class') . '@anonymous';
     }
 
-    /**
-     * Make all invisible characters visible. HTML-escape if needed.
-     */
     private static function exposeInvisibleCharacters($value)
     {
         if (is_int($value)) {
@@ -350,10 +361,6 @@ class SageHelper
         }
 
         if (self::isHtmlMode()) {
-            if (htmlspecialchars($value, ENT_NOQUOTES, 'UTF-8') === '') {
-                return '‹binary data›';
-            }
-
             $controlCharsMap = array(
                 "\v"   => '<u>\v</u>',
                 "\f"   => '<u>\f</u>',

@@ -97,13 +97,14 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         foreach ($trace->steps as $stepNumber => $step) {
             if (
                 $step->isBlackListed
-                && $stepNumber !== 0
+                && $stepNumber !== 0 // always display the first step (even if it's stripped down to just the file:line)
             ) {
                 $blacklistedStepsInARow++;
                 continue;
             }
 
             if ($blacklistedStepsInARow) {
+                // if there were fewer than 5 blacklisted steps in a row, display them (they only contain file:line tho)
                 if ($blacklistedStepsInARow <= 5) {
                     for ($j = $blacklistedStepsInARow; $j > 0; $j--) {
                         $output .= $this->drawTraceStep($stepNumber - $j, $trace->steps[$stepNumber - $j]);
@@ -116,6 +117,14 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             }
 
             $output .= $this->drawTraceStep($stepNumber, $step);
+        }
+
+        if ($blacklistedStepsInARow === count($trace->steps) - 1) {
+            $drawThisMany = min(count($trace->steps), 10);
+            for ($i = 1; $i < $drawThisMany; $i++) {
+                $output .= $this->drawTraceStep($i, $trace->steps[$i]);
+                $blacklistedStepsInARow--;
+            }
         }
 
         if ($blacklistedStepsInARow > 1) {
