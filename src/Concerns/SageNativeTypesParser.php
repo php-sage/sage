@@ -88,7 +88,6 @@ class SageNativeTypesParser
             return SageParsedVariable::erroneous('Depth too Great');
         }
 
-        $isSequential                       = SageHelper::isArraySequential($variable);
         $variable[SageHelper::ARRAY_MARKER] = true;
 
         if ($result->size > 1 && ($arrayKeys = self::isArrayTabular($variable)) !== false) {
@@ -111,11 +110,8 @@ class SageNativeTypesParser
                 }
 
                 $extendedValue .= '<tr>';
-                if ($isSequential) {
-                    $parsedValue = '<td>' . (((int) $rowIndex) + 1) . '</td>';
-                } else {
-                    $parsedValue = self::_decorateCell(SageParser::parse($rowIndex));
-                }
+
+                $parsedValue = self::_decorateCell(SageParser::parse($rowIndex));
                 if ($firstRow) {
                     $extendedValue .= '<th>&nbsp;</th>';
                 }
@@ -252,7 +248,7 @@ class SageNativeTypesParser
 
         // add link to definition of userland objects
         if (SageHelper::isHtmlMode() && $variableReflection->isUserDefined()) {
-            $result->type = SageHelper::ideLink(
+            $result->type = SageHelper::getIdeLink(
                 $variableReflection->getFileName(),
                 $variableReflection->getStartLine(),
                 $result->type

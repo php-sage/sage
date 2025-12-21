@@ -67,7 +67,7 @@ class SageTraceBuilder
                 continue;
             }
 
-            if (SageHelper::stepIsInternal($step)) {
+            if (SageHelper::isStepInternal($step)) {
                 // take first step from the top that is not inside Sage already
                 if (isset($step['file'], $step['line'])) {
                     $lastStep = $step;
@@ -175,7 +175,7 @@ class SageTraceBuilder
             return 'PHP internal call';
         }
 
-        return SageHelper::ideLink($rawTraceStep['file'], $rawTraceStep['line']);
+        return SageHelper::getIdeLink($rawTraceStep['file'], $rawTraceStep['line']);
     }
 
     private function getStepArgumentNames($rawTraceStep)

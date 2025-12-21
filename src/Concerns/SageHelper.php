@@ -67,9 +67,6 @@ class SageHelper
     }
 
     /**
-     * generic path display callback, can be configured in the settings; purpose is to show relevant path info and hide
-     * as much of the path as possible.
-     *
      * @param string $file
      *
      * @return string
@@ -126,11 +123,11 @@ class SageHelper
     /**
      * returns whether current trace step belongs to Sage or its wrappers
      *
-     * @param $step
+     * @param array $step
      *
      * @return bool
      */
-    public static function stepIsInternal($step)
+    public static function isStepInternal($step)
     {
         $methodName = strtolower($step['function']);
         $className  = array_key_exists('class', $step) ? strtolower($step['class']) : '';
@@ -177,22 +174,6 @@ class SageHelper
         return substr($string, $start, $end);
     }
 
-    /**
-     * returns whether the array:
-     *  1) is numeric and
-     *  2) in sequence starting from zero
-     *
-     * @param array $array
-     *
-     * @return bool
-     */
-    public static function isArraySequential(array $array)
-    {
-        $keys = array_keys($array);
-
-        return array_keys($keys) === $keys;
-    }
-
     public static function detectEncoding($value)
     {
         if (function_exists('mb_detect_encoding')) {
@@ -203,7 +184,7 @@ class SageHelper
         }
 
         if (! function_exists('iconv')) {
-            return ! empty($mbDetected) ? $mbDetected : 'UTF-8';
+            return $mbDetected ? $mbDetected : 'UTF-8';
         }
 
         $md5 = md5($value);
@@ -228,7 +209,7 @@ class SageHelper
         return strlen($string);
     }
 
-    public static function ideLink($file, $line, $linkText = null)
+    public static function getIdeLink($file, $line, $linkText = null)
     {
         $enabledMode = Sage::enabled();
         $file        = self::shortenPath($file);

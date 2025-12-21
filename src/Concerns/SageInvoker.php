@@ -10,9 +10,9 @@ class SageInvoker
      */
     public $parameterNames = array();
     /**
-     * @var array $miniTrace full trace up to sage without arguments and objects
+     * @var array $miniTrace trace only up to sage, and only file, line, class, function
      */
-    public $miniTrace = array();
+    public $trace = array();
     public $sageMethodCalled = '';
 
     /**
@@ -39,10 +39,10 @@ class SageInvoker
 
             if (isset($step['file'], $step['line'])) {
                 unset($step['object'], $step['args']);
-                array_unshift($self->miniTrace, $step);
+                array_unshift($self->trace, $step);
             }
 
-            if (SageHelper::stepIsInternal($step)) {
+            if (SageHelper::isStepInternal($step)) {
                 $self->sageMethodCalled = strtolower($step['function']);
                 break;
             }
@@ -55,14 +55,14 @@ class SageInvoker
         SageHelper::detectProjectRoot($self->getUserLandInvoker('file'));
 
         if (SageHelper::php82orLater()) {
-            $self->solveForPhp82();
+            $self->parameterNames = SageParameterNameParser::fetch($self->trace[0], $self->sageMethodCalled);
         } else {
-            $self->solveForEarlierVersions();
+            $self->parameterNames = SageParameterNameParserLegacy::fetch($self->trace[0]);
         }
 
         if ($insideTemplateDetected) {
-            $self->miniTrace[1]['file'] = $insideTemplateDetected;
-            $self->miniTrace[1]['line'] = null;
+            $self->trace[1]['file'] = $insideTemplateDetected;
+            $self->trace[1]['line'] = null;
         }
 
         return $self;
@@ -71,13 +71,13 @@ class SageInvoker
     /**
      * Gets the trace step where Sage was invoked.
      *
-     * @param 'all'|'file'|'line'|'function'|'args'|'object' $whichElement fetch specific element not the whole step
+     * @param 'all'|'file'|'line'|'function'|'class' $whichElement fetch specific element not the whole step
      *
      * @return null|array|string|int trace step where sage was called from
      */
     public function getUserLandInvoker($whichElement = 'all')
     {
-        $step = count($this->miniTrace) > 1 ? $this->miniTrace[1] : array();
+        $step = count($this->trace) > 1 ? $this->trace[1] : array();
         if ($whichElement === 'all') {
             return $step;
         }
@@ -113,187 +113,24 @@ class SageInvoker
         return $name;
     }
 
-    private function solveForPhp82()
+    private static function detectProjectRoot($calledFromFile)
     {
-        $this->solveForEarlierVersions();
+        // Find common path with Sage dir
+        self::$projectRootDir = '';
 
-        return;
-        // open the file and read it up to the position where the function call expression ended
-        // TODO since PHP 8.2 backtrace reports the lineno of the function/method name!
-        // https://github.com/php/php-src/pull/8818
-
-        $userLandInvoker = $this->miniTrace[0];
-
-        $file = new SplFileObject($userLandInvoker['file']);
-        $line = $userLandInvoker['line'];
-        do {
-            $file->seek($line);
-            $contents = $file->current(); // $contents would hold the data from line x
-
-        } while (! $file->eof());
-
-        $this->solveForEarlierVersions();
-    }
-
-    private function solveForEarlierVersions()
-    {
-        $userLandInvoker = $this->miniTrace[0];
-
-        $file   = fopen($userLandInvoker['file'], 'r');
-        $line   = 0;
-        $source = '';
-        while (($row = fgets($file)) !== false) {
-            if (++$line > $userLandInvoker['line']) {
-                break;
-            }
-            $source .= $row;
-        }
-        fclose($file);
-        $source = self::_removeAllButCode($source);
-
-        if (empty($userLandInvoker['class'])) {
-            $codePattern = $userLandInvoker['function'];
-        } else {
-            $codePattern = "\w+\x07*" . $userLandInvoker['type'] . "\x07*" . $userLandInvoker['function'];
-        }
-
-        // get the position of the last call to the function
-        preg_match_all(
-            "
-            /
-            # beginning of statement
-            [\x07{(]
-
-            # spaces
-            \x07*
-
-            # possibly a namespace symbol
-            \\\\?
-
-            # spaces again
-            \x07*
-
-            # main call to Sage (group 1)
-            ({$codePattern})
-
-            # spaces everywhere
-            \x07*
-
-            # find the character where Sage's opening bracket resides (group 2)
-            (\\()
-
-            /ix",
-            $source,
-            $matches,
-            PREG_OFFSET_CAPTURE
-        );
-
-        $callToSage = end($matches[1]);
-        $bracket    = end($matches[2]);
-
-        if (empty($callToSage)) {
-            // if a wrapper is misconfigured, don't display the whole file as variable name
+        if (! $calledFromFile) {
             return;
         }
 
-        $paramsString = preg_replace("[\x07+]", ' ', substr($source, $bracket[1] + 1));
-        // we now have a string like this:
-        // <parameters passed>); <the rest of the last read line>
-
-        // remove everything in brackets and quotes, we don't need nested statements nor literal strings which would
-        // complicate separating individual arguments
-        $i              = 0;
-        $c              = strlen($paramsString);
-        $betweenQuotes  = $escaped = $openedBracket = $closingBracket = false;
-        $inBrackets     = 0;
-        $openedBrackets = array();
-        $bracketPairs   = array('(' => ')', '[' => ']', '{' => '}');
-
-        while ($i < $c) {
-            $letter = $paramsString[$i];
-
-            if (! $betweenQuotes) {
-                if ($letter === "'" || $letter === '"') {
-                    $betweenQuotes = $letter;
-                } elseif ($letter === '(' || $letter === '[' || $letter === '{') {
-                    $inBrackets++;
-                    $openedBrackets[] = $openedBracket = $letter;
-                    $closingBracket   = $bracketPairs[$letter];
-                } elseif ($inBrackets && $letter === $closingBracket) {
-                    $inBrackets--;
-                    array_pop($openedBrackets);
-                    $openedBracket = end($openedBrackets);
-                    if ($openedBracket) {
-                        $closingBracket = $bracketPairs[$openedBracket];
-                    }
-                } elseif (! $inBrackets && $letter === ')') {
-                    $paramsString = substr($paramsString, 0, $i);
-                    break;
-                }
-            } elseif ($letter === $betweenQuotes && ! $escaped) {
-                $betweenQuotes = false;
+        $sagePathParts = explode('/', str_replace('\\', '/', SAGE_DIR));
+        $filePathParts = explode('/', $calledFromFile);
+        foreach ($filePathParts as $i => $filePart) {
+            if (! isset($sagePathParts[$i]) || $sagePathParts[$i] !== $filePart) {
+                break;
             }
 
-            // replace whatever was inside quotes or brackets with untypeable characters, we don't need that info.
-            if ($inBrackets > 0) {
-                if ($inBrackets > 1 || $letter !== $openedBracket) {
-                    $paramsString[$i] = "\x07";
-                }
-            }
-            if ($betweenQuotes) {
-                if ($letter !== $betweenQuotes || $escaped) {
-                    $paramsString[$i] = "\x07";
-                }
-            }
-
-            $escaped = ! $escaped && ($letter === '\\');
-            $i++;
+            self::$projectRootDir .= $filePart . '/';
         }
-
-        $this->parameterNames = explode(',', preg_replace("[\x07+]", '...', $paramsString));
-        $this->parameterNames = array_map('trim', $this->parameterNames);
     }
 
-    /**
-     * removes comments and zaps whitespace & < ?php tags from php code, makes for easier further parsing
-     *
-     * @param string $source
-     *
-     * @return string
-     */
-    private static function _removeAllButCode($source)
-    {
-        $commentTokens    = array(
-            T_COMMENT     => true,
-            T_INLINE_HTML => true,
-            T_DOC_COMMENT => true,
-        );
-        $whiteSpaceTokens = array(
-            T_WHITESPACE         => true,
-            T_CLOSE_TAG          => true,
-            T_OPEN_TAG           => true,
-            T_OPEN_TAG_WITH_ECHO => true,
-        );
-
-        $cleanedSource = '';
-        foreach (token_get_all($source) as $token) {
-            if (is_array($token)) {
-                if (isset($commentTokens[$token[0]])) {
-                    continue;
-                }
-
-                if (isset($whiteSpaceTokens[$token[0]])) {
-                    $token = "\x07";
-                } else {
-                    $token = $token[1];
-                }
-            } elseif ($token === ';') {
-                $token = "\x07";
-            }
-
-            $cleanedSource .= $token;
-        }
-
-        return $cleanedSource;
-    }
 }

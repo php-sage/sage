@@ -260,11 +260,11 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         }
         $callingFunction and $callingFunction = " [{$callingFunction}]";
 
-        if ($caller->miniTrace) {
-            foreach ($caller->miniTrace as $i => $step) {
+        if ($caller->trace) {
+            foreach ($caller->trace as $i => $step) {
                 if ($i === 0) {
                     $traceDisplay = 'Called from '
-                        . SageHelper::ideLink($caller->miniTrace[0]['file'], $caller->miniTrace[0]['line']);
+                        . SageHelper::getIdeLink($caller->trace[0]['file'], $caller->trace[0]['line']);
 
                     continue;
                 }
@@ -273,7 +273,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
                     $traceDisplay = '<nav></nav>' . $traceDisplay . '<ol>';
                 }
 
-                $traceDisplay .= '<li>' . SageHelper::ideLink($step['file'], $step['line']); // closing tag not required
+                $traceDisplay .= '<li>' . SageHelper::getIdeLink($step['file'], $step['line']); // closing tag not required
                 if (isset($step['function'])
                     && ! in_array($step['function'], array('include', 'include_once', 'require', 'require_once'))
                 ) {

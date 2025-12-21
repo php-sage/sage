@@ -121,7 +121,7 @@ class SageParsersSplFileInfo implements SageCustomParserInterface
                     $tab->addRow('true', 'link');
                     $tab->addRow($fileInfo->getLinkTarget(), 'linkTarget');
                 }
-                $tab->addRow(SageHelper::ideLink($fileInfo->getRealPath(), 0), 'IDE link');
+                $tab->addRow(SageHelper::getIdeLink($fileInfo->getRealPath(), 0), 'IDE link');
 
                 // todo add file preview for text files..?
 

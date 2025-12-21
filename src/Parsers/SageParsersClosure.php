@@ -49,7 +49,7 @@ class SageParsersClosure implements SageCustomParserInterface
         $result->addTabView($internalsTab);
 
         if ($reflection->getFileName()) {
-            $result->value = SageHelper::ideLink($reflection->getFileName(), $reflection->getStartLine());
+            $result->value = SageHelper::getIdeLink($reflection->getFileName(), $reflection->getStartLine());
         }
 
         return $result;

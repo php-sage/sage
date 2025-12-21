@@ -54,10 +54,15 @@ require SAGE_DIR . 'src/Decorators/SageDecoratorsInterface.php';
 require SAGE_DIR . 'src/Decorators/SageDecoratorsRich.php';
 require SAGE_DIR . 'src/Decorators/SageDecoratorsPlain.php';
 require SAGE_DIR . 'src/Parsers/SageCustomParserInterface.php';
+if (SageHelper::php82orLater()) {
+    require SAGE_DIR . 'src/Concerns/SageParameterNameParser.php';
+} else {
+    require SAGE_DIR . 'src/Concerns/SageParameterNameParserLegacy.php';
+}
 
 class Sage
 {
-    private static $_initialized = false;
+    private static $initialized = false;
     private static $_enabledMode = true;
     private static $_openedOutput;
 
@@ -453,7 +458,7 @@ class Sage
             return self::STATUS_ERROR;
         }
 
-        $this->settingsInit();
+        $this->bootstrap();
 
         $output           = '';
         $backtrace        = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
@@ -691,10 +696,12 @@ class Sage
      *
      */
 
+    # region BOOTSTRAP
+
     private static $loadedParsers = 0;
 
     /** Called before each invocation */
-    private function settingsInit()
+    private function bootstrap()
     {
         SageHelper::buildAliases();
 
@@ -714,7 +721,7 @@ class Sage
             }
         }
 
-        if (self::$_initialized) {
+        if (self::$initialized) {
             return;
         }
 
@@ -725,26 +732,19 @@ class Sage
         // 4. Load default from Sage
         self::_initSetting(
             'editor',
-            ini_get('xdebug.file_link_format') ? ini_get('xdebug.file_link_format') : 'phpstorm-remote'
+            ini_get('xdebug.file_link_format') ? ini_get('xdebug.file_link_format') : self::$editor
         );
-        self::_initSetting('fileLinkServerPath', null);
-        self::_initSetting('fileLinkLocalPath', null);
-        self::_initSetting('displayCalledFrom', true);
-        self::_initSetting('maxLevels', 7);
-        self::_initSetting('theme', self::THEME_ORIGINAL);
-        self::_initSetting('expandedByDefault', false);
-        self::_initSetting('cliDetection', true);
-        self::_initSetting('cliColors', true);
-        self::_initSetting(
-            'charEncodings',
-            array(
-                'UTF-8',
-                'Windows-1252', // Western; includes iso-8859-1, replace this with windows-1251 if you have Russian code
-                'euc-jp',       // Japanese
-            )
-        );
-        self::_initSetting('returnOutput', false);
-        self::_initSetting('aliases', array());
+        self::_initSetting('fileLinkServerPath', self::$fileLinkServerPath);
+        self::_initSetting('fileLinkLocalPath', self::$fileLinkLocalPath);
+        self::_initSetting('displayCalledFrom', self::$displayCalledFrom);
+        self::_initSetting('maxLevels', self::$maxLevels);
+        self::_initSetting('theme', self::$theme);
+        self::_initSetting('expandedByDefault', self::$expandedByDefault);
+        self::_initSetting('cliDetection', self::$cliDetection);
+        self::_initSetting('cliColors', self::$cliColors);
+        self::_initSetting('charEncodings', self::$charEncodings);
+        self::_initSetting('returnOutput', self::$returnOutput);
+        self::_initSetting('aliases', self::$aliases);
     }
 
     private static function _initSetting($name, $default)

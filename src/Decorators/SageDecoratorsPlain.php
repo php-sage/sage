@@ -455,16 +455,16 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             return $this->colorize($lastLine . $lastChar, 'header');
         }
 
-        foreach ($caller->miniTrace as $i => $step) {
+        foreach ($caller->trace as $i => $step) {
             if ($i === 0) {
                 $traceDisplay .= PHP_EOL
-                    . 'Call stack ' . SageHelper::ideLink($step['file'], $step['line'])
+                    . 'Call stack ' . SageHelper::getIdeLink($step['file'], $step['line'])
                     . PHP_EOL;
                 continue;
             }
 
             $traceDisplay .= '        ' . ($i + 1) . '. ';
-            $traceDisplay .= SageHelper::ideLink($step['file'], $step['line']);
+            $traceDisplay .= SageHelper::getIdeLink($step['file'], $step['line']);
             $traceDisplay .= PHP_EOL;
             if ($i > 3) {
                 break;
