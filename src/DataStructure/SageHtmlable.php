@@ -1,7 +1,9 @@
 <?php
 
 /**
- * @internal wrap string so it does not get escaped when passed to SageHelper::esc()
+ * Wraps strings so it does not get escaped when passed to SageHelper::esc()
+ *
+ * @internal
  */
 class SageHtmlable
 {

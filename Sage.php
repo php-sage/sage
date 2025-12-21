@@ -37,7 +37,7 @@ define('SAGE_DIR', dirname(__FILE__) . '/');
 // J/K it's not an autoloader, we just include all of the files (except the parsers)!
 // With PHP 5.1++ compatibility in mind we don't use namespaces and do the autoloading manually
 require SAGE_DIR . 'src/Concerns/SageLogicException.php';
-require SAGE_DIR . 'src/DataStructure/SageCallerData.php';
+require SAGE_DIR . 'src/Concerns/SageInvoker.php';
 require SAGE_DIR . 'src/Concerns/SageDynamicFacade.php';
 require SAGE_DIR . 'src/DataStructure/SageParsedVariable.php';
 require SAGE_DIR . 'src/DataStructure/SageParsedVariableContents.php';
@@ -456,11 +456,11 @@ class Sage
         $this->settingsInit();
 
         $output           = '';
-        $backtraceData    = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
-        $caller           = SageCallerData::process($backtraceData);
+        $backtrace        = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
+        $caller           = SageInvoker::from($backtrace);
         $decorator        = $this->detectDisplayMode($enabledMode);
         $firstRunOldValue = $this->initDecorator($decorator);
-        $arguments        = $this->getWhatToDump($caller, func_get_args(), $backtraceData);
+        $arguments        = $this->getWhatToDump($caller, func_get_args(), $backtrace);
 
         if ($decorator->areAssetsNeeded()) {
             $output .= $decorator->init();
@@ -532,7 +532,7 @@ class Sage
      *
      */
 
-    private function getWhatToDump(SageCallerData $caller, array $arguments, array $backtraceData)
+    private function getWhatToDump(SageInvoker $caller, array $arguments, array $backtraceData)
     {
         /** @see self::trace() */
         if ($caller->sageMethodCalled === 'trace') {

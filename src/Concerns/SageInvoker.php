@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageCallerData
+class SageInvoker
 {
     /**
      * @var array $parameterNames parameter names/expressions which were passed to be dumped
@@ -18,15 +18,17 @@ class SageCallerData
     /**
      * Fetches the public properties defined above.
      *
+     * @param array $rawTrace
+     *
      * @return self
      */
-    public static function process($backtraceData)
+    public static function from($rawTrace)
     {
         $self                   = new self();
         $insideTemplateDetected = null;
 
         // go from back of trace forward to find first occurrence of call to Sage or its wrappers
-        while ($step = array_pop($backtraceData)) {
+        while ($step = array_pop($rawTrace)) {
             if (
                 isset($step['args'][0])
                 && is_string($step['args'][0])
@@ -67,24 +69,31 @@ class SageCallerData
     }
 
     /**
-     * @param null|string $key fetch specific element not the whole step (file, line, function, args, object)
+     * Gets the trace step where Sage was invoked.
      *
-     * @return ?array|string|int trace step where sage was called from
+     * @param 'all'|'file'|'line'|'function'|'args'|'object' $whichElement fetch specific element not the whole step
+     *
+     * @return null|array|string|int trace step where sage was called from
      */
-    public function getUserLandInvoker($key = null)
+    public function getUserLandInvoker($whichElement = 'all')
     {
         $step = count($this->miniTrace) > 1 ? $this->miniTrace[1] : array();
-        if ($key === null) {
+        if ($whichElement === 'all') {
             return $step;
         }
 
-        if (array_key_exists($key, $step)) {
-            return $step[$key];
+        if (array_key_exists($whichElement, $step)) {
+            return $step[$whichElement];
         }
 
         return null;
     }
 
+    /**
+     * @param int $parameterIndex
+     *
+     * @return null|string
+     */
     public function getParameterName($parameterIndex)
     {
         // when the dump arguments take long to generate output, user might have changed the file and

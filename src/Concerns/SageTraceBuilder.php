@@ -1,5 +1,6 @@
 <?php
 
+/** @internal  */
 class SageTraceBuilder
 {
 

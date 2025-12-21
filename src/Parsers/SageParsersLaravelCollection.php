@@ -1,8 +1,10 @@
 <?php
 
-/** @internal {@see Sage::$enabledParsers} to enable/disable */
-
-// todo it's a quick copy from eloquent collection, duplicates code, always displays as a table!
+/**
+ * Alter {@see Sage::$enabledParsers} to enable/disable.
+ *
+ * @internal
+ */
 class SageParsersLaravelCollection implements SageCustomParserInterface
 {
     public function replacesAllOtherParsers()
@@ -12,6 +14,7 @@ class SageParsersLaravelCollection implements SageCustomParserInterface
 
     public function parse(&$variable)
     {
+        // todo it's a quick copy from eloquent collection, duplicates code, always displays as a table!
         if (! is_a($variable, '\Illuminate\Support\Collection')) {
             return null;
         }

@@ -3,7 +3,6 @@
 /**
  * @internal
  */
-
 class SageDecoratorsPlain implements SageDecoratorsInterface
 {
     protected static $needsAssets = true;

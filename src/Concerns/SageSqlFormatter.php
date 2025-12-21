@@ -11,6 +11,8 @@
  * @license    http://opensource.org/licenses/MIT
  * @link       http://github.com/jdorn/sql-formatter
  * @version    1.2.18
+ *
+ * @internal
  */
 class SageSqlFormatter
 {

@@ -20,7 +20,7 @@ interface SageDecoratorsInterface
     /**
      * Closes wrapStart() and displays callee information
      *
-     * @param SageCallerData $caller caller information taken from debug backtrace
+     * @param SageInvoker $caller caller information taken from debug backtrace
      *
      * @return string
      */
