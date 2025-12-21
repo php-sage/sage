@@ -36,18 +36,19 @@ define('SAGE_DIR', dirname(__FILE__) . '/');
 // Welcome to our autoloader!
 // J/K it's not an autoloader, we just include all of the files (except the parsers)!
 // With PHP 5.1++ compatibility in mind we don't use namespaces and do the autoloading manually
-require SAGE_DIR . 'src/inc/SageLogicException.php';
+require SAGE_DIR . 'src/Concerns/SageLogicException.php';
 require SAGE_DIR . 'src/DataStructure/SageCallerData.php';
-require SAGE_DIR . 'src/inc/SageDynamicFacade.php';
+require SAGE_DIR . 'src/Concerns/SageDynamicFacade.php';
 require SAGE_DIR . 'src/DataStructure/SageParsedVariable.php';
 require SAGE_DIR . 'src/DataStructure/SageParsedVariableContents.php';
-require SAGE_DIR . 'src/DataStructure/SageParsedTraceStep.php';
+require SAGE_DIR . 'src/DataStructure/SageTraceStep.php';
 require SAGE_DIR . 'src/DataStructure/SageHtmlable.php';
 require SAGE_DIR . 'src/DataStructure/SageTrace.php';
-require SAGE_DIR . 'src/inc/SageParser.php';
-require SAGE_DIR . 'src/inc/SageNativeTypesParser.php';
-require SAGE_DIR . 'src/inc/SageHelper.php';
-require SAGE_DIR . 'src/inc/SageSqlFormatter.php';
+require SAGE_DIR . 'src/Concerns/SageParser.php';
+require SAGE_DIR . 'src/Concerns/SageNativeTypesParser.php';
+require SAGE_DIR . 'src/Concerns/SageHelper.php';
+require SAGE_DIR . 'src/Concerns/SageSqlFormatter.php';
+require SAGE_DIR . 'src/Concerns/SageTraceBuilder.php';
 require SAGE_DIR . 'src/inc/shorthands.inc.php';
 require SAGE_DIR . 'src/Decorators/SageDecoratorsInterface.php';
 require SAGE_DIR . 'src/Decorators/SageDecoratorsRich.php';
@@ -536,7 +537,7 @@ class Sage
         /** @see self::trace() */
         if ($caller->sageMethodCalled === 'trace') {
             $parsedTrace        = new SageParsedVariable();
-            $parsedTrace->trace = SageTrace::full(
+            $parsedTrace->trace = SageTraceBuilder::full(
                 $arguments === array(null)
                     ? $backtraceData
                     : $arguments[0]
@@ -571,7 +572,7 @@ class Sage
             // Sage::dump(1) shorthand
             if ($caller->parameterNames === array('1') && $arguments[0] === 1) {
                 $parsedTrace        = new SageParsedVariable();
-                $parsedTrace->trace = SageTrace::full($backtraceData);
+                $parsedTrace->trace = SageTraceBuilder::full($backtraceData);
                 $parsedTrace->name  = 'Debug backtrace';
 
                 return array($parsedTrace);
@@ -580,7 +581,7 @@ class Sage
             // Sage::dump(2) shorthand
             if ($caller->parameterNames === array('2') && $arguments[0] === 2) {
                 $parsedTrace        = new SageParsedVariable();
-                $parsedTrace->trace = SageTrace::minimal($backtraceData);
+                $parsedTrace->trace = SageTraceBuilder::minimal($backtraceData);
                 $parsedTrace->name  = 'Debug backtrace (only paths)';
 
                 return array($parsedTrace);
@@ -588,7 +589,7 @@ class Sage
 
             if (SageHelper::isValidTrace($arguments[0])) {
                 $parsedTrace        = new SageParsedVariable();
-                $parsedTrace->trace = SageTrace::full($arguments[0]);
+                $parsedTrace->trace = SageTraceBuilder::full($arguments[0]);
 
                 return array($parsedTrace);
             }

@@ -162,7 +162,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
     /**
      * @param int $stepNumber
-     * @param SageParsedTraceStep|string $step
+     * @param SageTraceStep|string $step
      * @param int $level
      *
      * @return string

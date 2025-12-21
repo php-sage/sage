@@ -31,9 +31,9 @@ class SageParsersTrace implements SageCustomParserInterface
         $result->type = 'Trace';
         $result->size = count($variable);
         if (SageHelper::isRichMode()) {
-            $result->addTabView__Trace(SageTrace::minimalWithRaw($variable), 'Trace view');
+            $result->addTabView__Trace(SageTraceBuilder::minimalWithRaw($variable), 'Trace view');
         } else {
-            $result->trace = SageTrace::minimal($variable);
+            $result->trace = SageTraceBuilder::minimal($variable);
         }
 
         return $result;
