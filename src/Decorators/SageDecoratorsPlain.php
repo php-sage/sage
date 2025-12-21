@@ -21,7 +21,11 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         self::$needsAssets = $on;
     }
 
-    private static $_enableColors;
+    private static $enableColors;
+    private static $outputWidth = 120;
+    const FALLBACK_TERMINAL_WIDTH = 120;
+    const MIN_TERMINAL_WIDTH = 120;
+
     /**
      * Enhance cli mode by marking each level with a different color so we can visually spot when we scrolled passed
      * the current variable.
@@ -308,16 +312,23 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
     private function drawBigTitle($text)
     {
-        $escaped          = SageHelper::esc($text);
-        $lengthDifference = strlen($escaped) - strlen($text);
-
-        $ret = '┌──────────────────────────────────────────────────────────────────────────────┐' . PHP_EOL;
+        $line = str_repeat('─', self::$outputWidth - 2);
+        $ret  = '╭' . $line . '┐' . PHP_EOL;
         if ($text) {
-            $ret .= '│' . str_pad($escaped, 78 + $lengthDifference, ' ', STR_PAD_BOTH) . '│' . PHP_EOL;
+            $ret .= '│' . self::strPadBoth(SageHelper::esc($text), self::$outputWidth - 2) . '│' . PHP_EOL;
         }
-        $ret .= '└──────────────────────────────────────────────────────────────────────────────┘';
+        $ret .= '└' . $line . '╯';
 
         return $this->colorize($ret, 'header');
+    }
+
+    private static function strPadBoth($input, $pad_length, $pad_string = ' ')
+    {
+        if (function_exists('mb_str_pad')) {
+            return mb_str_pad($input, $pad_length, $pad_string, STR_PAD_BOTH);
+        }
+
+        return str_pad($input, $pad_length, $pad_string, STR_PAD_BOTH);
     }
 
     private function colorize($text, $type, $nlAfter = true)
@@ -326,7 +337,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
         switch (Sage::enabled()) {
             case Sage::MODE_PLAIN_HTML:
-                if (! self::$_enableColors) {
+                if (! self::$enableColors) {
                     return $text . $nl;
                 }
 
@@ -353,7 +364,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
                 return $text . $nl;
             case Sage::MODE_CLI:
-                if (! self::$_enableColors) {
+                if (! self::$enableColors) {
                     return $text . $nl;
                 }
 
@@ -413,19 +424,25 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
     public function init()
     {
         if (! Sage::$cliColors) {
-            self::$_enableColors = false;
+            self::$enableColors = false;
         } elseif (isset($_SERVER['NO_COLOR']) || getenv('NO_COLOR') !== false) {
-            self::$_enableColors = false;
+            self::$enableColors = false;
         } elseif (getenv('TERM_PROGRAM') === 'Hyper') {
-            self::$_enableColors = true;
+            self::$enableColors = true;
         } elseif (DIRECTORY_SEPARATOR === '\\') {
-            self::$_enableColors =
+            self::$enableColors =
                 function_exists('sapi_windows_vt100_support')
                 || getenv('ANSICON') !== false
                 || getenv('ConEmuANSI') === 'ON'
                 || getenv('TERM') === 'xterm';
         } else {
-            self::$_enableColors = true;
+            self::$enableColors = true;
+        }
+
+        if (self::$enableColors) {
+            self::$outputWidth = min(self::getTerminalWidth(), self::MIN_TERMINAL_WIDTH);
+        } else {
+            self::$outputWidth = self::FALLBACK_TERMINAL_WIDTH;
         }
 
         if (Sage::enabled() !== Sage::MODE_PLAIN_HTML) {
@@ -447,7 +464,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
     public function wrapEnd($caller)
     {
-        $lastLine     = '════════════════════════════════════════════════════════════════════════════════';
+        $lastLine     = str_repeat('═', self::$outputWidth);
         $lastChar     = Sage::enabled() === Sage::MODE_PLAIN_HTML ? '</pre>' : '';
         $traceDisplay = '';
 
@@ -475,4 +492,68 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
             . $lastChar;
     }
 
+    private static function getTerminalWidth()
+    {
+        if (DIRECTORY_SEPARATOR === '/') {
+            return self::getSttyColumns();
+        }
+
+        $ansicon = getenv('ANSICON');
+        if ($ansicon !== false && preg_match('/^(\d+)x(\d+)(?: \((\d+)x(\d+)\))?$/', trim($ansicon), $matches)) {
+            // extract [w, H] from "wxh (WxH)"
+            return (int) $matches[1];
+        }
+
+        if (
+            function_exists('sapi_windows_vt100_support')
+            && ! sapi_windows_vt100_support(fopen('php://stdout', 'w'))
+            && self::hasSttyAvailable()
+        ) {
+            // only use stty on Windows if the terminal does not support vt100 (e.g. Windows 7 + git-bash)
+            // testing for stty in a Windows 10 vt100-enabled console will implicitly disable vt100 support on STDOUT
+            return self::getSttyColumns();
+        }
+
+        return self::getWindowsTerminalWidth();
+    }
+
+    private static function hasSttyAvailable()
+    {
+        // skip check if shell_exec function is disabled
+        if (! function_exists('shell_exec')) {
+            return false;
+        }
+
+        $str = \DIRECTORY_SEPARATOR === '\\'
+            ? 'NUL'
+            : '/dev/null';
+
+        return (bool) shell_exec('stty 2> ' . $str);
+    }
+
+    private static function getSttyColumns()
+    {
+        if (! function_exists('shell_exec')) {
+            return self::FALLBACK_TERMINAL_WIDTH;
+        }
+
+        $size = shell_exec('stty size');
+        if ($size) {
+            $dimensions = explode(' ', trim($size));
+            if (isset($dimensions[1])) {
+                return (int) $dimensions[1];
+            }
+        }
+
+        return self::FALLBACK_TERMINAL_WIDTH;
+    }
+
+    private static function getWindowsTerminalWidth()
+    {
+        if (preg_match('/Columns:\s+(\d+)/', shell_exec('mode con'), $matches)) {
+            return (int) $matches[1];
+        }
+
+        return self::FALLBACK_TERMINAL_WIDTH;
+    }
 }

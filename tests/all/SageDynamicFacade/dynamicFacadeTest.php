@@ -78,7 +78,7 @@ describe('simplest()', function() {
     it(
         'puts the dump in the variable and is plain html',
         fn() => expect($a)
-            ->toStartWith('┌───')
+            ->toStartWith('╭───')
             ->toContain(123)
     );
 
