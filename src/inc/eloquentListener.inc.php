@@ -1,7 +1,5 @@
 <?php
 
-require_once 'SageSqlFormatter.php';
-
 $queryNumber = 0;
 DB::listen(function ($query) use (&$queryNumber) {
     // todo ideally we should detect where Sage::showEloquentQueries() was invoked from and display that.
