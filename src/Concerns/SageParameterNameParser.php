@@ -2,6 +2,8 @@
 
 /**
  * @internal
+ *
+ * todo: sage()->displaySimplest(123);
  */
 class SageParameterNameParser
 {
@@ -10,108 +12,132 @@ class SageParameterNameParser
         $file = new SplFileObject($step['file']);
         $file->seek($step['line'] - 1);
 
-        $contents = '';
-        while (! $file->eof()) {
-            $contents .= trim($file->current());
-            $file->next();
-        }
-        $pureCode = self::removeAllButCode($contents);
-        $pureCode = self::removeBefore($pureCode, $sageMethodCalled);
+        $code = self::getInvokerSource($file);
+        $code = self::strRemoveBeforeSage($code, $sageMethodCalled);
 
-        $i             = 0;
-        $c             = strlen($pureCode);
-        $bracketsLevel = 0;
-        $parameters    = array();
-        $stringSoFar   = '';
-        while ($i < $c) {
-            $char = $pureCode[$i];
-
-            if ($bracketsLevel === 0) {
-                $stringSoFar .= $char;
-            }
-
-            if ($char === '(') {
-                $bracketsLevel++;
-            } elseif ($char === ')') {
-                if ($bracketsLevel === 0) {
-                    break;
-                }
-                $bracketsLevel--;
-
-                if ($bracketsLevel === 0) {
-                    $stringSoFar .= '…)';
-                }
-            } elseif ($char === ',') {
-                if ($bracketsLevel === 0) {
-                    $parameters[] = substr($stringSoFar, 0, -1); // zap ","
-                    $stringSoFar  = '';
-                }
-            }
-
-            $i++;
-        }
-        $parameters[] = substr($stringSoFar, 0, -1); // last ")"
-
-        return $parameters;
+        return self::parseSourceToParams($code);
     }
 
-    private static function removeBefore($code, $sageMethodCalled)
+    /**
+     * Cleans the line where sage was invoked by replacing everything up to and including the sage invoke statement with
+     * `sage`
+     */
+    private static function strRemoveBeforeSage($code, $sageMethodCalled)
     {
-        // Get everything before the first instance of $sageMethodCalled
-        $prefix = strstr($code, $sageMethodCalled, true);
-
-        if ($prefix !== false) {
-            // Replace the prefix found with your new string
-            $code = str_replace($prefix . $sageMethodCalled . '(', '', $code);
+        $position = strpos($code, $sageMethodCalled);
+        if ($position !== false) {
+            $code = substr_replace($code, 'sage', 0, $position + strlen($sageMethodCalled));
         }
 
         return $code;
     }
 
-    /**
-     * @param string $source
-     *
-     * @return string
-     */
-    private static function removeAllButCode($source)
+    private static function parseSourceToParams($source)
     {
         if (substr($source, 0, 2) !== '<?') {
             $source = '<?php ' . $source;
         }
 
-        $commentTokens = array(
+        $uselessTokens = array(
             T_COMMENT            => true,
             T_INLINE_HTML        => true,
             T_DOC_COMMENT        => true,
             T_OPEN_TAG           => true,
-            T_WHITESPACE         => true,
             T_CLOSE_TAG          => true,
             T_OPEN_TAG_WITH_ECHO => true,
         );
-        $stringTokens  = array(
-            T_CONSTANT_ENCAPSED_STRING => true,
-            T_ENCAPSED_AND_WHITESPACE  => true,
+
+        $tokensInCurrentParameter = array();
+        $tokensInEachParameter    = array();
+        $bracketsLevel            = 0;
+        $curlyBracketsLevel       = 0;
+
+        $tokens = token_get_all($source);
+        unset( // we added these so PHP parser works, remove them now
+            $tokens[0], // <?php
+            $tokens[1], // sage
         );
 
-        $cleanedSource = '';
-        foreach (token_get_all($source) as $token) {
-            if (is_array($token)) {
-                if (isset($commentTokens[$token[0]])) {
-                    $token = '';
-                } elseif (isset($stringTokens[$token[0]])) {
-                    $token = '"…"';
-                } elseif ($token[0] === T_LNUMBER) {
-                    $token = '…';
-                } else {
-                    $token = $token[1];
-                }
-            } elseif ($token === ';') {
-                $token = '';
+        foreach ($tokens as $token) {
+            if ($curlyBracketsLevel && $token !== '}') { // ignore everything inside {}
+                continue;
             }
 
-            $cleanedSource .= $token;
+            if (! is_array($token)) {
+                if ($token === '{') {
+                    $curlyBracketsLevel++;
+                    continue;
+                }
+                if ($token === '}') {
+                    $curlyBracketsLevel--;
+                    if ($curlyBracketsLevel === 0) {
+                        $tokensInCurrentParameter[] = '...';
+                    }
+                    continue;
+                }
+
+                if ($token === '(') {
+                    $bracketsLevel++;
+                    if ($bracketsLevel === 1) { // main bracket
+                        continue;
+                    }
+                }
+
+                if ($token === ')') {
+                    if ($bracketsLevel === 1) { // main bracket
+                        $tokensInEachParameter[] = $tokensInCurrentParameter;
+                        break;
+                    }
+
+                    $bracketsLevel--;
+                }
+
+                if ($token === ',') {
+                    if ($bracketsLevel === 1) { // top level
+                        $tokensInEachParameter[]  = $tokensInCurrentParameter;
+                        $tokensInCurrentParameter = array();
+                        continue;
+                    }
+                }
+
+                $tokensInCurrentParameter[] = $token;
+                continue;
+            }
+
+            if (isset($uselessTokens[$token[0]])) {
+                continue;
+            }
+
+            if ($token[0] === T_WHITESPACE) {
+                $token = ' ';
+            }
+
+            $tokensInCurrentParameter[] = $token;
         }
 
-        return $cleanedSource;
+        $parameters = array();
+        foreach ($tokensInEachParameter as $tokens) {
+            $param = '';
+            foreach ($tokens as $token) {
+                $param .= trim(str_replace("\n", ' ', is_array($token) ? $token[1] : $token));
+            }
+            $parameters[] = $param;
+        }
+
+        return $parameters;
+    }
+
+    /**
+     * @return string e.g. `sage($param, $param, 'etc'); // and the entire remainder of this file`
+     */
+    private static function getInvokerSource(SplFileObject $file)
+    {
+        $contents = '';
+        while (! $file->eof()) {
+            $contents .= $file->current();
+            $file->next();
+        }
+
+        return $contents;
     }
 }

@@ -17,10 +17,10 @@ ENV COMPOSER_PROCESS_TIMEOUT 600
 RUN apt update && apt install -y unzip
 RUN curl -s https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin/ --filename=composer
 
+RUN pecl install xdebug;
 
 # disable phar readonly
 RUN echo "phar.readonly = Off" >> /usr/local/etc/php/conf.d/php.enable-phar.ini
-
 
 RUN useradd -u ${DOCKER_UID} -m the-whale; \
     useradd -u ${DOCKER_UID} -m the-whale; \

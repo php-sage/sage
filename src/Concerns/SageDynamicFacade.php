@@ -23,9 +23,6 @@ class SageDynamicFacade
      */
     public function SageDynamicFacade()
     {
-        //        if (! in_array('SageDynamicFacade::*', Sage::$aliases, true)) {
-        //            Sage::$aliases[] = 'SageDynamicFacade::*';
-        //        }
     }
 
     public function __construct()
@@ -76,10 +73,12 @@ class SageDynamicFacade
         $params = func_get_args();
         unset($params[0]);
 
-        $stateBackup                           = $this->saveSettingsPt1();
-        Sage::$enabledParsers                  = array();
-        Sage::$keysBlacklist                   = $ignoreKeys;
-        Sage::$translations['key_blacklisted'] = 'Skipped';
+        $stateBackup = $this->saveSettingsPt1();
+        Sage::settings()
+            ->enabledParsers(array())
+            ->keysBlacklist($ignoreKeys)
+            ->overrideTranslations(array('key_blacklisted' => 'Skipped'))
+        ;
         $this->saveSettingsPt2($stateBackup);
 
         call_user_func_array(array($this, 'dump'), $params); # PROCEDURE: dump
@@ -146,6 +145,16 @@ class SageDynamicFacade
     # region Settings
 
     /**
+     * Get global settings.
+     *
+     * @return SageSettings
+     */
+    public function settings()
+    {
+        return Sage::settings();
+    }
+
+    /**
      * Makes all changes to Sage configuration persist for all future instances.
      *
      * E.g. use it to set a theme globally.
@@ -173,7 +182,7 @@ class SageDynamicFacade
     public function resetToDefaults()
     {
         if (self::$defaultSettings) {
-            Sage::saveState(self::$defaultSettings);
+            Sage::settings(new SageSettings());
         }
     }
 
@@ -226,9 +235,11 @@ class SageDynamicFacade
             return $this;
         }
 
-        $stateBackup             = $this->saveSettingsPt1();
-        Sage::$expandedByDefault = true;
-        Sage::enabled(Sage::MODE_RICH);
+        $stateBackup = $this->saveSettingsPt1();
+        Sage::settings()
+            ->expandedByDefault(true)
+            ->enabled(Sage::MODE_RICH)
+        ;
         $this->saveSettingsPt2($stateBackup);
 
         if (func_num_args()) {
@@ -260,7 +271,62 @@ class SageDynamicFacade
      */
     public function showEloquentQueries()
     {
-        Sage::showEloquentQueries();
+        // maintain PHP5.1+ compatibility
+        if (! SageHelper::php53orLater()) {
+            return $this;
+        }
+
+        Sage::settings()->addAlias(__CLASS__ . '::' . __FUNCTION__);
+        Sage::dump('Started showing Eloquent queries');
+
+        $queryNumber = 0;
+        DB::listen(function($query) use (&$queryNumber) {
+            $state = Sage::saveState();
+            Sage::settings()->displayCalledFrom(false);
+
+            $callee = 'unknown';
+            $trace  = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+            foreach ($trace as $step) {
+                if (array_key_exists('file', $step) && strpos($step['file'], '/vendor/laravel/') === false) {
+                    $callee = $step['file'];
+                    if (array_key_exists('line', $step)) {
+                        $callee .= ':' . $step['line'];
+                    }
+                    break;
+                }
+            }
+
+            $substituteBindings = function($sql, $bindings) {
+                foreach ($bindings as $binding) {
+                    if ($binding instanceof DateTime) {
+                        $bindings[] = $binding->format('Y-m-d H:i:s');
+                        continue;
+                    }
+
+                    if ($binding === null) {
+                        $binding = 'NULL';
+                    }
+
+                    $bindings[] = (string) $binding;
+                }
+
+                return sprintf(str_replace('?', "'%s'", $sql), ...$bindings);
+            };
+
+            $EloquentQuery = array(
+                '#'             => $queryNumber++,
+                'sql'           => PHP_EOL
+                    . SageSqlFormatter::format($substituteBindings($query->sql, $query->bindings), false),
+                'plain_sql'     => PHP_EOL . $query->sql,
+                'bindings'      => $query->bindings,
+                'called_from'   => $callee,
+                'duration_in_s' => $query->time / 1000,
+                'connection'    => $query->connectionName,
+            );
+            Sage::dump($EloquentQuery);
+
+            Sage::saveState($state);
+        });
 
         return $this;
     }
@@ -272,8 +338,8 @@ class SageDynamicFacade
      */
     public function saveOutputTo(&$variable)
     {
-        $stateBackup        = $this->saveSettingsPt1();
-        Sage::$returnOutput = true;
+        $stateBackup = $this->saveSettingsPt1();
+        Sage::settings()->returnOutput(true);
         $this->saveSettingsPt2($stateBackup); # END PROCEDURE: save sage settings
 
         if ($variable === null) {
@@ -309,8 +375,10 @@ class SageDynamicFacade
         if (is_dir($saveTo)) {
             $saveTo = $saveTo . DIRECTORY_SEPARATOR . 'sage.html';
         }
-        Sage::$outputFile = $saveTo;
-        Sage::enabled(Sage::MODE_RICH);
+        Sage::settings()
+            ->outputToFile($saveTo)
+            ->enabled(Sage::MODE_RICH)
+        ;
 
         $this->saveSettingsPt2($stateBackup); # END PROCEDURE: save sage settings
 
@@ -324,11 +392,13 @@ class SageDynamicFacade
     {
         $stateBackup = $this->saveSettingsPt1();
 
-        $debugBacktrace   = debug_backtrace(2, 1);
-        $file             = isset($debugBacktrace[0]['file']) ? $debugBacktrace[0]['file'] : '';
-        $dir              = dirname($file);
-        Sage::$outputFile = $dir . DIRECTORY_SEPARATOR . 'sage.html';
-        Sage::enabled(Sage::MODE_RICH);
+        $debugBacktrace = debug_backtrace(2, 1);
+        $file           = isset($debugBacktrace[0]['file']) ? $debugBacktrace[0]['file'] : '';
+        $dir            = dirname($file);
+        Sage::settings()
+            ->outputToFile($dir . DIRECTORY_SEPARATOR . 'sage.html')
+            ->enabled(Sage::MODE_RICH)
+        ;
 
         $this->saveSettingsPt2($stateBackup); # END PROCEDURE: save sage settings
 

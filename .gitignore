@@ -3,9 +3,10 @@
 /config.php
 /node_modules
 /vendor
+/docker/*.log
 sage.html
 .dev-mode
 composer.lock
 package-lock.json
 *.map
-playground.php
+playground*.php

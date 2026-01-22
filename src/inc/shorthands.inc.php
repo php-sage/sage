@@ -31,10 +31,10 @@ if (! function_exists('sage')) {
      */
     function sage()
     {
-        Sage::$aliases[] = __FUNCTION__;
-
         $sage   = new SageDynamicFacade();
         $params = func_get_args();
+
+        Sage::settings()->addAlias(__FUNCTION__);
 
         if ($params) {
             return call_user_func_array(array($sage, 'dump'), $params);
@@ -58,7 +58,7 @@ if (! function_exists('s')) {
             return Sage::STATUS_ERROR;
         }
 
-        Sage::$aliases[] = __FUNCTION__;
+        Sage::settings()->addAlias(__FUNCTION__);
 
         $params = func_get_args();
 
@@ -78,7 +78,7 @@ if (! function_exists('saged')) {
             return Sage::STATUS_ERROR;
         }
 
-        Sage::$aliases[] = __FUNCTION__;
+        Sage::settings()->addAlias(__FUNCTION__);
 
         $params = func_get_args();
         call_user_func_array(array('Sage', 'dump'), $params);
@@ -100,7 +100,7 @@ if (! function_exists('sd')) {
             return Sage::STATUS_ERROR;
         }
 
-        Sage::$aliases[] = __FUNCTION__;
+        Sage::settings()->addAlias(__FUNCTION__);
 
         $params = func_get_args();
         call_user_func_array(array('Sage', 'dump'), $params);
@@ -126,13 +126,16 @@ if (! function_exists('ssage')) {
             return Sage::STATUS_ERROR;
         }
 
-        $simplify              = Sage::$simplifyDisplay;
-        Sage::$simplifyDisplay = true;
-        Sage::$aliases[]       = __FUNCTION__;
+        $restore = Sage::settings()->simplifyOutput;
+        Sage::settings()
+            ->addAlias(__FUNCTION__)
+            ->simplifyOutput(true)
+        ;
 
-        $params                = func_get_args();
-        $dump                  = call_user_func_array(array('Sage', 'dump'), $params);
-        Sage::$simplifyDisplay = $simplify;
+        $params = func_get_args();
+        $dump   = call_user_func_array(array('Sage', 'dump'), $params);
+
+        Sage::settings()->simplifyOutput($restore);
 
         return $dump;
     }
@@ -152,19 +155,7 @@ if (! function_exists('ss')) {
      */
     function ss()
     {
-        if (! Sage::enabled()) {
-            return Sage::STATUS_ERROR;
-        }
-
-        $simplify              = Sage::$simplifyDisplay;
-        Sage::$simplifyDisplay = true;
-        Sage::$aliases[]       = __FUNCTION__;
-
-        $params                = func_get_args();
-        $dump                  = call_user_func_array(array('Sage', 'dump'), $params);
-        Sage::$simplifyDisplay = $simplify;
-
-        return $dump;
+        return call_user_func_array('ssage', func_get_args());
     }
 }
 
@@ -176,14 +167,7 @@ if (! function_exists('ssaged')) {
      */
     function ssaged()
     {
-        if (! Sage::enabled()) {
-            return Sage::STATUS_ERROR;
-        }
-
-        Sage::$simplifyDisplay = true;
-        Sage::$aliases[]       = __FUNCTION__;
-        $params                = func_get_args();
-        call_user_func_array(array('Sage', 'dump'), $params);
+        call_user_func_array('ssage', func_get_args());
         die;
     }
 }
@@ -196,14 +180,7 @@ if (! function_exists('ssd')) {
      */
     function ssd()
     {
-        if (! Sage::enabled()) {
-            return Sage::STATUS_ERROR;
-        }
-
-        Sage::$simplifyDisplay = true;
-        Sage::$aliases[]       = __FUNCTION__;
-        $params                = func_get_args();
-        call_user_func_array(array('Sage', 'dump'), $params);
+        call_user_func_array('ssage', func_get_args());
         die;
     }
 }
@@ -218,15 +195,7 @@ if (! function_exists('d')) {
      */
     function d()
     {
-        if (! Sage::enabled()) {
-            return Sage::STATUS_ERROR;
-        }
-
-        Sage::$aliases[] = __FUNCTION__;
-
-        $params = func_get_args();
-
-        return call_user_func_array(array('Sage', 'dump'), $params);
+        return call_user_func_array('sage', func_get_args());
     }
 }
 
@@ -244,7 +213,7 @@ if (! function_exists('sagetrace')) {
             return Sage::STATUS_ERROR;
         }
 
-        Sage::$aliases[] = __FUNCTION__;
+        Sage::settings()->addAlias(__FUNCTION__);
 
         return Sage::trace();
     }

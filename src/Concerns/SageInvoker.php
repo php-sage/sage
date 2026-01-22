@@ -103,7 +103,7 @@ class SageInvoker
             ? $this->parameterNames[$parameterIndex]
             : '???';
 
-        if (strlen($name) > 60) {
+        if (strlen($name) > 70) {
             $name =
                 SageHelper::substr($name, 0, 27)
                 . '...'
@@ -112,25 +112,4 @@ class SageInvoker
 
         return $name;
     }
-
-    private static function detectProjectRoot($calledFromFile)
-    {
-        // Find common path with Sage dir
-        self::$projectRootDir = '';
-
-        if (! $calledFromFile) {
-            return;
-        }
-
-        $sagePathParts = explode('/', str_replace('\\', '/', SAGE_DIR));
-        $filePathParts = explode('/', $calledFromFile);
-        foreach ($filePathParts as $i => $filePart) {
-            if (! isset($sagePathParts[$i]) || $sagePathParts[$i] !== $filePart) {
-                break;
-            }
-
-            self::$projectRootDir .= $filePart . '/';
-        }
-    }
-
 }

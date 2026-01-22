@@ -27,7 +27,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
 
             if ($varData->alternativeViews) {
                 $class = '_sage-parent';
-                if (Sage::$expandedByDefault) {
+                if (Sage::settings()->expandedByDefault) {
                     $class .= ' _sage-show';
                 }
                 $output .= '<dt class="' . $class . '">';
@@ -155,7 +155,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         } else {
             $class .= '_sage-parent';
 
-            if (Sage::$expandedByDefault) {
+            if (Sage::settings()->expandedByDefault()) {
                 $class .= ' _sage-show';
             }
         }
@@ -235,7 +235,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
 
     public function wrapEnd($caller)
     {
-        if (! Sage::$displayCalledFrom) {
+        if (! Sage::settings()->displayCalledFrom) {
             return '</div>';
         }
 
@@ -352,9 +352,9 @@ class SageDecoratorsRich implements SageDecoratorsInterface
      */
     public function init()
     {
-        $baseDir = SAGE_DIR . 'src/resources/compiled/';
+        $baseDir = SAGE_DIR . 'resources/compiled/';
 
-        if (! is_readable($cssFile = $baseDir . Sage::$theme . '.css')) {
+        if (! is_readable($cssFile = $baseDir . Sage::settings()->theme . '.css')) {
             $cssFile = $baseDir . 'original.css';
         }
 

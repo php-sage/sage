@@ -47,7 +47,7 @@ class SageParser
         $parseAsNative = true;
 
         $objects = self::$objects;
-        foreach (Sage::$enabledParsers as $parserClass => $enabled) {
+        foreach (Sage::settings()->enabledParsers as $parserClass => $enabled) {
             if (! $enabled) {
                 continue;
             }

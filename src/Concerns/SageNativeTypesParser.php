@@ -581,6 +581,8 @@ class SageNativeTypesParser
 
     private static function isDepthLimit()
     {
-        return Sage::$maxLevels && SageParser::$level >= Sage::$maxLevels;
+        $maxLevel = Sage::settings()->maxLevels;
+
+        return $maxLevel && SageParser::$level >= $maxLevel;
     }
 }

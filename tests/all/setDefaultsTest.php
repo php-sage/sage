@@ -1,6 +1,6 @@
 <?php
 
-describe('set defaults', function () {
+describe('set defaults', function() {
     sage()
         ->saveOutputTo($a)
         ->setDefaults()
@@ -16,6 +16,5 @@ describe('set defaults', function () {
     ob_start();
     Sage::dump();
     $z = ob_get_clean();
-
-    it('again echoes plain output', fn() => expect($z)->toContain('╭───'));
+    it('again echoes plain output', fn() => expect($z)->toContain('━━━───'));
 });

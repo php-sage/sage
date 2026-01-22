@@ -19,10 +19,13 @@ release:
 
 
 build:
-	$(DOCKER) up -d
+	$(DOCKER) up -d --remove-orphans
 	$(DOCKER) run php composer build # see composer.json -> "scripts" section
 	make test
 
+rebuild:
+	@# Help: Rebuild docker image (or all of them) to reflect configuration (e.g. Dockerfile) changes.
+	$(DOCKER) up -d --build --force-recreate --no-deps --remove-orphans
 
 compile-resources:
 	@# Help: One part of build process if you're only working with sass/js
@@ -109,6 +112,7 @@ ci:
 
 
 play:
+	make up
 	$(DOCKER) exec php php /var/www/playground.php
 
 

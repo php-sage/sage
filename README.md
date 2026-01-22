@@ -127,9 +127,9 @@ class TestHelper{
   
       $state = Sage::saveState();
       Sage::enabled(Sage::MODE_TEXT_ONLY);
-      Sage::$aliases[]         = __CLASS__ . '::' . __FUNCTION__;
-      Sage::$returnOutput      = true;
-      Sage::$displayCalledFrom = false;
+      Sage::settings()->aliases[]         = __CLASS__ . '::' . __FUNCTION__;
+      Sage::settings()->returnOutput      = true;
+      Sage::settings()->displayCalledFrom = false;
       $debugOutput             = Sage::dump($providedContext);
       
       Sage::saveState($state); // now reset settings to presumed defaults
@@ -174,14 +174,14 @@ sage.enabled = 0
 
 ```php
 require 'sage.phar';
-Sage::$theme = Sage::THEME_LIGHT;
+Sage::settings()->theme = Sage::THEME_LIGHT;
 ```
 
 
 # All available options
 
 ```php
-Sage::$theme = Sage::THEME_ORIGINAL;
+Sage::settings()->theme = Sage::THEME_ORIGINAL;
 ```
 
 Currently available themes are:
@@ -194,7 +194,7 @@ Currently available themes are:
 ---
 
 ```php
-Sage::$editor = ini_get('xdebug.file_link_format');
+Sage::settings()->editor = ini_get('xdebug.file_link_format');
 ```
 
 Make visible source file paths clickable to open your editor. Available options are:
@@ -207,7 +207,7 @@ link. Set to null to disable linking.
 ---
 
 ```php
-Sage::$displayCalledFrom = true;
+Sage::settings()->displayCalledFrom = true;
 ```
 
 Whether to display where Sage was called from
@@ -215,7 +215,7 @@ Whether to display where Sage was called from
 ---
 
  ```php
-Sage::$maxLevels = 7;
+Sage::settings()->maxLevels = 7;
 ```
 
 Max array/object levels to go deep, set to zero/false to disable
@@ -223,7 +223,7 @@ Max array/object levels to go deep, set to zero/false to disable
 ---
 
 ```php
-Sage::$expandedByDefault = false;
+Sage::settings()->expandedByDefault = false;
 ```
 
 Draw rich output already expanded without having to click
@@ -231,7 +231,7 @@ Draw rich output already expanded without having to click
 ---
 
 ```php
-Sage::$cliDetection = true; 
+Sage::settings()->cliDetectionEnabled = true; 
 ```
 
 Enable detection when running in command line and adjust output format accordingly.
@@ -239,7 +239,7 @@ Enable detection when running in command line and adjust output format according
 ---
 
 ```php
-Sage::$cliColors = true;
+Sage::settings()->cliColors = true;
 ```
 
 In addition to above setting, enable detection when Sage is run in *UNIX* command line. Attempts to add coloring, but if
@@ -248,7 +248,7 @@ opened as plain text, the color information is visible as gibberish.
 ---
 
 ```php
-Sage::$charEncodings =  [ 'UTF-8', 'Windows-1252', 'euc-jp' ]
+Sage::settings()->charEncodings =  [ 'UTF-8', 'Windows-1252', 'euc-jp' ]
 ```
 
 Possible alternative char encodings in order of probability.
@@ -256,7 +256,7 @@ Possible alternative char encodings in order of probability.
 ---
 
 ```php
-Sage::$returnOutput = false;
+Sage::settings()->returnOutput = false;
 ```
 
 Sage returns output instead of printing it.
@@ -264,7 +264,7 @@ Sage returns output instead of printing it.
 ---
 
 ```php
-Sage::$aliases;
+Sage::settings()->aliases;
 ```
 
 Add new custom Sage wrapper names. Optional, but needed for backtraces, variable name detection and modifiers to work

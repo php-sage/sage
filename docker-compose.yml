@@ -10,6 +10,7 @@ services:
     volumes:
       - ./:/var/www
       - ./:/dupe # for testing to be outside the sage dir to emulate real situation better
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/php.ini
     extra_hosts:
       - "host.docker.internal:host-gateway" # docker on mac lacks `host-gateway`
     user:

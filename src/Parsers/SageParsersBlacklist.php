@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Alter {@see Sage::$enabledParsers} to enable/disable.
+ * {@see SageSettings::enabledParsers} to enable/disable.
  *
  * @internal
  */
@@ -28,7 +28,7 @@ class SageParsersBlacklist implements SageCustomParserInterface
 
         $className = get_class($variable);
         $match     = false;
-        foreach (Sage::$classNameBlacklist as $item) {
+        foreach (Sage::settings()->classNameBlacklist as $item) {
             if (preg_match($item, $className)) {
                 $match = true;
                 break;

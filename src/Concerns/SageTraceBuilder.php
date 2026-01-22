@@ -150,18 +150,18 @@ class SageTraceBuilder
         return $self;
     }
 
-    private function isStepBlacklisted($rawTraceStep)
+    private function isStepBlacklisted($step)
     {
-        if (! Sage::$maxLevels) {
+        if (! Sage::settings()->maxLevels) {
             return false;
         }
 
-        if (! isset($rawTraceStep['file'])) {
+        if (! isset($step['file'])) {
             return false;
         }
 
-        foreach (Sage::$traceBlacklist as $blacklistedPath) {
-            if (preg_match($blacklistedPath, $rawTraceStep['file'])) {
+        foreach (Sage::settings()->traceBlacklist as $blacklistedPath) {
+            if (preg_match($blacklistedPath, $step['file'])) {
                 return true;
             }
         }

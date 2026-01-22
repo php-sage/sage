@@ -28,310 +28,25 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+// todo https://www.php.net/manual/en/language.oop5.magic.php#object.debuginfo
+
 if (defined('SAGE_DIR')) {
     return;
 }
-define('SAGE_DIR', dirname(__FILE__) . '/');
 
-// Welcome to our autoloader!
-// J/K it's not an autoloader, we just include all of the files (except the parsers)!
-// With PHP 5.1++ compatibility in mind we don't use namespaces and do the autoloading manually
-require SAGE_DIR . 'src/Concerns/SageLogicException.php';
-require SAGE_DIR . 'src/Concerns/SageInvoker.php';
-require SAGE_DIR . 'src/Concerns/SageDynamicFacade.php';
-require SAGE_DIR . 'src/DataStructure/SageParsedVariable.php';
-require SAGE_DIR . 'src/DataStructure/SageParsedVariableContents.php';
-require SAGE_DIR . 'src/DataStructure/SageTraceStep.php';
-require SAGE_DIR . 'src/DataStructure/SageHtmlable.php';
-require SAGE_DIR . 'src/DataStructure/SageTrace.php';
-require SAGE_DIR . 'src/Concerns/SageParser.php';
-require SAGE_DIR . 'src/Concerns/SageNativeTypesParser.php';
-require SAGE_DIR . 'src/Concerns/SageHelper.php';
-require SAGE_DIR . 'src/Concerns/SageSqlFormatter.php';
-require SAGE_DIR . 'src/Concerns/SageTraceBuilder.php';
-require SAGE_DIR . 'src/inc/shorthands.inc.php';
-require SAGE_DIR . 'src/Decorators/SageDecoratorsInterface.php';
-require SAGE_DIR . 'src/Decorators/SageDecoratorsRich.php';
-require SAGE_DIR . 'src/Decorators/SageDecoratorsPlain.php';
-require SAGE_DIR . 'src/Parsers/SageCustomParserInterface.php';
-if (SageHelper::php82orLater()) {
-    require SAGE_DIR . 'src/Concerns/SageParameterNameParser.php';
-} else {
-    require SAGE_DIR . 'src/Concerns/SageParameterNameParserLegacy.php';
+define('SAGE_DIR', dirname(__FILE__) . '/src/');
+
+// autoloder php5.1 style!
+require SAGE_DIR . 'Parsers/SageCustomParserInterface.php';
+require SAGE_DIR . 'Decorators/SageDecoratorsInterface.php';
+foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(SAGE_DIR)) as $file) {
+    if ($file->isFile() && pathinfo($file->getFilename(), PATHINFO_EXTENSION) === 'php') {
+        require_once $file->getPathname();
+    }
 }
 
 class Sage
 {
-    private static $initialized = false;
-    private static $_enabledMode = true;
-    private static $_openedOutput;
-
-    /*
-     *   region CONFIG
-     *     ██████╗ ██████╗ ███╗   ██╗███████╗██╗ ██████╗ ██╗   ██╗██████╗  █████╗ ████████╗██╗ ██████╗ ███╗   ██╗
-     *    ██╔════╝██╔═══██╗████╗  ██║██╔════╝██║██╔════╝ ██║   ██║██╔══██╗██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║
-     *    ██║     ██║   ██║██╔██╗ ██║█████╗  ██║██║  ███╗██║   ██║██████╔╝███████║   ██║   ██║██║   ██║██╔██╗ ██║
-     *    ██║     ██║   ██║██║╚██╗██║██╔══╝  ██║██║   ██║██║   ██║██╔══██╗██╔══██║   ██║   ██║██║   ██║██║╚██╗██║
-     *    ╚██████╗╚██████╔╝██║ ╚████║██║     ██║╚██████╔╝╚██████╔╝██║  ██║██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║
-     *     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
-     *
-     * ASCII ART: http://patorjk.com/software/taag/#p=display&h=1&v=2&c=c&f=ANSI%20Shadow&t=
-     */
-
-    /**
-     * @var string makes visible source file paths clickable to open your editor.
-     *
-     * Pre-defined values:
-     *   'sublime'                => 'subl://open?url=file://%file&line=%line',
-     *   'textmate'               => 'txmt://open?url=file://%file&line=%line',
-     *   'emacs'                  => 'emacs://open?url=file://%file&line=%line',
-     *   'macvim'                 => 'mvim://open/?url=file://%file&line=%line',
-     *   'phpstorm'               => 'phpstorm://open?file=%file&line=%line',
-     *   'phpstorm-remote'        => 'http://localhost:63342/api/file/%file:%line',
-     *   'idea'                   => 'idea://open?file=%file&line=%line',
-     *   'vscode'                 => 'vscode://file/%file:%line',
-     *   'vscode-insiders'        => 'vscode-insiders://file/%file:%line',
-     *   'vscode-remote'          => 'vscode://vscode-remote/%file:%line',
-     *   'vscode-insiders-remote' => 'vscode-insiders://vscode-remote/%file:%line',
-     *   'vscodium'               => 'vscodium://file/%file:%line',
-     *   'atom'                   => 'atom://core/open/file?filename=%file&line=%line',
-     *   'nova'                   => 'nova://core/open/file?filename=%file&line=%line',
-     *   'netbeans'               => 'netbeans://open/?f=%file:%line',
-     *   'xdebug'                 => 'xdebug://%file@%line'
-     *
-     * Or pass a custom string where %file should be replaced with full file path, %line with line number
-     * to create a custom link. Set to null to disable linking.
-     *
-     * Example:
-     *             // works with for PHPStorm and IDE Remote Control Plugin
-     *             Sage::$editor = 'phpstorm-remote';
-     * Example:
-     *             // same result as above, but explicitly defined
-     *             Sage::$editor = 'http://localhost:63342/api/file/f:%line';
-     *
-     * Default:
-     *             ini_get('xdebug.file_link_format') ?: 'phpstorm-remote'
-     *
-     */
-    public static $editor = 'phpstorm-remote';
-
-    /**
-     * @var string the full path (not URL) to your project folder on your remote dev server, be this Homestead, Docker,
-     *             or in the cloud.
-     */
-    public static $fileLinkServerPath = null;
-
-    /**
-     * @var string the full path (not URL) to your project on your local machine, the way your IDE or editor accesses
-     *             the files.
-     */
-    public static $fileLinkLocalPath = null;
-
-    /**
-     * @var bool whether to display where Sage was called from.
-     */
-    public static $displayCalledFrom = true;
-
-    /**
-     * @var int max array/object levels to go deep, set to zero/false to disable.
-     */
-    public static $maxLevels = 7;
-
-    /**
-     * @var string theme for rich view
-     *
-     * Possible values:
-     *             Sage::$theme = Sage::THEME_ORIGINAL;
-     *             Sage::$theme = Sage::THEME_ORIGINAL_LIGHT;
-     *             Sage::$theme = Sage::THEME_LIGHT;
-     *             Sage::$theme = Sage::THEME_SOLARIZED;
-     *             Sage::$theme = Sage::THEME_SOLARIZED_DARK;
-     */
-    public static $theme = Sage::THEME_ORIGINAL;
-
-    /**
-     * @var bool draw rich output already expanded without having to click
-     */
-    public static $expandedByDefault = false;
-
-    /**
-     * @var bool enable detection when running in command line and adjust output format accordingly.
-     */
-    public static $cliDetection = true;
-
-    /**
-     * @var bool in addition to above setting, enable detection when Sage is run in *UNIX* command line.
-     * Attempts to add coloring, but if seen as plain text, the color information is visible as gibberish
-     */
-    public static $cliColors = true;
-
-    /**
-     * @var array possible alternative char encodings in order of probability
-     */
-    public static $charEncodings = array(
-        'UTF-8',
-        'Windows-1252', // Western; includes iso-8859-1, replace this with windows-1251 if you use Russian
-        'euc-jp'       // Japanese
-    );
-
-    /**
-     * @var bool|string Sage returns output instead of echo.
-     *
-     * If true, the return has scripts+css always included, if set to a string, only first time per "group".
-     */
-    public static $returnOutput = false;
-
-    /**
-     * @var string Write output to this file instead of echoing it. If it ends in `.html` forces output in html mode.
-     */
-    public static $outputFile = false;
-
-    /**
-     * @var array Add new custom Sage wrapper names. Needed for nice backtraces, variable name detection and modifiers.
-     *
-     *            [!] Use notation `Class::method` for methods.
-     *
-     * Example:
-     *            function doom_dump($args)
-     *            {
-     *                echo "DOOOM!";
-     *                d(...func_get_args());
-     *            }
-     *            Sage::$aliases = 'doom_dump';
-     */
-    public static $aliases = array();
-
-    /**
-     * @var string[] Patterns of filename paths. Keys don't matter, but you can use them to unset a particular entry.
-     */
-    public static $traceBlacklist = array(
-        'vendor'     => '#\/vendor\/#',
-        'middleware' => '#\/Middleware\/#'
-    );
-
-    public static $classNameBlacklist = array(
-        'illuminate' => '/^Illuminate(?!.*(?:Exception|Collection|Expression|Response))/',
-        // 'symfony'    => '/^Symfony/'
-    );
-
-    // todo more strings
-    public static $translations = array(
-        'key_blacklisted' => 'Redacted'
-    );
-
-    public static $keysBlacklist = array();
-
-    /**
-     * The ordering matters, each variable and its children are processed by each from top to bottom
-     *
-     * @var class-string<SageParser>[]
-     */
-    public static $enabledParsers = array(
-        // first all parsers that replacesAllOtherParsers() === true:
-        'SageParsersSmarty'                    => true,
-        'SageParsersSplFileInfo'               => true,
-        'SageParsersClosure'                   => true,
-        'SageParsersEloquent'                  => true,
-        'SageParsersDateTime'                  => true,
-        'SageParsersEloquentCollection'        => true,
-        'SageParsersEloquentExpression'        => true,
-        'SageParsersLaravelCollection'         => true,
-        'SageParsersLaravelRequest'            => true,
-
-        // now we run the blacklist
-        'SageParsersBlacklist'                 => true,
-
-        // all the rest
-        // SageParsersXml'                       => true,
-        'SageParsersTrace'                     => true,
-        'SageParsersIterable'                  => true,
-        'SageParsersPsrStreamInterface'        => true,
-        'SageParsersSplObjectStorage'          => true,
-        'SageParsersFilePath'                  => true,
-        'SageParsersTimestamp'                 => true,
-        'SageParsersClassStatics'              => true,
-        'SageParsersColor'                     => true,
-        'SageParsersJson'                      => true,
-        'SageParsersXml'                       => true,
-        'SageParsersClassName'                 => true,
-        'SageParsersMicrotime'                 => true,
-        'SageParsersInvisibleStringCharacters' => true,
-    );
-
-    # region SAVE STATE
-
-    public static function saveState($state = array())
-    {
-        $rich  = new SageDecoratorsRich();
-        $plain = new SageDecoratorsPlain();
-
-        if (func_num_args()) {
-            self::$_enabledMode       = $state['enabled'];
-            self::$editor             = $state['editor'];
-            self::$fileLinkServerPath = $state['fileLinkServerPath'];
-            self::$fileLinkLocalPath  = $state['fileLinkLocalPath'];
-            self::$displayCalledFrom  = $state['displayCalledFrom'];
-            self::$maxLevels          = $state['maxLevels'];
-            self::$theme              = $state['theme'];
-            self::$expandedByDefault  = $state['expandedByDefault'];
-            self::$cliDetection       = $state['cliDetection'];
-            self::$cliColors          = $state['cliColors'];
-            self::$charEncodings      = $state['charEncodings'];
-            self::$returnOutput       = $state['returnOutput'];
-            self::$outputFile         = $state['outputFile'];
-            self::$aliases            = $state['aliases'];
-            self::$traceBlacklist     = $state['traceBlacklist'];
-            self::$classNameBlacklist = $state['classNameBlacklist'];
-            self::$enabledParsers     = $state['enabledParsers'];
-            self::$translations       = $state['translations'];
-
-            $rich->setAssetsNeeded($state['SageDecoratorsRich::firstRun']);
-            $plain->setAssetsNeeded($state['SageDecoratorsPlain::firstRun']);
-
-            return array();
-        }
-
-        return array(
-            'enabled'                       => self::$_enabledMode,
-            'editor'                        => self::$editor,
-            'fileLinkServerPath'            => self::$fileLinkServerPath,
-            'fileLinkLocalPath'             => self::$fileLinkLocalPath,
-            'displayCalledFrom'             => self::$displayCalledFrom,
-            'maxLevels'                     => self::$maxLevels,
-            'theme'                         => self::$theme,
-            'expandedByDefault'             => self::$expandedByDefault,
-            'cliDetection'                  => self::$cliDetection,
-            'cliColors'                     => self::$cliColors,
-            'charEncodings'                 => self::$charEncodings,
-            'returnOutput'                  => self::$returnOutput,
-            'outputFile'                    => self::$outputFile,
-            'aliases'                       => self::$aliases,
-            'traceBlacklist'                => self::$traceBlacklist,
-            'classNameBlacklist'            => self::$classNameBlacklist,
-            'enabledParsers'                => self::$enabledParsers,
-            'translations'                  => self::$translations,
-            'SageDecoratorsRich::firstRun'  => $rich->areAssetsNeeded(),
-            'SageDecoratorsPlain::firstRun' => $plain->areAssetsNeeded()
-        );
-    }
-
-    /**
-     * @var bool there are multiple ways to direct sage to display "simpler" view than current mode (e.g. Rich -> PLain)
-     * todo must be private
-     */
-    public static $simplifyDisplay = false;
-
-    /*
-     *   region CONSTANTS
-     *     ██████╗ ██████╗ ███╗   ██╗███████╗████████╗ █████╗ ███╗   ██╗████████╗███████╗
-     *    ██╔════╝██╔═══██╗████╗  ██║██╔════╝╚══██╔══╝██╔══██╗████╗  ██║╚══██╔══╝██╔════╝
-     *    ██║     ██║   ██║██╔██╗ ██║███████╗   ██║   ███████║██╔██╗ ██║   ██║   ███████╗
-     *    ██║     ██║   ██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║╚██╗██║   ██║   ╚════██║
-     *    ╚██████╗╚██████╔╝██║ ╚████║███████║   ██║   ██║  ██║██║ ╚████║   ██║   ███████║
-     *     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝
-     *
-     */
-
     const MODE_RICH = 'r';
     const MODE_TEXT_ONLY = 'w';
     const MODE_CLI = 'c';
@@ -343,45 +58,190 @@ class Sage
     const THEME_SOLARIZED_DARK = 'solarized-dark';
     const THEME_SOLARIZED = 'solarized';
 
-    const STATUS_ERROR = 'sage error :(';
+    const STATUS_ERROR = 5463;
 
-    /*
-     *    region ENABLE
-     *    ███████╗███╗   ██╗ █████╗ ██████╗ ██╗     ███████╗██████╗
-     *    ██╔════╝████╗  ██║██╔══██╗██╔══██╗██║     ██╔════╝██╔══██╗
-     *    █████╗  ██╔██╗ ██║███████║██████╔╝██║     █████╗  ██║  ██║
-     *    ██╔══╝  ██║╚██╗██║██╔══██║██╔══██╗██║     ██╔══╝  ██║  ██║
-     *    ███████╗██║ ╚████║██║  ██║██████╔╝███████╗███████╗██████╔╝
-     *    ╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚═════╝
-     */
+    private static $isBootstrapped = false;
+
+    /** @var SageSettings */
+    private static $settings;
+
+    # region Settings
 
     /**
      * Enables or disables Sage, and forces display mode. Also returns currently active mode.
      *
-     * @param bool|Sage::MODE_* $forceMode
-     *                        null or void - return current mode
-     *                        false        - disable Sage
-     *                        true         - enable Sage and allow it to auto-detect the best formatting
-     *                        Sage::MODE_* - enable and force selected mode:
-     *                        -      Sage::MODE_RICH         Rich Text HTML
-     *                        -      Sage::MODE_PLAIN        Plain-view, HTML formatted output
-     *                        -      Sage::MODE_CLI          Console-formatted colored output
-     *                        -      Sage::MODE_TEXT_ONLY    Non-escaped plain text mode
+     * @param bool|Sage::MODE_* $forceMode possible values:
+     *  - null or void - return current mode
+     *  - false        - disable Sage
+     *  - true         - enable Sage and allow it to auto-detect the best output mode
+     *  - Sage::MODE_* - enable and force selected mode:
+     *    -      {@see Sage::MODE_RICH}         Rich Text HTML
+     *    -      {@see Sage::MODE_PLAIN}        Plain-view, HTML formatted output
+     *    -      {@see Sage::MODE_CLI}          Console-formatted colored output
+     *    -      {@see Sage::MODE_TEXT_ONLY}    Non-escaped plain text mode
      *
-     * @return mixed            previously set value
+     * @return bool|Sage::MODE_* previously set value
      */
     public static function enabled($forceMode = null)
     {
-        // act both as a setter...
-        if ($forceMode !== null) {
-            $before             = self::$_enabledMode;
-            self::$_enabledMode = $forceMode;
+        self::bootstrap();
 
-            return $before;
+        $currentMode = self::settings()->enabled;
+
+        if ($forceMode !== null) {
+            self::settings()->enabled = $forceMode;
+
+            return $currentMode;
         }
 
-        // ...and a getter
-        return self::$_enabledMode;
+        return $currentMode;
+    }
+
+    /**
+     * Usage
+     * ```
+     *   $previousSettings = Sage::saveState();
+     *   Sage::settings()->cliDetectionEnabled(false); // change any needed settings
+     *   sage($var);
+     *   Sage::saveState($previousSettings); // revert to previous configuration
+     * ```
+     *
+     * @param ?SageSettings $savedState
+     *
+     * @return SageSettings
+     */
+    public static function saveState($savedState = null)
+    {
+        self::bootstrap();
+
+        $oldState = clone self::$settings;
+
+        if (func_num_args()) {
+            self::settings($savedState);
+        }
+
+        return $oldState;
+    }
+
+    /**
+     * Sets setting for all subsequent instances of sage, returns previous state to revert to if needed.
+     *
+     * Usage:
+     * ```
+     *     $previousSettings = clone Sage::settings();
+     *
+     *     Sage::settings(cliDetectionEnabled: false);
+     *     // or
+     *     Sage::settings()->cliDetectionEnabled = false;
+     *
+     *     sage($data);
+     *     Sage::settings($previousSettings);
+     * ```
+     *
+     * @param mixed|SageSettings $enabled - pass SageSettings object to override
+     *
+     * @return SageSettings
+     */
+    public static function settings(
+        $enabled = SageSettings::SKIP,
+        $theme = SageSettings::SKIP,
+        $charEncodings = SageSettings::SKIP,
+        $aliases = SageSettings::SKIP,
+        $addAlias = SageSettings::SKIP,
+        $simplifyOutput = SageSettings::SKIP,
+        $displayCalledFrom = SageSettings::SKIP,
+        $outputToFile = SageSettings::SKIP,
+        $expandedByDefault = SageSettings::SKIP,
+        $ideLinkServerPath = SageSettings::SKIP,
+        $ideLinkLocalPath = SageSettings::SKIP,
+        $returnOutput = SageSettings::SKIP,
+        $keysBlacklist = SageSettings::SKIP,
+        $traceBlacklist = SageSettings::SKIP,
+        $editor = SageSettings::SKIP,
+        $cliDetectionEnabled = SageSettings::SKIP,
+        $maxLevels = SageSettings::SKIP,
+        $cliColors = SageSettings::SKIP,
+        $enabledParsers = SageSettings::SKIP,
+        $classNameBlacklist = SageSettings::SKIP,
+        $overrideTranslations = SageSettings::SKIP
+    ) {
+        self::bootstrap();
+
+        if (! func_num_args()) {
+            return self::$settings;
+        }
+
+        if ($enabled instanceof SageSettings) {
+            self::$settings = $enabled;
+
+            return self::$settings;
+        }
+
+        if ($enabled !== SageSettings::SKIP) {
+            self::$settings->enabled = $theme;
+        }
+        if ($theme !== SageSettings::SKIP) {
+            self::$settings->theme = $theme;
+        }
+        if ($charEncodings !== SageSettings::SKIP) {
+            self::$settings->charEncodings = $charEncodings;
+        }
+        if ($aliases !== SageSettings::SKIP) {
+            self::$settings->aliases = $aliases;
+        }
+        if ($addAlias !== SageSettings::SKIP) {
+            self::$settings->addAlias($addAlias);
+        }
+        if ($simplifyOutput !== SageSettings::SKIP) {
+            self::$settings->simplifyOutput = $simplifyOutput;
+        }
+        if ($displayCalledFrom !== SageSettings::SKIP) {
+            self::$settings->displayCalledFrom = $displayCalledFrom;
+        }
+        if ($outputToFile !== SageSettings::SKIP) {
+            self::$settings->outputToFile = $outputToFile;
+        }
+        if ($expandedByDefault !== SageSettings::SKIP) {
+            self::$settings->expandedByDefault = $expandedByDefault;
+        }
+        if ($ideLinkServerPath !== SageSettings::SKIP) {
+            self::$settings->ideLinkServerPath = $ideLinkServerPath;
+        }
+        if ($ideLinkLocalPath !== SageSettings::SKIP) {
+            self::$settings->ideLinkLocalPath = $ideLinkLocalPath;
+        }
+        if ($returnOutput !== SageSettings::SKIP) {
+            self::$settings->returnOutput = $returnOutput;
+        }
+        if ($keysBlacklist !== SageSettings::SKIP) {
+            self::$settings->keysBlacklist = $keysBlacklist;
+        }
+        if ($traceBlacklist !== SageSettings::SKIP) {
+            self::$settings->traceBlacklist = $traceBlacklist;
+        }
+        if ($editor !== SageSettings::SKIP) {
+            self::$settings->editor = $editor;
+        }
+        if ($cliDetectionEnabled !== SageSettings::SKIP) {
+            self::$settings->cliDetectionEnabled = $cliDetectionEnabled;
+        }
+        if ($maxLevels !== SageSettings::SKIP) {
+            self::$settings->maxLevels = $maxLevels;
+        }
+        if ($cliColors !== SageSettings::SKIP) {
+            self::$settings->cliColors = $cliColors;
+        }
+        if ($enabledParsers !== SageSettings::SKIP) {
+            self::$settings->enabledParsers = $enabledParsers;
+        }
+        if ($classNameBlacklist !== SageSettings::SKIP) {
+            self::$settings->classNameBlacklist = $classNameBlacklist;
+        }
+        if ($overrideTranslations !== SageSettings::SKIP) {
+            self::$settings->overrideTranslations($overrideTranslations);
+        }
+
+        return self::$settings;
     }
 
     /*
@@ -406,29 +266,27 @@ class Sage
      */
     public static function trace($trace = null)
     {
-        try {
-            /** @see self::getWhatToDump() */
-            return self::dump($trace);
-        } catch (Throwable $e) {
-            if (file_exists(SAGE_DIR . '/.dev-mode')) {
-                dd($e);
-            }
-        } catch (Exception $e) {
-        }
+        /** @see self::getWhatToDump() */
+        return self::dump($trace);
+    }
 
-        return self::STATUS_ERROR;
+    public static function traceWithoutArgs()
+    {
+        self::dump(2);
+    }
+
+    public static function simpleTrace()
+    {
+        self::dump(2);
+    }
+
+    public static function showEloquentQueries()
+    {
+        sage()->showEloquentQueries();
     }
 
     /**
      * Dump information about variables, accepts any number of parameters.
-     *
-     * -----
-     * Shorthand to display debug_backtrace():
-     *   Sage::dump( 1 );
-     *   Sage::trace();
-     *   Sage::dump( debug_backtrace() ); // passed as single-parameter is displayed more nicely.
-     *
-     * @param mixed $data
      *
      * @return string|int returns 5463 if disabled/error
      *
@@ -440,11 +298,12 @@ class Sage
             $params = func_get_args();
 
             return call_user_func_array(array(new self(), 'doDump'), $params);
-        } catch (Throwable $e) {
-            if (file_exists(SAGE_DIR . '/.dev-mode')) {
+        } /** @noinspection PhpElementIsNotAvailableInCurrentPhpVersionInspection */ catch (Throwable $e) {
+            if (file_exists(SAGE_DIR . '../.dev-mode')) {
+                /** @noinspection ForgottenDebugOutputInspection */
                 dd($e);
             }
-        } catch (Exception $e) {
+        } /** @noinspection PhpWrongCatchClausesOrderInspection */ catch (Exception $e) {
         }
 
         return self::STATUS_ERROR;
@@ -452,20 +311,20 @@ class Sage
 
     private function doDump($data = null)
     {
-        $enabledMode = self::enabled();
+        $previousMode = self::enabled();
 
-        if (! $enabledMode) {
+        if (! $previousMode) {
             return self::STATUS_ERROR;
         }
 
-        $this->bootstrap();
+        $this->initBeforeDump();
 
         $output           = '';
         $backtrace        = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
-        $caller           = SageInvoker::from($backtrace);
-        $decorator        = $this->detectDisplayMode($enabledMode);
-        $firstRunOldValue = $this->initDecorator($decorator);
-        $arguments        = $this->getWhatToDump($caller, func_get_args(), $backtrace);
+        $invoker          = SageInvoker::from($backtrace);
+        $decorator        = SageHelper::detectDisplayMode($previousMode);
+        $firstRunOldValue = SageHelper::initDecorator($decorator);
+        $arguments        = $this->getWhatToDump($invoker, func_get_args(), $backtrace);
 
         if ($decorator->areAssetsNeeded()) {
             $output .= $decorator->init();
@@ -477,7 +336,7 @@ class Sage
 
             // self::getWhatToDump can return an array of prepared SageParsedVariable
             if (! $argument instanceof SageParsedVariable) {
-                $name = $caller->getParameterName($k);
+                $name = $invoker->getParameterName($k);
 
                 $argument = SageParser::parse($argument, $name);
             }
@@ -485,40 +344,38 @@ class Sage
             $output .= $decorator->decorate($argument);
         }
 
-        $output .= $decorator->wrapEnd($caller);
+        $output .= $decorator->wrapEnd($invoker);
 
-        // now restore all on-the-fly settings and return
-
-        if (self::$outputFile) {
-            $saveTo = self::$outputFile;
+        $saveTo = self::settings()->outputToFile;
+        if ($saveTo) {
             try {
-                if (! isset(self::$_openedOutput[$saveTo])) {
+                if (! isset(SageHelper::$openedOutput[$saveTo])) {
                     $decorator->setAssetsNeeded($firstRunOldValue);
-                    self::$_openedOutput[$saveTo] = fopen($saveTo, 'w');
+                    SageHelper::$openedOutput[$saveTo] = fopen($saveTo, 'w');
                 }
 
-                fwrite(self::$_openedOutput[$saveTo], $output);
+                fwrite(SageHelper::$openedOutput[$saveTo], $output);
 
                 echo 'Sage -> ' . $saveTo . PHP_EOL;
-            } catch (Throwable $e) {
-                self::$outputFile = null;
-                $output           .= "Error: Sage can't write file to " . $saveTo;
-            } catch (Exception $e) {
-                self::$outputFile = null;
-                $output           .= "Error: Sage can't write file to " . $saveTo;
+            } /** @noinspection PhpElementIsNotAvailableInCurrentPhpVersionInspection */ catch (Throwable $e) {
+                self::settings()->outputToFile = null;
+                $output                        .= "Error: Sage can't write file to " . $saveTo;
+            } /** @noinspection PhpWrongCatchClausesOrderInspection */ catch (Exception $e) {
+                self::settings()->outputToFile = null;
+                $output                        .= "Error: Sage can't write file to " . $saveTo;
             }
         }
 
-        self::enabled($enabledMode);
+        self::enabled($previousMode);
 
         $decorator->setAssetsNeeded(false);
 
-        if (self::$returnOutput) {
+        if (self::settings()->returnOutput) {
             return $output;
         }
 
-        if (self::$outputFile) {
-            return;
+        if (self::settings()->outputToFile) {
+            return self::STATUS_ERROR;
         }
 
         echo $output;
@@ -603,89 +460,6 @@ class Sage
         return $arguments;
     }
 
-    /**
-     * @param bool|Sage::MODE_* $enabledMode
-     *
-     * @return SageDecoratorsPlain|SageDecoratorsRich
-     */
-    private function detectDisplayMode($enabledMode)
-    {
-        // auto-detect mode if not explicitly set
-        if ($enabledMode === true) {
-            if (self::$outputFile && substr(self::$outputFile, -5) === '.html') {
-                $newMode = self::MODE_RICH;
-            } else {
-                $newMode = PHP_SAPI === 'cli' && self::$cliDetection === true
-                    ? self::MODE_CLI
-                    : self::MODE_RICH;
-            }
-
-            if (self::$simplifyDisplay) {
-                switch ($newMode) {
-                    case self::MODE_RICH:
-                        $newMode = self::MODE_PLAIN_HTML;
-                        break;
-                    case self::MODE_CLI:
-                        $newMode = self::MODE_TEXT_ONLY;
-                        break;
-                }
-            }
-
-            // change mode globally
-            self::enabled($newMode);
-        }
-
-        $decoratorClass = self::enabled() === self::MODE_RICH ? 'SageDecoratorsRich' : 'SageDecoratorsPlain';
-        /** @var SageDecoratorsPlain|SageDecoratorsRich $decorator */
-        $decorator = new $decoratorClass();
-
-        return $decorator;
-    }
-
-    /**
-     * @param SageDecoratorsPlain|SageDecoratorsRich $decorator
-     *
-     * @return bool
-     */
-    private function initDecorator($decorator)
-    {
-        $firstRunOldValue = $decorator->areAssetsNeeded();
-
-        // self::$returnOutput can be true, can be a string to put multiple dumps together
-        if (self::$returnOutput) {
-            if (self::$returnOutput === true) {
-                $decorator->setAssetsNeeded(true);
-            } elseif (! isset(self::$_openedOutput[self::$returnOutput])) {
-                $decorator->setAssetsNeeded(true);
-
-                self::$_openedOutput[self::$returnOutput] = true;
-            }
-        }
-
-        if (self::$outputFile && ! isset(self::$_openedOutput[self::$outputFile])) {
-            $firstRunOldValue = $decorator->areAssetsNeeded();
-
-            $decorator->setAssetsNeeded(true);
-        }
-
-        return $firstRunOldValue;
-    }
-
-    public static function traceWithoutArgs()
-    {
-        self::dump(2);
-    }
-
-    public static function showEloquentQueries()
-    {
-        // maintain PHP5.1+ compatibility
-        if (SageHelper::php53orLater()) {
-            self::$aliases[] = __CLASS__ . '::' . __FUNCTION__;
-
-            require SAGE_DIR . 'src/inc/eloquentListener.inc.php';
-        }
-    }
-
     /*
      *    ██╗███╗   ██╗██╗████████╗
      *    ██║████╗  ██║██║╚══██╔══╝
@@ -698,58 +472,53 @@ class Sage
 
     # region BOOTSTRAP
 
-    private static $loadedParsers = 0;
-
     /** Called before each invocation */
-    private function bootstrap()
+    private function initBeforeDump()
     {
         SageHelper::buildAliases();
 
-        $parsersCount = 0;
-        foreach (Sage::$enabledParsers as $enabled) {
-            if ($enabled) {
-                $parsersCount++;
-            }
-        }
+        self::bootstrap();
+    }
 
-        if (self::$loadedParsers !== $parsersCount) {
-            self::$loadedParsers = $parsersCount;
-            foreach (Sage::$enabledParsers as $className => $enabled) {
-                if ($enabled && file_exists($f = SAGE_DIR . 'src/Parsers/' . $className . '.php')) {
-                    require_once $f;
-                }
-            }
-        }
-
-        if (self::$initialized) {
+    private static function bootstrap()
+    {
+        if (self::$isBootstrapped) {
             return;
         }
+        self::$isBootstrapped = true;
+
+        self::$settings = new SageSettings();
+
+        return; //todo
+
+        self::settings(self::enabled());
 
         // first load defaults for configuration. In this order:
         // 1. If value is set, it means user explicitly set it
-        // 2. TODO: composer.json
+        // 2. TODO: .env
         // 3. If present in get_cfg_var means user put it into his php.ini
         // 4. Load default from Sage
-        self::_initSetting(
+        self::initSetting(
             'editor',
-            ini_get('xdebug.file_link_format') ? ini_get('xdebug.file_link_format') : self::$editor
+            ini_get('xdebug.file_link_format') ? ini_get('xdebug.file_link_format') : self::$settings->editor
         );
-        self::_initSetting('fileLinkServerPath', self::$fileLinkServerPath);
-        self::_initSetting('fileLinkLocalPath', self::$fileLinkLocalPath);
-        self::_initSetting('displayCalledFrom', self::$displayCalledFrom);
-        self::_initSetting('maxLevels', self::$maxLevels);
-        self::_initSetting('theme', self::$theme);
-        self::_initSetting('expandedByDefault', self::$expandedByDefault);
-        self::_initSetting('cliDetection', self::$cliDetection);
-        self::_initSetting('cliColors', self::$cliColors);
-        self::_initSetting('charEncodings', self::$charEncodings);
-        self::_initSetting('returnOutput', self::$returnOutput);
-        self::_initSetting('aliases', self::$aliases);
+        self::initSetting('fileLinkServerPath', self::$settings->ideLinkServerPath);
+        self::initSetting('fileLinkLocalPath', self::$settings->ideLinkLocalPath);
+        self::initSetting('displayCalledFrom', self::$settings->displayCalledFrom);
+        self::initSetting('maxLevels', self::$settings->maxLevels);
+        self::initSetting('theme', self::$settings->theme);
+        self::initSetting('expandedByDefault', self::$settings->expandedByDefault);
+        self::initSetting('cliDetectionEnabled', self::$settings->cliDetectionEnabled);
+        self::initSetting('cliColors', self::$settings->cliColors);
+        self::initSetting('charEncodings', self::$settings->charEncodings);
+        self::initSetting('returnOutput', self::$settings->returnOutput);
+        self::initSetting('aliases', self::$settings->aliases);
     }
 
-    private static function _initSetting($name, $default)
+    private static function initSetting($name, $default)
     {
         if (! isset(self::$$name)) {
+            // gets from php.ini
             $value = get_cfg_var('sage.' . $name);
             if (! $value) {
                 $value = $default;

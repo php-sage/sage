@@ -5,10 +5,18 @@
  */
 class SageDecoratorsPlain implements SageDecoratorsInterface
 {
-    protected static $needsAssets = true;
+    private static $needsAssets = true;
 
-    // todo disable it now, remove it someday
+    // todo remove rich traces from plain view completely
     private static $onlySimpleTraces = true;
+
+    private static $enableColors;
+
+    /**
+     * Enhance cli mode by marking each level with a different color so we can visually spot when we scrolled passed
+     * the current variable.
+     */
+    private static $levelColors = array();
 
     // repeated methods due to the way old PHP versions handle static variables on dynamic classnames :)
     public function areAssetsNeeded()
@@ -21,17 +29,6 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         self::$needsAssets = $on;
     }
 
-    private static $enableColors;
-    private static $outputWidth = 120;
-    const FALLBACK_TERMINAL_WIDTH = 120;
-    const MIN_TERMINAL_WIDTH = 120;
-
-    /**
-     * Enhance cli mode by marking each level with a different color so we can visually spot when we scrolled passed
-     * the current variable.
-     */
-    private static $levelColors = array();
-
     public function decorate(SageParsedVariable $varData, $level = 0, $prefix = '', $skipHeader = false)
     {
         $output = '';
@@ -39,7 +36,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
         if (! $skipHeader) {
             if ($level === 0) {
-                $output .= $this->drawBigTitle($varData->name);
+                $output .= $this->drawBanner($varData->name);
                 // We'll put the name in the title, don't repeat it in the header
                 $varData->name = null;
             }
@@ -111,6 +108,72 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return $output;
     }
 
+    # region init
+
+    public function init()
+    {
+        if (! Sage::settings()->cliColors) {
+            self::$enableColors = false;
+        } elseif (isset($_SERVER['NO_COLOR']) || getenv('NO_COLOR') !== false) {
+            self::$enableColors = false;
+        } elseif (getenv('TERM_PROGRAM') === 'Hyper') {
+            self::$enableColors = true;
+        } elseif (DIRECTORY_SEPARATOR === '\\') {
+            self::$enableColors =
+                function_exists('sapi_windows_vt100_support')
+                || getenv('ANSICON') !== false
+                || getenv('ConEmuANSI') === 'ON'
+                || getenv('TERM') === 'xterm';
+        } else {
+            self::$enableColors = true;
+        }
+
+        if (Sage::enabled() !== Sage::MODE_PLAIN_HTML) {
+            return '';
+        }
+
+        return '<style>' . file_get_contents(SAGE_DIR . 'resources/compiled/plain-html.css') . '</style>'
+            . '<script>window.onload=function(){document.querySelectorAll("._sage_plain a").forEach(el=>el.addEventListener("click",e=>{e.preventDefault();let X=new XMLHttpRequest;X.open("GET",e.target.href);X.send()}))}</script>';
+    }
+
+    public function wrapStart()
+    {
+        if (Sage::enabled() === Sage::MODE_PLAIN_HTML) {
+            return '<pre class="_sage_plain">';
+        }
+
+        return '';
+    }
+
+    public function wrapEnd($caller)
+    {
+        $lastLine     = '══════════════════════════════════════════════════════════════════════════════════';
+        $lastChar     = Sage::enabled() === Sage::MODE_PLAIN_HTML ? '</pre>' : '';
+        $traceDisplay = '';
+
+        if (! Sage::settings()->displayCalledFrom) {
+            return $this->colorize($lastLine . $lastChar, 'header');
+        }
+
+        foreach ($caller->trace as $i => $step) {
+            if ($i === 0) {
+                $traceDisplay .= PHP_EOL
+                    . 'Call stack ' . SageHelper::getIdeLink($step['file'], $step['line'])
+                    . PHP_EOL;
+                continue;
+            }
+
+            $traceDisplay .= '        ' . ($i + 1) . '. ';
+            $traceDisplay .= SageHelper::getIdeLink($step['file'], $step['line']);
+            $traceDisplay .= PHP_EOL;
+            if ($i > 3) {
+                break;
+            }
+        }
+
+        return $this->colorize($lastLine . $traceDisplay, 'header')
+            . $lastChar;
+    }
     # region trace
 
     /**
@@ -161,7 +224,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return $output;
     }
 
-    # region draw
+    # region draw trace
 
     /**
      * @param int $stepNumber
@@ -180,10 +243,10 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         $lineIndentation = $this->getIndentation($level);
 
         // ASCII art 🎨
-        $_________________ = '────────────────────────────────────────────────────────────────────────────────';
-        $____Arguments____ = '  ┌────────────────────────── Arguments ─────────────────────────────────┐';
-        $__Callee_Object__ = '  ┌───────────────────────── Callee Object ──────────────────────────────┐';
-        $L________________ = '  └──────────────────────────────────────────────────────────────────────┘';
+        $_________________ = '━━━━━━━━━────────────────────┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╌╌╌╌╌╌╌╌╌╌╌╌╴╴╴╴╴╴╴╴╴';
+        $____Arguments____ = '  ╭────────────────────────── Arguments ─────────────────────────────────┐';
+        $__Callee_Object__ = '  ╭───────────────────────── Callee Object ──────────────────────────────┐';
+        $L________________ = '  └──────────────────────────────────────────────────────────────────────╯';
 
         $_________________ = $this->colorize($lineIndentation . $_________________, 'header');
         $____Arguments____ = $this->colorize($lineIndentation . $____Arguments____, 'header');
@@ -261,6 +324,8 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return $space;
     }
 
+    # region draw var
+
     /**
      * @return string
      */
@@ -310,26 +375,20 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return ltrim($output);
     }
 
-    private function drawBigTitle($text)
+    # region draw banner
+
+    private function drawBanner($text)
     {
-        $line = str_repeat('─', self::$outputWidth - 2);
-        $ret  = '╭' . $line . '┐' . PHP_EOL;
+        $ret = PHP_EOL . '┏━━━━━━━────────────────────┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╌╌╌╌╌╌╌╌╌╌╌╌╴╴╴╴╴╴╴╴╴╴' . PHP_EOL;
         if ($text) {
-            $ret .= '│' . self::strPadBoth(SageHelper::esc($text), self::$outputWidth - 2) . '│' . PHP_EOL;
+            $ret .= '┃ ' . SageHelper::esc($text) . PHP_EOL;
         }
-        $ret .= '└' . $line . '╯';
+        $ret .= '┗━━━───────┄┄┄┄┄┄┈┈┈┈╌╌╌╌╌╌╴╴';
 
         return $this->colorize($ret, 'header');
     }
 
-    private static function strPadBoth($input, $pad_length, $pad_string = ' ')
-    {
-        if (function_exists('mb_str_pad')) {
-            return mb_str_pad($input, $pad_length, $pad_string, STR_PAD_BOTH);
-        }
-
-        return str_pad($input, $pad_length, $pad_string, STR_PAD_BOTH);
-    }
+    # region helpers
 
     private function colorize($text, $type, $nlAfter = true)
     {
@@ -419,141 +478,4 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         return $this->colorize($text, 'value', $nlAfter);
     }
 
-    # region init
-
-    public function init()
-    {
-        if (! Sage::$cliColors) {
-            self::$enableColors = false;
-        } elseif (isset($_SERVER['NO_COLOR']) || getenv('NO_COLOR') !== false) {
-            self::$enableColors = false;
-        } elseif (getenv('TERM_PROGRAM') === 'Hyper') {
-            self::$enableColors = true;
-        } elseif (DIRECTORY_SEPARATOR === '\\') {
-            self::$enableColors =
-                function_exists('sapi_windows_vt100_support')
-                || getenv('ANSICON') !== false
-                || getenv('ConEmuANSI') === 'ON'
-                || getenv('TERM') === 'xterm';
-        } else {
-            self::$enableColors = true;
-        }
-
-        if (self::$enableColors) {
-            self::$outputWidth = min(self::getTerminalWidth(), self::MIN_TERMINAL_WIDTH);
-        } else {
-            self::$outputWidth = self::FALLBACK_TERMINAL_WIDTH;
-        }
-
-        if (Sage::enabled() !== Sage::MODE_PLAIN_HTML) {
-            return '';
-        }
-
-        return '<style>' . file_get_contents(SAGE_DIR . 'src/resources/compiled/plain-html.css') . '</style>'
-            . '<script>window.onload=function(){document.querySelectorAll("._sage_plain a").forEach(el=>el.addEventListener("click",e=>{e.preventDefault();let X=new XMLHttpRequest;X.open("GET",e.target.href);X.send()}))}</script>';
-    }
-
-    public function wrapStart()
-    {
-        if (Sage::enabled() === Sage::MODE_PLAIN_HTML) {
-            return '<pre class="_sage_plain">';
-        }
-
-        return '';
-    }
-
-    public function wrapEnd($caller)
-    {
-        $lastLine     = str_repeat('═', self::$outputWidth);
-        $lastChar     = Sage::enabled() === Sage::MODE_PLAIN_HTML ? '</pre>' : '';
-        $traceDisplay = '';
-
-        if (! Sage::$displayCalledFrom) {
-            return $this->colorize($lastLine . $lastChar, 'header');
-        }
-
-        foreach ($caller->trace as $i => $step) {
-            if ($i === 0) {
-                $traceDisplay .= PHP_EOL
-                    . 'Call stack ' . SageHelper::getIdeLink($step['file'], $step['line'])
-                    . PHP_EOL;
-                continue;
-            }
-
-            $traceDisplay .= '        ' . ($i + 1) . '. ';
-            $traceDisplay .= SageHelper::getIdeLink($step['file'], $step['line']);
-            $traceDisplay .= PHP_EOL;
-            if ($i > 3) {
-                break;
-            }
-        }
-
-        return $this->colorize($lastLine . $traceDisplay, 'header')
-            . $lastChar;
-    }
-
-    private static function getTerminalWidth()
-    {
-        if (DIRECTORY_SEPARATOR === '/') {
-            return self::getSttyColumns();
-        }
-
-        $ansicon = getenv('ANSICON');
-        if ($ansicon !== false && preg_match('/^(\d+)x(\d+)(?: \((\d+)x(\d+)\))?$/', trim($ansicon), $matches)) {
-            // extract [w, H] from "wxh (WxH)"
-            return (int) $matches[1];
-        }
-
-        if (
-            function_exists('sapi_windows_vt100_support')
-            && ! sapi_windows_vt100_support(fopen('php://stdout', 'w'))
-            && self::hasSttyAvailable()
-        ) {
-            // only use stty on Windows if the terminal does not support vt100 (e.g. Windows 7 + git-bash)
-            // testing for stty in a Windows 10 vt100-enabled console will implicitly disable vt100 support on STDOUT
-            return self::getSttyColumns();
-        }
-
-        return self::getWindowsTerminalWidth();
-    }
-
-    private static function hasSttyAvailable()
-    {
-        // skip check if shell_exec function is disabled
-        if (! function_exists('shell_exec')) {
-            return false;
-        }
-
-        $str = \DIRECTORY_SEPARATOR === '\\'
-            ? 'NUL'
-            : '/dev/null';
-
-        return (bool) shell_exec('stty 2> ' . $str);
-    }
-
-    private static function getSttyColumns()
-    {
-        if (! function_exists('shell_exec')) {
-            return self::FALLBACK_TERMINAL_WIDTH;
-        }
-
-        $size = shell_exec('stty size');
-        if ($size) {
-            $dimensions = explode(' ', trim($size));
-            if (isset($dimensions[1])) {
-                return (int) $dimensions[1];
-            }
-        }
-
-        return self::FALLBACK_TERMINAL_WIDTH;
-    }
-
-    private static function getWindowsTerminalWidth()
-    {
-        if (preg_match('/Columns:\s+(\d+)/', shell_exec('mode con'), $matches)) {
-            return (int) $matches[1];
-        }
-
-        return self::FALLBACK_TERMINAL_WIDTH;
-    }
 }

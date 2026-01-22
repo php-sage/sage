@@ -32,7 +32,6 @@ class SageHelper
         'xdebug'                 => 'xdebug://%file@%line',
     );
 
-    /** @var array build from internal methods and {@see Sage::$aliases} */
     private static $aliasesRaw;
     private static $projectRootDir;
 
@@ -89,10 +88,15 @@ class SageHelper
             'functions' => array(),
         );
 
-        foreach (Sage::$aliases as $alias) {
+        foreach (Sage::settings()->aliases as $alias) {
             $alias = strtolower($alias);
 
-            if (strpos($alias, '::') !== false) {
+            $strpos = strpos($alias, '::');
+            if ($strpos !== false) {
+                if ($strpos === 0) {
+                    self::$aliasesRaw['functions'][] = substr($alias, 2);
+                    continue;
+                }
                 self::$aliasesRaw['methods'][] = explode('::', $alias);
             } else {
                 self::$aliasesRaw['functions'][] = $alias;
@@ -156,7 +160,85 @@ class SageHelper
 
     public static function isKeyBlacklisted($key)
     {
-        return Sage::$keysBlacklist && in_array(preg_replace('/\W/', '', $key), Sage::$keysBlacklist, true);
+        return Sage::settings()->keysBlacklist
+            && in_array(preg_replace('/\W/', '', $key), Sage::settings()->keysBlacklist, true);
+    }
+
+    /**
+     * @param bool|Sage::MODE_* $enabledMode
+     *
+     * @return SageDecoratorsPlain|SageDecoratorsRich|SageDecoratorsInterface
+     */
+    public static function detectDisplayMode($enabledMode)
+    {
+        // auto-detect mode if not explicitly set
+        if ($enabledMode === true) {
+            $outputToFile = Sage::settings()->outputToFile;
+            if ($outputToFile && substr($outputToFile, -5) === '.html') {
+                $newMode = Sage::MODE_RICH;
+            } else {
+                $newMode = PHP_SAPI === 'cli' && Sage::settings()->cliDetectionEnabled
+                    ? Sage::MODE_CLI
+                    : Sage::MODE_RICH;
+            }
+
+            if (Sage::settings()->simplifyOutput) {
+                switch ($newMode) {
+                    case Sage::MODE_RICH:
+                        $newMode = Sage::MODE_PLAIN_HTML;
+                        break;
+                    case Sage::MODE_CLI:
+                    default:
+                        $newMode = Sage::MODE_TEXT_ONLY;
+                        break;
+                }
+            }
+
+            // change mode globally
+            Sage::enabled($newMode);
+        } else {
+            $newMode = $enabledMode;
+        }
+
+        $decoratorClass = $newMode === Sage::MODE_RICH ? 'SageDecoratorsRich' : 'SageDecoratorsPlain';
+        /** @var SageDecoratorsPlain|SageDecoratorsRich $decorator */
+        $decorator = new $decoratorClass();
+
+        return $decorator;
+    }
+
+    // todo dirty
+    public static $openedOutput;
+
+    /**
+     * @param SageDecoratorsPlain|SageDecoratorsRich $decorator
+     *
+     * @return bool
+     */
+    public static function initDecorator($decorator)
+    {
+        $firstRunOldValue = $decorator->areAssetsNeeded();
+
+        // $returnOutput is false by default but can be true
+        // and can be any arbitrary string to put multiple dumps together
+        $returnOutput = Sage::settings()->returnOutput;
+        if ($returnOutput) {
+            if ($returnOutput === true) {
+                $decorator->setAssetsNeeded(true);
+            } elseif (! isset(self::$openedOutput[$returnOutput])) {
+                $decorator->setAssetsNeeded(true);
+
+                Sage::settings()->returnOutput = true;
+            }
+        }
+
+        if (Sage::settings()->outputToFile && ! isset(self::$openedOutput[Sage::settings()->outputToFile])) {
+            $firstRunOldValue = $decorator->areAssetsNeeded();
+
+            $decorator->setAssetsNeeded(true);
+        }
+
+        return $firstRunOldValue;
     }
 
     public static function substr($string, $start, $end, $encoding = null)
@@ -188,7 +270,7 @@ class SageHelper
         }
 
         $md5 = md5($value);
-        foreach (Sage::$charEncodings as $encoding) {
+        foreach (Sage::settings()->charEncodings as $encoding) {
             // f*#! knows why, //IGNORE and //TRANSLIT still throw notice
             if (md5(@iconv($encoding, $encoding, $value)) === $md5) {
                 return $encoding;
@@ -233,14 +315,15 @@ class SageHelper
             : $fileLine;
         $linkText = self::esc($linkText);
 
-        if (! Sage::$editor) {
+        $settings = Sage::settings();
+        if (! $settings->editor) {
             return $linkText;
         }
 
         $ideLink = str_replace(
-            array('%file', '%line', Sage::$fileLinkServerPath),
-            array($file, $line, Sage::$fileLinkLocalPath),
-            isset(self::$editors[Sage::$editor]) ? self::$editors[Sage::$editor] : Sage::$editor
+            array('%file', '%line', $settings->ideLinkServerPath),
+            array($file, $line, $settings->ideLinkLocalPath),
+            isset(self::$editors[$settings->editor]) ? self::$editors[$settings->editor] : $settings->editor
         );
 
         if ($enabledMode === Sage::MODE_RICH) {
@@ -283,7 +366,9 @@ class SageHelper
 
     public static function trans($key)
     {
-        return array_key_exists($key, Sage::$translations) ? Sage::$translations[$key] : $key;
+        $translations = Sage::settings()->translations;
+
+        return array_key_exists($key, $translations) ? $translations[$key] : $key;
     }
 
     public static function getDebugType($variable)

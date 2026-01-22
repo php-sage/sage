@@ -3,25 +3,27 @@
 use Seld\PharUtils\Timestamps;
 use Symfony\Component\Finder\Finder;
 
-require_once __DIR__ . '/../../vendor/autoload.php';
-$pharPath = SAGE_DIR . 'sage.phar';
+$sageRoot = __DIR__ . '/../../';
+require_once $sageRoot . 'vendor/autoload.php';
+$pharPath = $sageRoot . 'sage.phar';
 
 if (is_file($pharPath)) {
     unlink($pharPath);
 }
 
-$rootPathLength = strlen(SAGE_DIR);
+$rootPathLength = strlen($sageRoot);
 
 $phar = new Phar($pharPath);
 $phar->setStub("<?php require 'phar://'.__FILE__.'/Sage.php'; __HALT_COMPILER();");
-$phar->addFile(SAGE_DIR . 'Sage.php', 'Sage.php');
+$phar->addFile($sageRoot . 'Sage.php', 'Sage.php');
 
 $includeInPhar = array(
-    SAGE_DIR . 'src/DataStructure',
-    SAGE_DIR . 'src/Decorators',
-    SAGE_DIR . 'src/inc',
-    SAGE_DIR . 'src/Parsers',
-    SAGE_DIR . 'src/resources/compiled'
+    $sageRoot . 'src/Concerns',
+    $sageRoot . 'src/DataStructure',
+    $sageRoot . 'src/Decorators',
+    $sageRoot . 'src/inc',
+    $sageRoot . 'src/Parsers',
+    $sageRoot . 'src/resources/compiled'
 );
 foreach (Finder::create()->files()->in($includeInPhar)->sortByName() as $file) {
     $local = substr($file, $rootPathLength);

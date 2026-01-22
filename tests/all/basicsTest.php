@@ -2,12 +2,13 @@
 
 describe('the basics', function() {
     it('dumps successfully', function() {
-        $n = 123;
+        $thisIsMyVariable = 123;
         ob_start();
-        sage($n);
+        sage($thisIsMyVariable);
         $a = ob_get_clean();
         expect($a)
-            ->toContain('123')//            ->toContain('$n') // todo fix names
+            ->toContain('123')
+            ->toContain('$thisIsMyVariable')
         ;
     });
 
@@ -23,22 +24,10 @@ describe('the basics', function() {
         Sage::enabled($previously);
         $a = ob_get_clean();
 
-        $expected = <<<OUT
-            ╭──────────────────────────────────────────────────────────────────────┐\n
-            │                               Debug backtrace                        │
-            └──────────────────────────────────────────────────────────────────────╯
-            ───────────────────────────────────────────────────────────────────────
-            0:  tests/all/basicsTest.php:17
-                Sage::trace()
-            ───────────────────────────────────────────────────────────────────────
-            1:  tests/all/basicsTest.php:22
-                raveren_abcdefgh5()
-            OUT;
-
         expect($a)
             ->toContain(
                 <<<'OUT'
-                0:  tests/all/basicsTest.php:17
+                0:  tests/all/basicsTest.php:18
                     Sage::trace()
                 OUT
             )
