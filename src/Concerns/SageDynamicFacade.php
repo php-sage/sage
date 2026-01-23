@@ -30,6 +30,10 @@ class SageDynamicFacade
         $this->SageDynamicFacade();
     }
 
+    public function serve()
+    {
+        SageServe::serve();
+    }
     # region Dump
 
     public function dump($data = null)

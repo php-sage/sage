@@ -110,14 +110,14 @@ class Sage
      *
      * @return SageSettings
      */
-    public static function saveState($savedState = null)
+    public static function saveState(SageSettings $savedState = null)
     {
         self::bootstrap();
 
         $oldState = clone self::$settings;
 
-        if (func_num_args()) {
-            self::settings($savedState);
+        if ($savedState) {
+            self::$settings = $savedState;
         }
 
         return $oldState;
@@ -129,116 +129,22 @@ class Sage
      * Usage:
      * ```
      *     $previousSettings = clone Sage::settings();
-     *
-     *     Sage::settings(cliDetectionEnabled: false);
-     *     // or
      *     Sage::settings()->cliDetectionEnabled = false;
      *
      *     sage($data);
      *     Sage::settings($previousSettings);
      * ```
      *
-     * @param mixed|SageSettings $enabled - pass SageSettings object to override
+     * @param ?SageSettings $restore - pass SageSettings object to override
      *
      * @return SageSettings
      */
-    public static function settings(
-        $enabled = SageSettings::SKIP,
-        $theme = SageSettings::SKIP,
-        $charEncodings = SageSettings::SKIP,
-        $aliases = SageSettings::SKIP,
-        $addAlias = SageSettings::SKIP,
-        $simplifyOutput = SageSettings::SKIP,
-        $displayCalledFrom = SageSettings::SKIP,
-        $outputToFile = SageSettings::SKIP,
-        $expandedByDefault = SageSettings::SKIP,
-        $ideLinkServerPath = SageSettings::SKIP,
-        $ideLinkLocalPath = SageSettings::SKIP,
-        $returnOutput = SageSettings::SKIP,
-        $keysBlacklist = SageSettings::SKIP,
-        $traceBlacklist = SageSettings::SKIP,
-        $editor = SageSettings::SKIP,
-        $cliDetectionEnabled = SageSettings::SKIP,
-        $maxLevels = SageSettings::SKIP,
-        $cliColors = SageSettings::SKIP,
-        $enabledParsers = SageSettings::SKIP,
-        $classNameBlacklist = SageSettings::SKIP,
-        $overrideTranslations = SageSettings::SKIP
-    ) {
+    public static function settings($restore = null)
+    {
         self::bootstrap();
 
-        if (! func_num_args()) {
-            return self::$settings;
-        }
-
-        if ($enabled instanceof SageSettings) {
-            self::$settings = $enabled;
-
-            return self::$settings;
-        }
-
-        if ($enabled !== SageSettings::SKIP) {
-            self::$settings->enabled = $theme;
-        }
-        if ($theme !== SageSettings::SKIP) {
-            self::$settings->theme = $theme;
-        }
-        if ($charEncodings !== SageSettings::SKIP) {
-            self::$settings->charEncodings = $charEncodings;
-        }
-        if ($aliases !== SageSettings::SKIP) {
-            self::$settings->aliases = $aliases;
-        }
-        if ($addAlias !== SageSettings::SKIP) {
-            self::$settings->addAlias($addAlias);
-        }
-        if ($simplifyOutput !== SageSettings::SKIP) {
-            self::$settings->simplifyOutput = $simplifyOutput;
-        }
-        if ($displayCalledFrom !== SageSettings::SKIP) {
-            self::$settings->displayCalledFrom = $displayCalledFrom;
-        }
-        if ($outputToFile !== SageSettings::SKIP) {
-            self::$settings->outputToFile = $outputToFile;
-        }
-        if ($expandedByDefault !== SageSettings::SKIP) {
-            self::$settings->expandedByDefault = $expandedByDefault;
-        }
-        if ($ideLinkServerPath !== SageSettings::SKIP) {
-            self::$settings->ideLinkServerPath = $ideLinkServerPath;
-        }
-        if ($ideLinkLocalPath !== SageSettings::SKIP) {
-            self::$settings->ideLinkLocalPath = $ideLinkLocalPath;
-        }
-        if ($returnOutput !== SageSettings::SKIP) {
-            self::$settings->returnOutput = $returnOutput;
-        }
-        if ($keysBlacklist !== SageSettings::SKIP) {
-            self::$settings->keysBlacklist = $keysBlacklist;
-        }
-        if ($traceBlacklist !== SageSettings::SKIP) {
-            self::$settings->traceBlacklist = $traceBlacklist;
-        }
-        if ($editor !== SageSettings::SKIP) {
-            self::$settings->editor = $editor;
-        }
-        if ($cliDetectionEnabled !== SageSettings::SKIP) {
-            self::$settings->cliDetectionEnabled = $cliDetectionEnabled;
-        }
-        if ($maxLevels !== SageSettings::SKIP) {
-            self::$settings->maxLevels = $maxLevels;
-        }
-        if ($cliColors !== SageSettings::SKIP) {
-            self::$settings->cliColors = $cliColors;
-        }
-        if ($enabledParsers !== SageSettings::SKIP) {
-            self::$settings->enabledParsers = $enabledParsers;
-        }
-        if ($classNameBlacklist !== SageSettings::SKIP) {
-            self::$settings->classNameBlacklist = $classNameBlacklist;
-        }
-        if ($overrideTranslations !== SageSettings::SKIP) {
-            self::$settings->overrideTranslations($overrideTranslations);
+        if ($restore instanceof SageSettings) {
+            self::$settings = $restore;
         }
 
         return self::$settings;
@@ -319,10 +225,14 @@ class Sage
 
         $this->initBeforeDump();
 
+        if (SageServe::isServing()) {
+            SageServe::setSettings();
+        }
+
         $output           = '';
         $backtrace        = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
         $invoker          = SageInvoker::from($backtrace);
-        $decorator        = SageHelper::detectDisplayMode($previousMode);
+        $decorator        = SageHelper::detectDisplayMode();
         $firstRunOldValue = SageHelper::initDecorator($decorator);
         $arguments        = $this->getWhatToDump($invoker, func_get_args(), $backtrace);
 
@@ -356,6 +266,9 @@ class Sage
 
                 fwrite(SageHelper::$openedOutput[$saveTo], $output);
 
+                if ($servingUrl = SageServe::isServing()) {
+                    $saveTo = $servingUrl;
+                }
                 echo 'Sage -> ' . $saveTo . PHP_EOL;
             } /** @noinspection PhpElementIsNotAvailableInCurrentPhpVersionInspection */ catch (Throwable $e) {
                 self::settings()->outputToFile = null;

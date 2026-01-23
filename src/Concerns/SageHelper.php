@@ -169,8 +169,9 @@ class SageHelper
      *
      * @return SageDecoratorsPlain|SageDecoratorsRich|SageDecoratorsInterface
      */
-    public static function detectDisplayMode($enabledMode)
+    public static function detectDisplayMode()
     {
+        $enabledMode = Sage::enabled();
         // auto-detect mode if not explicitly set
         if ($enabledMode === true) {
             $outputToFile = Sage::settings()->outputToFile;
@@ -232,7 +233,12 @@ class SageHelper
             }
         }
 
-        if (Sage::settings()->outputToFile && ! isset(self::$openedOutput[Sage::settings()->outputToFile])) {
+        if (SageServe::isServing()) {
+            $decorator->setAssetsNeeded(false);
+        } elseif (
+            Sage::settings()->outputToFile
+            && ! isset(self::$openedOutput[Sage::settings()->outputToFile])
+        ) {
             $firstRunOldValue = $decorator->areAssetsNeeded();
 
             $decorator->setAssetsNeeded(true);

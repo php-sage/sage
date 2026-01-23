@@ -14,6 +14,7 @@
  * @method self simplifyOutput($newValue)
  * @method self displayCalledFrom($newValue)
  * @method self outputToFile($newValue)
+ * @method self writeableDir($newValue)
  * @method self expandedByDefault($newValue)
  * @method self translations($newValue)
  * @method self ideLinkServerPath($newValue)
@@ -39,11 +40,11 @@ class SageSettings
      * @var string theme for rich view
      *
      * Possible values:
-     *             Sage::$theme = Sage::THEME_ORIGINAL;
-     *             Sage::$theme = Sage::THEME_ORIGINAL_LIGHT;
-     *             Sage::$theme = Sage::THEME_LIGHT;
-     *             Sage::$theme = Sage::THEME_SOLARIZED;
-     *             Sage::$theme = Sage::THEME_SOLARIZED_DARK;
+     *             Sage::settings()->theme = Sage::THEME_ORIGINAL;
+     *             Sage::settings()->theme = Sage::THEME_ORIGINAL_LIGHT;
+     *             Sage::settings()->theme = Sage::THEME_LIGHT;
+     *             Sage::settings()->theme = Sage::THEME_SOLARIZED;
+     *             Sage::settings()->theme = Sage::THEME_SOLARIZED_DARK;
      */
     public $theme = Sage::THEME_ORIGINAL;
 
@@ -86,6 +87,12 @@ class SageSettings
      * @var string Write output to this file instead of echoing it. If it ends in `.html` forces output in html mode.
      */
     public $outputToFile = false;
+
+    /**
+     * @var ?string Must be globally set, used for internal intercommunication (currently only Sage::serve() with
+     * potential to store settings).
+     */
+    public $writeableDir = null;
 
     /**
      * @var bool draw rich output already expanded without having to click
@@ -152,10 +159,10 @@ class SageSettings
      *
      * Example:
      *             // works with for PHPStorm and IDE Remote Control Plugin
-     *             Sage::$editor = 'phpstorm-remote';
+     *             Sage::settings()->editor = 'phpstorm-remote';
      * Example:
      *             // same result as above, but explicitly defined
-     *             Sage::$editor = 'http://localhost:63342/api/file/f:%line';
+     *             Sage::settings()->editor = 'http://localhost:63342/api/file/f:%line';
      *
      * Default:
      *             ini_get('xdebug.file_link_format') ?: 'phpstorm-remote'
