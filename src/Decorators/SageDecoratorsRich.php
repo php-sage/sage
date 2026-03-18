@@ -223,6 +223,8 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         return $output;
     }
 
+    private $microtime;
+
     /**
      * called for each dump, opens the html tag
      *
@@ -230,7 +232,9 @@ class SageDecoratorsRich implements SageDecoratorsInterface
      */
     public function wrapStart()
     {
-        return "<div class=\"_sage\">";
+        $this->microtime = microtime(true);
+
+        return "<div class=\"_sage\" data-microtime=\"{$this->microtime}\">";
     }
 
     public function wrapEnd($caller)
@@ -240,8 +244,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         }
 
         $callingFunction = '';
-        $calledFrom      = '';
-        $traceDisplay    = '';
+        $miniTrace       = '';
         $userLandInvoker = $caller->getUserLandInvoker();
         if (isset($userLandInvoker['class'])) {
             $callingFunction = $userLandInvoker['class'];
@@ -263,17 +266,17 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         if ($caller->trace) {
             foreach ($caller->trace as $i => $step) {
                 if ($i === 0) {
-                    $traceDisplay = 'Called from '
+                    $miniTrace = 'Called from '
                         . SageHelper::getIdeLink($caller->trace[0]['file'], $caller->trace[0]['line']);
 
                     continue;
                 }
 
                 if ($i === 1) {
-                    $traceDisplay = '<nav></nav>' . $traceDisplay . '<ol>';
+                    $miniTrace = '<nav></nav>' . $miniTrace . '<ol>';
                 }
 
-                $traceDisplay .= '<li>' . SageHelper::getIdeLink($step['file'], $step['line']); // closing tag not required
+                $miniTrace .= '<li>' . SageHelper::getIdeLink($step['file'], $step['line']);
                 if (isset($step['function'])
                     && ! in_array($step['function'], array('include', 'include_once', 'require', 'require_once'))
                 ) {
@@ -284,20 +287,22 @@ class SageDecoratorsRich implements SageDecoratorsInterface
                     if (isset($step['type'])) {
                         $classString .= $step['type'];
                     }
-                    $classString  .= $step['function'] . '()]';
-                    $traceDisplay .= $classString;
+                    $classString .= $step['function'] . '()]';
+                    $miniTrace   .= $classString;
                 }
             }
             if ($i > 0) {
-                $traceDisplay .= '</ol>';
+                $miniTrace .= '</ol>';
             }
         }
 
-        $callingFunction .= ' @ ' . date('Y-m-d H:i:s');
+        $t               = $this->microtime;
+        $callingFunction .= ' @ ' . date('Y-m-d H:i:s.', (int) $t) . round(($t - floor($t)) * 1000);
 
-        return '<footer>'
+        return
+            '<footer>'
             . '<span class="_sage-popup-trigger" title="Open in new window">&rarr;</span> '
-            . "{$calledFrom}{$traceDisplay}{$callingFunction}"
+            . "{$miniTrace}{$callingFunction}"
             . '</footer></div>';
     }
 

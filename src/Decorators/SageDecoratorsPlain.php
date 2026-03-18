@@ -243,10 +243,10 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
         $lineIndentation = $this->getIndentation($level);
 
         // ASCII art 🎨
-        $_________________ = '━━━━━━━━━────────────────────┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╌╌╌╌╌╌╌╌╌╌╌╌╴╴╴╴╴╴╴╴╴';
-        $____Arguments____ = '  ╭────────────────────────── Arguments ─────────────────────────────────┐';
-        $__Callee_Object__ = '  ╭───────────────────────── Callee Object ──────────────────────────────┐';
-        $L________________ = '  └──────────────────────────────────────────────────────────────────────╯';
+        $_________________ = '━━━━━━━━────────────┄┄┄┄┄┄┄┄┄┄┄┄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╌╌╌╌╌╌╌╌╌╌╌╌╴';
+        $____Arguments____ = '  ╭────────────────────────── Arguments ─────────────────────┐';
+        $__Callee_Object__ = '  ╭───────────────────────── Callee Object ──────────────────┐';
+        $L________________ = '  └──────────────────────────────────────────────────────────╯';
 
         $_________________ = $this->colorize($lineIndentation . $_________________, 'header');
         $____Arguments____ = $this->colorize($lineIndentation . $____Arguments____, 'header');
@@ -379,7 +379,7 @@ class SageDecoratorsPlain implements SageDecoratorsInterface
 
     private function drawBanner($text)
     {
-        $ret = PHP_EOL . '┏━━━━━━━────────────────────┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╌╌╌╌╌╌╌╌╌╌╌╌╴╴╴╴╴╴╴╴╴╴' . PHP_EOL;
+        $ret = PHP_EOL . '┏━━━━━━━────────────┄┄┄┄┄┄┄┄┄┄┄┄┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╌╌╌╌╌╌╌╌╌╌╌╌╴' . PHP_EOL;
         if ($text) {
             $ret .= '┃ ' . SageHelper::esc($text) . PHP_EOL;
         }

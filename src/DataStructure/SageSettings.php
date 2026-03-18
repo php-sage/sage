@@ -7,27 +7,27 @@
  * @internal
  * use via {@see Sage::settings()}
  *
- * @method self enabled($newValue)
- * @method self theme($newValue)
- * @method self charEncodings($newValue)
- * @method self aliases($newValue)
- * @method self simplifyOutput($newValue)
- * @method self displayCalledFrom($newValue)
- * @method self outputToFile($newValue)
- * @method self writeableDir($newValue)
- * @method self expandedByDefault($newValue)
- * @method self translations($newValue)
- * @method self ideLinkServerPath($newValue)
- * @method self ideLinkLocalPath($newValue)
- * @method self returnOutput($newValue)
- * @method self keysBlacklist($newValue)
- * @method self traceBlacklist($newValue)
- * @method self editor($newValue)
- * @method self cliDetectionEnabled($newValue)
- * @method self maxLevels($newValue)
- * @method self cliColors($newValue)
- * @method self enabledParsers($newValue)
- * @method self classNameBlacklist($newValue)
+ * @method self enabled($newValue) sets the public variable of the same name and returns $this
+ * @method self theme($newValue) sets the public variable of the same name and returns $this
+ * @method self charEncodings($newValue) sets the public variable of the same name and returns $this
+ * @method self aliases($newValue) sets the public variable of the same name and returns $this
+ * @method self simplifyOutput($newValue) sets the public variable of the same name and returns $this
+ * @method self displayCalledFrom($newValue) sets the public variable of the same name and returns $this
+ * @method self outputToFile($newValue) sets the public variable of the same name and returns $this
+ * @method self writeableDir($newValue) sets the public variable of the same name and returns $this
+ * @method self expandedByDefault($newValue) sets the public variable of the same name and returns $this
+ * @method self translations($newValue) sets the public variable of the same name and returns $this
+ * @method self ideLinkServerPath($newValue) sets the public variable of the same name and returns $this
+ * @method self ideLinkLocalPath($newValue) sets the public variable of the same name and returns $this
+ * @method self returnOutput($newValue) sets the public variable of the same name and returns $this
+ * @method self keysBlacklist($newValue) sets the public variable of the same name and returns $this
+ * @method self traceBlacklist($newValue) sets the public variable of the same name and returns $this
+ * @method self editor($newValue) sets the public variable of the same name and returns $this
+ * @method self cliDetectionEnabled($newValue) sets the public variable of the same name and returns $this
+ * @method self maxLevels($newValue) sets the public variable of the same name and returns $this
+ * @method self cliColors($newValue) sets the public variable of the same name and returns $this
+ * @method self enabledParsers($newValue) sets the public variable of the same name and returns $this
+ * @method self classNameBlacklist($newValue) sets the public variable of the same name and returns $this
  */
 class SageSettings
 {

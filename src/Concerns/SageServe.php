@@ -5,12 +5,14 @@ class SageServe
 {
     const DIR = 'sage-server';
 
-    public static function isServing()
+    public static function isServing($getUrl = false)
     {
         $file = self::getServingStatusFile();
 
         if (file_exists($file) && filemtime($file) > (time() - 3)) {
-            return file_get_contents($file);
+            return $getUrl
+                ? file_get_contents($file)
+                : true;
         }
 
         return false;

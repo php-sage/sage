@@ -172,6 +172,7 @@ class SageHelper
     public static function detectDisplayMode()
     {
         $enabledMode = Sage::enabled();
+
         // auto-detect mode if not explicitly set
         if ($enabledMode === true) {
             $outputToFile = Sage::settings()->outputToFile;
@@ -208,8 +209,7 @@ class SageHelper
         return $decorator;
     }
 
-    // todo dirty
-    public static $openedOutput;
+    private static $openedFiles;
 
     /**
      * @param SageDecoratorsPlain|SageDecoratorsRich $decorator
@@ -226,7 +226,7 @@ class SageHelper
         if ($returnOutput) {
             if ($returnOutput === true) {
                 $decorator->setAssetsNeeded(true);
-            } elseif (! isset(self::$openedOutput[$returnOutput])) {
+            } elseif (! isset(self::$openedFiles[$returnOutput])) {
                 $decorator->setAssetsNeeded(true);
 
                 Sage::settings()->returnOutput = true;
@@ -237,7 +237,7 @@ class SageHelper
             $decorator->setAssetsNeeded(false);
         } elseif (
             Sage::settings()->outputToFile
-            && ! isset(self::$openedOutput[Sage::settings()->outputToFile])
+            && ! isset(self::$openedFiles[Sage::settings()->outputToFile])
         ) {
             $firstRunOldValue = $decorator->areAssetsNeeded();
 
@@ -539,5 +539,23 @@ class SageHelper
         preg_match('[#(\d+)]', ob_get_clean(), $match);
 
         return $match[1];
+    }
+
+    public static function saveOutputToFile($output, $decorator, $decoratorState)
+    {
+        $saveTo = Sage::settings()->outputToFile;
+
+        if (! isset(self::$openedFiles[$saveTo])) {
+            $decorator->setAssetsNeeded($decoratorState);
+            self::$openedFiles[$saveTo] = fopen($saveTo, 'w');
+        }
+
+        fwrite(self::$openedFiles[$saveTo], $output);
+
+        if ($servingUrl = SageServe::isServing(true)) {
+            $saveTo = $servingUrl;
+        }
+
+        echo 'Sage -> ' . $saveTo . PHP_EOL;
     }
 }

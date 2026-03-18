@@ -106,11 +106,11 @@ class Sage
      *   Sage::saveState($previousSettings); // revert to previous configuration
      * ```
      *
-     * @param ?SageSettings $savedState
+     * @param null|SageSettings $savedState
      *
      * @return SageSettings
      */
-    public static function saveState(SageSettings $savedState = null)
+    public static function saveState($savedState = null)
     {
         self::bootstrap();
 
@@ -229,12 +229,12 @@ class Sage
             SageServe::setSettings();
         }
 
-        $output           = '';
-        $backtrace        = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
-        $invoker          = SageInvoker::from($backtrace);
-        $decorator        = SageHelper::detectDisplayMode();
-        $firstRunOldValue = SageHelper::initDecorator($decorator);
-        $arguments        = $this->getWhatToDump($invoker, func_get_args(), $backtrace);
+        $output         = '';
+        $backtrace      = SageHelper::php53orLater() ? debug_backtrace(true) : debug_backtrace();
+        $invoker        = SageInvoker::from($backtrace);
+        $decorator      = SageHelper::detectDisplayMode();
+        $decoratorState = SageHelper::initDecorator($decorator);
+        $arguments      = $this->getWhatToDump($invoker, func_get_args(), $backtrace);
 
         if ($decorator->areAssetsNeeded()) {
             $output .= $decorator->init();
@@ -256,26 +256,15 @@ class Sage
 
         $output .= $decorator->wrapEnd($invoker);
 
-        $saveTo = self::settings()->outputToFile;
-        if ($saveTo) {
+        if (self::settings()->outputToFile) {
             try {
-                if (! isset(SageHelper::$openedOutput[$saveTo])) {
-                    $decorator->setAssetsNeeded($firstRunOldValue);
-                    SageHelper::$openedOutput[$saveTo] = fopen($saveTo, 'w');
-                }
-
-                fwrite(SageHelper::$openedOutput[$saveTo], $output);
-
-                if ($servingUrl = SageServe::isServing()) {
-                    $saveTo = $servingUrl;
-                }
-                echo 'Sage -> ' . $saveTo . PHP_EOL;
+                SageHelper::saveOutputToFile($output, $decorator, $decoratorState);
             } /** @noinspection PhpElementIsNotAvailableInCurrentPhpVersionInspection */ catch (Throwable $e) {
                 self::settings()->outputToFile = null;
-                $output                        .= "Error: Sage can't write file to " . $saveTo;
+                $output                        .= "Error: Sage can't write file to " . self::settings()->outputToFile;
             } /** @noinspection PhpWrongCatchClausesOrderInspection */ catch (Exception $e) {
                 self::settings()->outputToFile = null;
-                $output                        .= "Error: Sage can't write file to " . $saveTo;
+                $output                        .= "Error: Sage can't write file to " . self::settings()->outputToFile;
             }
         }
 
