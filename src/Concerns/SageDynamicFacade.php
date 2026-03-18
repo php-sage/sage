@@ -30,6 +30,12 @@ class SageDynamicFacade
         $this->SageDynamicFacade();
     }
 
+    /** `echo d($var);` - d() returns a stringable object */
+    public function __toString()
+    {
+        return '';
+    }
+
     public function serve()
     {
         SageServe::serve();
@@ -67,13 +73,17 @@ class SageDynamicFacade
     }
 
     /**
-     * @param array $ignoreKeys
+     * @param string[]|string $ignoreKeys
      * @param mixed $data any number of parameters
      *
      * @return $this
      */
     public function dumpWithKeyBlacklist($ignoreKeys, $data = null)
     {
+        if (! is_array($ignoreKeys)) {
+            $ignoreKeys = array($ignoreKeys);
+        }
+
         $params = func_get_args();
         unset($params[0]);
 
