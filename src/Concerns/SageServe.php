@@ -7,8 +7,16 @@ class SageServe
 
     public static function isServing($getUrl = false)
     {
-        $file = self::getServingStatusFile();
+        $sageSettings = Sage::settings();
 
+        if (
+            $sageSettings->returnOutput
+            || ($sageSettings->outputToFile && strpos($sageSettings->outputToFile, self::getFilesDir()) === 0)
+        ) {
+            return false;
+        }
+
+        $file = self::getServingStatusFile();
         if (file_exists($file) && filemtime($file) > (time() - 3)) {
             return $getUrl
                 ? file_get_contents($file)
