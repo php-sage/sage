@@ -280,7 +280,7 @@ class SageDynamicFacade
             return $this;
         }
 
-        Sage::settings()->addAlias(__CLASS__ . '::' . __FUNCTION__);
+        Sage::settings()->addDumpFunctionAlias(__CLASS__ . '::' . __FUNCTION__);
         Sage::dump('Started showing Eloquent queries');
 
         $queryNumber = 0;

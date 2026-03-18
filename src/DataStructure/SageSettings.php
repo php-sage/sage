@@ -1,33 +1,31 @@
 <?php
 
 /**
- * stores not just the settings, but also the entire rest of the state - for example if we're asked
- * to write multiple files with output, each of these have to have the css
+ * Use by calling {@see Sage::settings()}
  *
  * @internal
- * use via {@see Sage::settings()}
  *
- * @method self enabled($newValue) sets the public variable of the same name and returns $this
- * @method self theme($newValue) sets the public variable of the same name and returns $this
- * @method self charEncodings($newValue) sets the public variable of the same name and returns $this
- * @method self aliases($newValue) sets the public variable of the same name and returns $this
- * @method self simplifyOutput($newValue) sets the public variable of the same name and returns $this
- * @method self displayCalledFrom($newValue) sets the public variable of the same name and returns $this
- * @method self outputToFile($newValue) sets the public variable of the same name and returns $this
- * @method self writeableDir($newValue) sets the public variable of the same name and returns $this
- * @method self expandedByDefault($newValue) sets the public variable of the same name and returns $this
- * @method self translations($newValue) sets the public variable of the same name and returns $this
- * @method self ideLinkServerPath($newValue) sets the public variable of the same name and returns $this
- * @method self ideLinkLocalPath($newValue) sets the public variable of the same name and returns $this
- * @method self returnOutput($newValue) sets the public variable of the same name and returns $this
- * @method self keysBlacklist($newValue) sets the public variable of the same name and returns $this
- * @method self traceBlacklist($newValue) sets the public variable of the same name and returns $this
- * @method self editor($newValue) sets the public variable of the same name and returns $this
- * @method self cliDetectionEnabled($newValue) sets the public variable of the same name and returns $this
- * @method self maxLevels($newValue) sets the public variable of the same name and returns $this
- * @method self cliColors($newValue) sets the public variable of the same name and returns $this
- * @method self enabledParsers($newValue) sets the public variable of the same name and returns $this
- * @method self classNameBlacklist($newValue) sets the public variable of the same name and returns $this
+ * @method self enabled($newValue) sets SageSettings::$enabled and returns $this
+ * @method self theme($newValue) sets SageSettings::$theme and returns $this
+ * @method self charEncodings($newValue) sets SageSettings::$charEncodings and returns $this
+ * @method self aliases($newValue) sets SageSettings::$aliases and returns $this
+ * @method self simplifyOutput($newValue) sets SageSettings::$simplifyOutput and returns $this
+ * @method self displayCalledFrom($newValue) sets SageSettings::$displayCalledFrom and returns $this
+ * @method self outputToFile($newValue) sets SageSettings::$outputToFile and returns $this
+ * @method self writeableDir($newValue) sets SageSettings::$writeableDir and returns $this
+ * @method self expandedByDefault($newValue) sets SageSettings::$expandedByDefault and returns $this
+ * @method self translations($newValue) sets SageSettings::$translations and returns $this
+ * @method self ideLinkServerPath($newValue) sets SageSettings::$ideLinkServerPath and returns $this
+ * @method self ideLinkLocalPath($newValue) sets SageSettings::$ideLinkLocalPath and returns $this
+ * @method self returnOutput($newValue) sets SageSettings::$returnOutput and returns $this
+ * @method self keysBlacklist($newValue) sets SageSettings::$keysBlacklist and returns $this
+ * @method self traceBlacklist($newValue) sets SageSettings::$traceBlacklist and returns $this
+ * @method self editor($newValue) sets SageSettings::$editor and returns $this
+ * @method self cliDetectionEnabled($newValue) sets SageSettings::$cliDetectionEnabled and returns $this
+ * @method self maxLevels($newValue) sets SageSettings::$maxLevels and returns $this
+ * @method self cliColors($newValue) sets SageSettings::$cliColors and returns $this
+ * @method self enabledParsers($newValue) sets SageSettings::$enabledParsers and returns $this
+ * @method self classNameBlacklist($newValue) sets SageSettings::$classNameBlacklist and returns $this
  */
 class SageSettings
 {
@@ -65,7 +63,7 @@ class SageSettings
      * Example:
      *            function doom_dump($args)
      *            {
-     *                sage()->settings()->addAlias(__CLASS__ . '::' . __FUNCTION__);
+     *                sage()->settings()->addDumpFunctionAlias(__CLASS__ . '::' . __FUNCTION__);
      *                echo "DOOOM!";
      *                d(...func_get_args());
      *            }
@@ -123,6 +121,9 @@ class SageSettings
      */
     public $returnOutput = false;
 
+    /**
+     * @var string[] - Blacklist of array/object keys to censor.
+     */
     public $keysBlacklist = array();
 
     /**
@@ -238,17 +239,46 @@ class SageSettings
         return $this->$name;
     }
 
-    public function addAlias($alias)
+    /**
+     * Enables or disables Sage, and forces display mode. {@see Sage::enabled()}
+     *
+     * @param bool|Sage::MODE_*
+     */
+    public function setMode($newValue)
     {
-        if (func_num_args()) {
+        $this->enabled = $newValue;
+
+        return $this;
+    }
+
+    public function addDumpFunctionAlias($aliases)
+    {
+        if (! is_array($aliases)) {
+            $aliases = array($aliases);
+        }
+
+        foreach ($aliases as $alias) {
             if (! in_array($alias, $this->aliases, true)) {
                 $this->aliases[] = $alias;
             }
-
-            return $this;
         }
 
-        return $this->aliases;
+        return $this;
+    }
+
+    public function addTraceBlacklist($blacklist)
+    {
+        if (! is_array($blacklist)) {
+            $blacklist = array($blacklist);
+        }
+
+        foreach ($blacklist as $entry) {
+            if (! in_array($entry, $this->traceBlacklist, true)) {
+                $this->traceBlacklist[] = $entry;
+            }
+        }
+
+        return $this;
     }
 
     public function overrideTranslations($overrideTranslations = null)

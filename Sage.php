@@ -124,28 +124,13 @@ class Sage
     }
 
     /**
-     * Sets setting for all subsequent instances of sage, returns previous state to revert to if needed.
-     *
-     * Usage:
-     * ```
-     *     $previousSettings = clone Sage::settings();
-     *     Sage::settings()->cliDetectionEnabled = false;
-     *
-     *     sage($data);
-     *     Sage::settings($previousSettings);
-     * ```
-     *
-     * @param ?SageSettings $restore - pass SageSettings object to override
+     * Set settings for all subsequent calls to Sage.
      *
      * @return SageSettings
      */
-    public static function settings($restore = null)
+    public static function settings()
     {
         self::bootstrap();
-
-        if ($restore instanceof SageSettings) {
-            self::$settings = $restore;
-        }
 
         return self::$settings;
     }

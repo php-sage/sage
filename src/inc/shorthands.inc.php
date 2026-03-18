@@ -34,7 +34,7 @@ if (! function_exists('sage')) {
         $sage   = new SageDynamicFacade();
         $params = func_get_args();
 
-        Sage::settings()->addAlias(__FUNCTION__);
+        Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
 
         if ($params) {
             return call_user_func_array(array($sage, 'dump'), $params);
@@ -58,7 +58,7 @@ if (! function_exists('s')) {
             return Sage::STATUS_ERROR;
         }
 
-        Sage::settings()->addAlias(__FUNCTION__);
+        Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
 
         $params = func_get_args();
 
@@ -78,7 +78,7 @@ if (! function_exists('saged')) {
             return Sage::STATUS_ERROR;
         }
 
-        Sage::settings()->addAlias(__FUNCTION__);
+        Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
 
         $params = func_get_args();
         call_user_func_array(array('Sage', 'dump'), $params);
@@ -100,7 +100,7 @@ if (! function_exists('sd')) {
             return Sage::STATUS_ERROR;
         }
 
-        Sage::settings()->addAlias(__FUNCTION__);
+        Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
 
         $params = func_get_args();
         call_user_func_array(array('Sage', 'dump'), $params);
@@ -128,7 +128,7 @@ if (! function_exists('ssage')) {
 
         $restore = Sage::settings()->simplifyOutput;
         Sage::settings()
-            ->addAlias(__FUNCTION__)
+            ->addDumpFunctionAlias(__FUNCTION__)
             ->simplifyOutput(true)
         ;
 
@@ -213,7 +213,7 @@ if (! function_exists('sagetrace')) {
             return Sage::STATUS_ERROR;
         }
 
-        Sage::settings()->addAlias(__FUNCTION__);
+        Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
 
         return Sage::trace();
     }
