@@ -24,7 +24,7 @@ class SageParameterNameParser
      */
     private static function strRemoveBeforeSage($code, $sageMethodCalled)
     {
-        $position = strpos($code, $sageMethodCalled);
+        $position = stripos($code, $sageMethodCalled);
         if ($position !== false) {
             $code = substr_replace($code, 'sage', 0, $position + strlen($sageMethodCalled));
         }
