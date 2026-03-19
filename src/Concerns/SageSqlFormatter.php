@@ -1022,12 +1022,12 @@ class SageSqlFormatter
     /**
      * Format the whitespace in a SQL string to make it easier to read.
      *
-     * @param String $string The SQL string
+     * @param String $sql The SQL string
      * @param boolean $highlight If true, syntax highlighting will also be performed
      *
      * @return String The SQL string with HTML styles and formatting wrapped in a <pre> tag
      */
-    public static function format($string, $highlight = true)
+    public static function format($sql, $substituteBindings = array(), $highlight = true)
     {
         // This variable will be populated with formatted html
         $return = '';
@@ -1046,8 +1046,23 @@ class SageSqlFormatter
         $inline_indented         = false;
         $clause_limit            = false;
 
+        foreach ($substituteBindings as $binding) {
+            if ($binding instanceof DateTime) {
+                $substituteBindings[] = $binding->format('Y-m-d H:i:s');
+                continue;
+            }
+
+            if ($binding === null) {
+                $binding = 'NULL';
+            }
+
+            $substituteBindings[] = (string) $binding;
+        }
+
+        $sql = vsprintf(str_replace('?', "'%s'", $sql), $substituteBindings);
+
         // Tokenize String
-        $original_tokens = self::tokenize($string);
+        $original_tokens = self::tokenize($sql);
 
         // Remove existing whitespace
         $tokens = array();
@@ -1401,7 +1416,7 @@ class SageSqlFormatter
 
             $result .= $token[self::TOKEN_VALUE];
         }
-        $result = self::format($result, false);
+        $result = self::format($result, array(), false);
 
         return $result;
     }

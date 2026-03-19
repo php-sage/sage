@@ -220,7 +220,8 @@ class Sage
         $invoker        = SageInvoker::from($backtrace);
         $decorator      = SageHelper::detectDisplayMode();
         $decoratorState = SageHelper::initDecorator($decorator);
-        $arguments      = $this->getWhatToDump($invoker, func_get_args(), $backtrace);
+        $_              = func_get_args();
+        $arguments      = $this->getWhatToDump($invoker, $_, $backtrace);
 
         if ($decorator->areAssetsNeeded()) {
             $output .= $decorator->init();

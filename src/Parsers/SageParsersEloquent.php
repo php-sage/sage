@@ -92,7 +92,7 @@ class SageParsersEloquent implements SageCustomParserInterface
         $query        = $variable->toRawSql();
         $result->size = strlen($query);
         $result->addTabView__String(
-            SageSqlFormatter::format($variable->toRawSql(), false),
+            SageSqlFormatter::format($variable->toRawSql(), array(), false),
             'Raw query'
         );
 

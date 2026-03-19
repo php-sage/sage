@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class SageLogicException extends \LogicException
+class SageLogicException extends LogicException
 {
     protected $data;
 

@@ -31,9 +31,9 @@ if (! function_exists('sage')) {
     {
         Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
 
-        $params = func_get_args();
-        if ($params) {
-            return call_user_func_array(array('Sage', 'dump'), $params);
+        $_ = func_get_args();
+        if ($_) {
+            return call_user_func_array(array('Sage', 'dump'), $_);
         }
 
         return Sage::settings();
@@ -56,9 +56,9 @@ if (! function_exists('s')) {
 
         Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
 
-        $params = func_get_args();
+        $_ = func_get_args();
 
-        return call_user_func_array(array('Sage', 'dump'), $params);
+        return call_user_func_array(array('Sage', 'dump'), $_);
     }
 }
 
@@ -76,8 +76,8 @@ if (! function_exists('saged')) {
 
         Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
 
-        $params = func_get_args();
-        call_user_func_array(array('Sage', 'dump'), $params);
+        $_ = func_get_args();
+        call_user_func_array(array('Sage', 'dump'), $_);
         die;
     }
 }
@@ -98,8 +98,8 @@ if (! function_exists('sd')) {
 
         Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
 
-        $params = func_get_args();
-        call_user_func_array(array('Sage', 'dump'), $params);
+        $_ = func_get_args();
+        call_user_func_array(array('Sage', 'dump'), $_);
         die;
     }
 }
@@ -126,7 +126,8 @@ if (! function_exists('ssage')) {
         Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
         Sage::settings()->simplifyOutput = true;
 
-        $dump = call_user_func_array(array('Sage', 'dump'), func_get_args());
+        $_    = func_get_args();
+        $dump = call_user_func_array(array('Sage', 'dump'), $_);
 
         Sage::saveState($restore);
 
@@ -148,7 +149,9 @@ if (! function_exists('ss')) {
      */
     function ss()
     {
-        return call_user_func_array('ssage', func_get_args());
+        $_ = func_get_args();
+
+        return call_user_func_array('ssage', $_);
     }
 }
 
@@ -160,7 +163,8 @@ if (! function_exists('ssaged')) {
      */
     function ssaged()
     {
-        call_user_func_array('ssage', func_get_args());
+        $_ = func_get_args();
+        call_user_func_array('ssage', $_);
         die;
     }
 }
@@ -173,7 +177,8 @@ if (! function_exists('ssd')) {
      */
     function ssd()
     {
-        call_user_func_array('ssage', func_get_args());
+        $_ = func_get_args();
+        call_user_func_array('ssage', $_);
         die;
     }
 }

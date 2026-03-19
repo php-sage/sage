@@ -331,7 +331,7 @@ class SageNativeTypesParser
                 if ($propertyReflection->isProtected()) {
                     $propertyReflection->setAccessible(true);
                     $access = 'protected';
-                } elseif ($propertyReflection->isPrivate()) {
+                } elseif ($propertyReflection->isPrivate() && method_exists($propertyReflection, 'setAccessible')) {
                     $propertyReflection->setAccessible(true);
                     $access = 'private';
                 } else {

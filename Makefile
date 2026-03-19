@@ -48,7 +48,6 @@ test:
 
 
 php53:
-	make build
 	docker run -it --rm --name my-running-script -v "$$PWD":/usr/src/myapp -w /usr/src/myapp \
 	orsolin/docker-php-5.3-apache php /usr/src/myapp/tests/temp_tests/php53test.php
 

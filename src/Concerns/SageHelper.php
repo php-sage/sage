@@ -164,6 +164,35 @@ class SageHelper
             && in_array(preg_replace('/\W/', '', $key), Sage::settings()->keysBlacklist, true);
     }
 
+    public static function eloquentListener($query)
+    {
+        $callee = 'unknown';
+        $trace  = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        foreach ($trace as $step) {
+            if (array_key_exists('file', $step) && strpos($step['file'], '/vendor/laravel/') === false) {
+                $callee = $step['file'];
+                if (array_key_exists('line', $step)) {
+                    $callee .= ':' . $step['line'];
+                }
+                break;
+            }
+        }
+
+        $EloquentQuery = array(
+            'sql'           => PHP_EOL . SageSqlFormatter::format($query->sql, $query->bindings, false),
+            'plain_sql'     => PHP_EOL . $query->sql,
+            'bindings'      => $query->bindings,
+            'called_from'   => $callee,
+            'duration_in_s' => $query->time / 1000,
+            'connection'    => $query->connectionName,
+        );
+
+        sage()
+            ->displayCalledFrom(false)
+            ->dumpAndRevert($EloquentQuery)
+        ;
+    }
+
     /**
      * @param bool|Sage::MODE_* $enabledMode
      *
@@ -367,7 +396,11 @@ class SageHelper
             $value = $escaped;
         }
 
-        return new SageHtmlable(self::exposeInvisibleCharacters($value));
+        $exposed = self::exposeInvisibleCharacters($value);
+
+        return self::php53orLater()
+            ? new SageHtmlable($exposed)
+            : $exposed;
     }
 
     public static function trans($key)
@@ -419,7 +452,13 @@ class SageHelper
             return $class;
         }
 
-        return (get_parent_class($class) ?: key(class_implements($class)) ?: 'class') . '@anonymous';
+        $parent = get_parent_class($class);
+        if (! $parent) {
+            $interfaces = class_implements($class);
+            $parent     = $interfaces ? key($interfaces) : 'class';
+        }
+
+        return $parent . '@anonymous';
     }
 
     private static function exposeInvisibleCharacters($value)

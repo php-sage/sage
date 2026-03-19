@@ -75,7 +75,7 @@ class SageServe
 
         $directory = self::getFilesDir();
         if (! is_dir($directory) && ! mkdir($directory, 0755) && ! is_dir($directory)) {
-            throw new \RuntimeException(sprintf('Could not create directory "%s"', $directory));
+            throw new RuntimeException(sprintf('Could not create directory "%s"', $directory));
         }
         file_put_contents(self::getServingStatusFile(), self::getCurrentUrl());
 

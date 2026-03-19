@@ -19,7 +19,8 @@ class SageParsersClassStatics implements SageCustomParserInterface
             return null;
         }
 
-        $staticProperties = (new ReflectionClass($variable))->getProperties(ReflectionProperty::IS_STATIC);
+        $reflectionClass  = new ReflectionClass($variable);
+        $staticProperties = $reflectionClass->getProperties(ReflectionProperty::IS_STATIC);
         if (count($staticProperties) === 0) {
             return null;
         }

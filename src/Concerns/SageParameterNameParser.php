@@ -55,7 +55,7 @@ class SageParameterNameParser
         $tokens = token_get_all($source);
         unset( // we added these so PHP parser works, remove them now
             $tokens[0], // <?php
-            $tokens[1], // sage
+            $tokens[1] // sage
         );
 
         foreach ($tokens as $token) {

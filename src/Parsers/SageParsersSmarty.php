@@ -49,14 +49,15 @@ class SageParsersSmarty implements SageCustomParserInterface
                 $globalAssigns
             )
         );
+        $sageParsedVariableContents = new SageParsedVariableContents(
+            SageParsedVariableContents::PLAIN_TEXT_ROWS,
+            'Configuration'
+        );
         $result->addTabView(
-            (new SageParsedVariableContents(SageParsedVariableContents::PLAIN_TEXT_ROWS, 'Configuration'))
-                ->addRow(
-                    'Compiled files stored in',
-                    isset($variable->compile_dir)
-                        ? $variable->compile_dir
-                        : $variable->getCompileDir()
-                )
+            $sageParsedVariableContents->addRow(
+                'Compiled files stored in',
+                isset($variable->compile_dir) ? $variable->compile_dir : $variable->getCompileDir()
+            )
         );
 
         return $result;

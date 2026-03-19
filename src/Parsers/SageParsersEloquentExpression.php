@@ -27,7 +27,7 @@ class SageParsersEloquentExpression implements SageCustomParserInterface
 
         $result = new SageParsedVariable();
         $result->addTabView__String(
-            SageSqlFormatter::format($value, false),
+            SageSqlFormatter::format($value, array(), false),
             'Formatted expression'
         );
 

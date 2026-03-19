@@ -313,13 +313,13 @@ class SageInstance
     /**
      * Will write output to file.
      *
-     * @param null|string $fileOrDir by default it's sage.html in directory of the php file it was called from
+     * @param null|false|string $fileOrDir by default it's sage.html in directory of the php file it was called from
      */
     public function outputToFile($fileOrDir = null)
     {
         $saveTo = $fileOrDir;
         if ($saveTo === null) {
-            $debugBacktrace = debug_backtrace(2, 1);
+            $debugBacktrace = SageHelper::php53orLater() ? debug_backtrace(2, 1) : debug_backtrace();
             $file           = isset($debugBacktrace[0]['file']) ? $debugBacktrace[0]['file'] : '';
             $dir            = dirname($file);
             $saveTo         = $dir;
@@ -449,53 +449,7 @@ class SageInstance
 
         Sage::dump('Started showing Eloquent queries');
 
-        $queryNumber = 0;
-        DB::listen(function($query) use (&$queryNumber) {
-            $callee = 'unknown';
-            $trace  = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-            foreach ($trace as $step) {
-                if (array_key_exists('file', $step) && strpos($step['file'], '/vendor/laravel/') === false) {
-                    $callee = $step['file'];
-                    if (array_key_exists('line', $step)) {
-                        $callee .= ':' . $step['line'];
-                    }
-                    break;
-                }
-            }
-
-            $substituteBindings = function($sql, $bindings) {
-                foreach ($bindings as $binding) {
-                    if ($binding instanceof DateTime) {
-                        $bindings[] = $binding->format('Y-m-d H:i:s');
-                        continue;
-                    }
-
-                    if ($binding === null) {
-                        $binding = 'NULL';
-                    }
-
-                    $bindings[] = (string) $binding;
-                }
-
-                return vsprintf(str_replace('?', "'%s'", $sql), $bindings);
-            };
-
-            $EloquentQuery = array(
-                '#'             => $queryNumber++,
-                'sql'           => PHP_EOL
-                    . SageSqlFormatter::format($substituteBindings($query->sql, $query->bindings), false),
-                'plain_sql'     => PHP_EOL . $query->sql,
-                'bindings'      => $query->bindings,
-                'called_from'   => $callee,
-                'duration_in_s' => $query->time / 1000,
-                'connection'    => $query->connectionName,
-            );
-
-            sage()
-                ->displayCalledFrom(false)
-                ->dumpAndRevert($EloquentQuery)
-            ;
-        });
+        DB::listen(array('SageHelper', 'eloquentListener'));
 
         return $this;
     }
