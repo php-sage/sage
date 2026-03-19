@@ -229,6 +229,12 @@ class SageInstance
 
     public function __call($name, $arguments)
     {
+        if ($name === 'resetRevert') {
+            $this->revert = array();
+
+            return $this;
+        }
+
         if (! count($arguments)) {
             throw new RuntimeException('Call to undefined method ' . get_class($this) . '->' . $name . '()');
         }
@@ -445,9 +451,6 @@ class SageInstance
 
         $queryNumber = 0;
         DB::listen(function($query) use (&$queryNumber) {
-            $state                              = Sage::saveState();
-            Sage::settings()->displayCalledFrom = false;
-
             $callee = 'unknown';
             $trace  = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
             foreach ($trace as $step) {
@@ -487,9 +490,11 @@ class SageInstance
                 'duration_in_s' => $query->time / 1000,
                 'connection'    => $query->connectionName,
             );
-            Sage::dump($EloquentQuery);
 
-            Sage::saveState($state);
+            sage()
+                ->displayCalledFrom(false)
+                ->dumpAndRevert($EloquentQuery)
+            ;
         });
 
         return $this;

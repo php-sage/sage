@@ -132,7 +132,8 @@ class Sage
     {
         self::bootstrap();
 
-        return self::$settings;
+        /** @noinspection PhpUndefinedMethodInspection internal method */
+        return self::$settings->resetRevert();
     }
 
     /*
