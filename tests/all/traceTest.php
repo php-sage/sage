@@ -1,20 +1,17 @@
 <?php
 
-// todo test closure parser, file parser
-
-describe('trace', function () {
-    return;
-    sage()
-        ->saveOutputTo($var)
+describe('trace', function() {
+    $output = sage()
+        ->richHtmlMode()
+        ->returnOutput(true)
         ->trace()
     ;
 
-    dd($var);
+    it('puts the dump in the variable', fn() => expect($output)->toBeString()->not()->toBeEmpty());
+    it('contains html', fn() => expect($output)->toContain('<script'));
+    it('contains trace', fn() => expect($output)->toContain(__FILE__));
 
-    it('puts the dump in the variable', fn() => expect($var)->toBeString()->not()->toBeEmpty());
-    it('contains html', fn() => expect($var)->toContain('<script'));
-    it('contains trace', fn() => expect($var)->toContain(__FILE__));
-
+    sage()->resetToDefaults();
     ob_start();
     sage(123);
     $a = ob_get_clean();

@@ -62,7 +62,7 @@ class Sage
 
     private static $isBootstrapped = false;
 
-    /** @var SageSettings */
+    /** @var SageInstance */
     private static $settings;
 
     # region Settings
@@ -101,14 +101,14 @@ class Sage
      * Usage
      * ```
      *   $previousSettings = Sage::saveState();
-     *   Sage::settings()->cliDetectionEnabled(false); // change any needed settings
+     *   Sage::settings()->cliDetectionEnabled (false); // change any needed settings
      *   sage($var);
      *   Sage::saveState($previousSettings); // revert to previous configuration
      * ```
      *
-     * @param null|SageSettings $savedState
+     * @param null|SageInstance $savedState
      *
-     * @return SageSettings
+     * @return SageInstance
      */
     public static function saveState($savedState = null)
     {
@@ -126,7 +126,7 @@ class Sage
     /**
      * Set settings for all subsequent calls to Sage.
      *
-     * @return SageSettings
+     * @return SageInstance
      */
     public static function settings()
     {
@@ -374,7 +374,7 @@ class Sage
         }
         self::$isBootstrapped = true;
 
-        self::$settings = new SageSettings();
+        self::$settings = new SageInstance();
 
         return; //todo
 

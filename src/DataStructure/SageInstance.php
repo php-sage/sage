@@ -1,9 +1,7 @@
 <?php
 
 /**
- * Use by calling {@see Sage::settings()}
- *
- * @internal
+ * Use it by calling {@see Sage::settings()} or {@see sage()}
  *
  * @method self enabled($newValue) sets SageSettings::$enabled and returns $this
  * @method self theme($newValue) sets SageSettings::$theme and returns $this
@@ -11,7 +9,6 @@
  * @method self aliases($newValue) sets SageSettings::$aliases and returns $this
  * @method self simplifyOutput($newValue) sets SageSettings::$simplifyOutput and returns $this
  * @method self displayCalledFrom($newValue) sets SageSettings::$displayCalledFrom and returns $this
- * @method self outputToFile($newValue) sets SageSettings::$outputToFile and returns $this
  * @method self writeableDir($newValue) sets SageSettings::$writeableDir and returns $this
  * @method self expandedByDefault($newValue) sets SageSettings::$expandedByDefault and returns $this
  * @method self translations($newValue) sets SageSettings::$translations and returns $this
@@ -27,10 +24,8 @@
  * @method self enabledParsers($newValue) sets SageSettings::$enabledParsers and returns $this
  * @method self classNameBlacklist($newValue) sets SageSettings::$classNameBlacklist and returns $this
  */
-class SageSettings
+class SageInstance
 {
-    const SKIP = "\x07";
-
     /** @var bool|string `true` means autodetect */
     public $enabled = true;
 
@@ -57,16 +52,20 @@ class SageSettings
 
     /**
      * @var array Add new custom Sage wrapper names. Needed for nice backtraces, variable name detection and modifiers.
+     * Use `sage()->addDumpFunctionAlias()` to add current method/function.
      *
-     *            [!] Use notation `Class::method` for methods.
+     * [!] Use notation `Class::method` for methods.
      *
      * Example:
-     *            function doom_dump($args)
-     *            {
-     *                sage()->settings()->addDumpFunctionAlias(__CLASS__ . '::' . __FUNCTION__);
-     *                echo "DOOOM!";
-     *                d(...func_get_args());
-     *            }
+     * ```
+     * function doom_dump($args)
+     * {
+     *     sage()->addDumpFunctionAlias();
+     *     echo "DOOOM!";
+     *     d(...func_get_args());
+     * }
+     * ```
+     * @see SageDynamicFacade::addDumpFunctionAlias().
      */
     public $aliases = array();
 
@@ -226,17 +225,19 @@ class SageSettings
         // 'symfony'    => '/^Symfony/'
     );
 
+    private $revert = array();
+
     public function __call($name, $arguments)
     {
-        // act as a setter for method chaining
-        if (count($arguments)) {
-            $this->$name = $arguments[0];
-
-            return $this;
+        if (! count($arguments)) {
+            throw new RuntimeException('Call to undefined method ' . get_class($this) . '->' . $name . '()');
         }
 
-        // also as a getter, whatever (static code analyzers WILL complain if invoked without args!)
-        return $this->$name;
+        // act as a setter for method chaining
+        $this->saveForRevert($name);
+        $this->$name = $arguments[0];
+
+        return $this;
     }
 
     /**
@@ -246,24 +247,7 @@ class SageSettings
      */
     public function setMode($newValue)
     {
-        $this->enabled = $newValue;
-
-        return $this;
-    }
-
-    public function addDumpFunctionAlias($aliases)
-    {
-        if (! is_array($aliases)) {
-            $aliases = array($aliases);
-        }
-
-        foreach ($aliases as $alias) {
-            if (! in_array($alias, $this->aliases, true)) {
-                $this->aliases[] = $alias;
-            }
-        }
-
-        return $this;
+        return $this->enabled($newValue);
     }
 
     public function addTraceBlacklist($blacklist)
@@ -271,6 +255,8 @@ class SageSettings
         if (! is_array($blacklist)) {
             $blacklist = array($blacklist);
         }
+
+        $this->saveForRevert('traceBlacklist');
 
         foreach ($blacklist as $entry) {
             if (! in_array($entry, $this->traceBlacklist, true)) {
@@ -281,16 +267,238 @@ class SageSettings
         return $this;
     }
 
-    public function overrideTranslations($overrideTranslations = null)
+    public function addKeysBlacklist($blacklist)
     {
-        if (func_num_args()) {
-            foreach ($overrideTranslations as $k => $val) {
-                $this->translations[$k] = $val;
+        if (! is_array($blacklist)) {
+            $blacklist = array($blacklist);
+        }
+
+        $this->saveForRevert('keysBlacklist');
+
+        foreach ($blacklist as $entry) {
+            if (! in_array($entry, $this->keysBlacklist, true)) {
+                $this->keysBlacklist[] = $entry;
+            }
+        }
+
+        return $this;
+    }
+
+    public function addTranslations($blacklist)
+    {
+        if (! is_array($blacklist)) {
+            $blacklist = array($blacklist);
+        }
+
+        $this->saveForRevert('translations');
+
+        foreach ($blacklist as $key => $translation) {
+            $this->translations[$key] = $translation;
+        }
+
+        return $this;
+    }
+
+    public function resetToDefaults()
+    {
+        Sage::saveState(new self());
+    }
+
+    /**
+     * Will write output to file.
+     *
+     * @param null|string $fileOrDir by default it's sage.html in directory of the php file it was called from
+     */
+    public function outputToFile($fileOrDir = null)
+    {
+        $saveTo = $fileOrDir;
+        if ($saveTo === null) {
+            $debugBacktrace = debug_backtrace(2, 1);
+            $file           = isset($debugBacktrace[0]['file']) ? $debugBacktrace[0]['file'] : '';
+            $dir            = dirname($file);
+            $saveTo         = $dir;
+        }
+
+        if (is_dir($saveTo)) {
+            $saveTo .= DIRECTORY_SEPARATOR . 'sage.html';
+        }
+
+        $this->saveForRevert('outputToFile');
+        $this->outputToFile = $saveTo;
+
+        return $this;
+    }
+
+    /**
+     * @param null|bool $allNodesExpanded
+     */
+    public function richHtmlMode($allNodesExpanded = null)
+    {
+        $this->enabled(Sage::MODE_RICH);
+        if ($allNodesExpanded !== null) {
+            $this->expandedByDefault($allNodesExpanded);
+        }
+
+        return $this;
+    }
+
+    public function textMode()
+    {
+        return $this->enabled(Sage::MODE_TEXT_ONLY);
+    }
+
+    public function plainHtmlMode()
+    {
+        return $this->enabled(Sage::MODE_PLAIN_HTML);
+    }
+
+    public function cliColorsMode()
+    {
+        return $this->enabled(Sage::MODE_CLI);
+    }
+
+    public function dumpAndRevert($data = null)
+    {
+        $output = call_user_func_array(array('Sage', 'dump'), func_get_args());
+
+        foreach ($this->revert as $key => $value) {
+            $this->$key = $value;
+        }
+        $this->revert = array();
+
+        return $output;
+    }
+
+    public function dump($data = null)
+    {
+        return call_user_func_array(array('Sage', 'dump'), func_get_args());
+    }
+
+    public function trace($onlyFilePaths = false)
+    {
+        if ($onlyFilePaths) {
+            return Sage::dump(2);
+        }
+
+        return Sage::trace();
+    }
+
+    public function dd($data = null)
+    {
+        call_user_func_array(array($this, 'dump'), func_get_args());
+
+        die;
+    }
+
+    public function serve()
+    {
+        SageServe::serve();
+    }
+
+    /**
+     * All calls from within this function will be treated as coming from Sage, e.g. for parameter names and trace.
+     *
+     * [!] Use notation `Class::method` for methods.
+     *
+     * ```
+     *    sage()->addDumpFunctionAlias();
+     *    // is same as
+     *    sage()->addDumpFunctionAlias(__CLASS__ . '::' . __FUNCTION__)
+     * ```
+     *
+     * Don't pass any argument to use current method.
+     */
+    public function addDumpFunctionAlias($alias = null)
+    {
+        if ($alias === null) {
+            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+
+            if (! isset($trace[1])) {
+                throw new RuntimeException('Cannot be called from global scope.');
             }
 
+            $caller = $trace[1];
+
+            $alias = isset($caller['class'])
+                ? $caller['class'] . '::' . $caller['method']
+                : $caller['function'];
+        }
+
+        if (! in_array($alias, $this->aliases, true)) {
+            $this->aliases[] = ltrim($alias, ':');
+        }
+
+        return $this;
+    }
+
+    /**
+     * Laravel helper. Will dump all DB queries from this point forward.
+     */
+    public function showEloquentQueries()
+    {
+        // maintain PHP5.1+ compatibility
+        if (! SageHelper::php53orLater()) {
             return $this;
         }
 
-        return $this->getTranslations();
+        Sage::dump('Started showing Eloquent queries');
+
+        $queryNumber = 0;
+        DB::listen(function($query) use (&$queryNumber) {
+            $state                              = Sage::saveState();
+            Sage::settings()->displayCalledFrom = false;
+
+            $callee = 'unknown';
+            $trace  = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+            foreach ($trace as $step) {
+                if (array_key_exists('file', $step) && strpos($step['file'], '/vendor/laravel/') === false) {
+                    $callee = $step['file'];
+                    if (array_key_exists('line', $step)) {
+                        $callee .= ':' . $step['line'];
+                    }
+                    break;
+                }
+            }
+
+            $substituteBindings = function($sql, $bindings) {
+                foreach ($bindings as $binding) {
+                    if ($binding instanceof DateTime) {
+                        $bindings[] = $binding->format('Y-m-d H:i:s');
+                        continue;
+                    }
+
+                    if ($binding === null) {
+                        $binding = 'NULL';
+                    }
+
+                    $bindings[] = (string) $binding;
+                }
+
+                return vsprintf(str_replace('?', "'%s'", $sql), $bindings);
+            };
+
+            $EloquentQuery = array(
+                '#'             => $queryNumber++,
+                'sql'           => PHP_EOL
+                    . SageSqlFormatter::format($substituteBindings($query->sql, $query->bindings), false),
+                'plain_sql'     => PHP_EOL . $query->sql,
+                'bindings'      => $query->bindings,
+                'called_from'   => $callee,
+                'duration_in_s' => $query->time / 1000,
+                'connection'    => $query->connectionName,
+            );
+            Sage::dump($EloquentQuery);
+
+            Sage::saveState($state);
+        });
+
+        return $this;
+    }
+
+    private function saveForRevert($key)
+    {
+        if (! array_key_exists($key, $this->revert)) {
+            $this->revert[$key] = $this->$key;
+        }
     }
 }

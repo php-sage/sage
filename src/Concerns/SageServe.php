@@ -28,10 +28,8 @@ class SageServe
 
     public static function setSettings()
     {
-        Sage::settings()
-            ->enabled(Sage::MODE_RICH)
-            ->outputToFile(self::getFilesDir() . uniqid('sage-', true))
-        ;
+        Sage::settings()->enabled      = Sage::MODE_RICH;
+        Sage::settings()->outputToFile = self::getFilesDir() . uniqid('sage-', true);
     }
 
     public static function getFilesDir()

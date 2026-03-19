@@ -23,24 +23,20 @@
 
 if (! function_exists('sage')) {
     /**
-     * Alias of Sage::dump()
-     *
-     * @return SageDynamicFacade
+     * Will either dump whatever was passed OR return {@see SageInstance} to continue chaining options.
      *
      * @see Sage::dump()
      */
     function sage()
     {
-        $sage   = new SageDynamicFacade();
-        $params = func_get_args();
-
         Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
 
+        $params = func_get_args();
         if ($params) {
-            return call_user_func_array(array($sage, 'dump'), $params);
+            return call_user_func_array(array('Sage', 'dump'), $params);
         }
 
-        return $sage;
+        return Sage::settings();
     }
 }
 
@@ -126,16 +122,13 @@ if (! function_exists('ssage')) {
             return Sage::STATUS_ERROR;
         }
 
-        $restore = Sage::settings()->simplifyOutput;
-        Sage::settings()
-            ->addDumpFunctionAlias(__FUNCTION__)
-            ->simplifyOutput(true)
-        ;
+        $restore = Sage::saveState();
+        Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
+        Sage::settings()->simplifyOutput = true;
 
-        $params = func_get_args();
-        $dump   = call_user_func_array(array('Sage', 'dump'), $params);
+        $dump = call_user_func_array(array('Sage', 'dump'), func_get_args());
 
-        Sage::settings()->simplifyOutput($restore);
+        Sage::saveState($restore);
 
         return $dump;
     }
@@ -207,7 +200,7 @@ if (! function_exists('sagetrace')) {
      *
      * @return string|int @see Sage::dump()
      */
-    function sagetrace()
+    function sageTrace()
     {
         if (! Sage::enabled()) {
             return Sage::STATUS_ERROR;

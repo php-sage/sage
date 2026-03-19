@@ -155,7 +155,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         } else {
             $class .= '_sage-parent';
 
-            if (Sage::settings()->expandedByDefault()) {
+            if (Sage::settings()->expandedByDefault) {
                 $class .= ' _sage-show';
             }
         }

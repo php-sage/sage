@@ -2,7 +2,7 @@
 
 /**
  * @internal
- * {@see SageSettings::enabledParsers} to enable/disable
+ * {@see SageInstance::enabledParsers} to enable/disable
  */
 // todo
 class SageParsersArrayAsTable implements SageCustomParserInterface

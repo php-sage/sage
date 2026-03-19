@@ -7,11 +7,11 @@ error_reporting(E_ALL);
 require_once dirname(__FILE__) . '/../../Sage.php';
 
 $file                       = dirname(__FILE__) . "/../../sage.html";
-SageSettings::$outputToFile = $file;
+SageInstance::$outputToFile = $file;
 
 require dirname(__FILE__) . '/overview.php';
 
-SageSettings::$outputToFile = null;
+SageInstance::$outputToFile = null;
 
 Sage::trace();
 Sage::dump(PHP_VERSION . ' PHP version verified working! Open following file to view output:', $file);

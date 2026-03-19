@@ -1,7 +1,7 @@
 <?php
 
 /**
- * {@see SageSettings::enabledParsers} to enable/disable.
+ * {@see SageInstance::enabledParsers} to enable/disable.
  *
  * @internal
  */
