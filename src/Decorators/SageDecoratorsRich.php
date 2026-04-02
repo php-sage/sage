@@ -36,7 +36,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             }
 
             if ($varData->alternativeViews) {
-                $output .= '<span class="_sage-popup-trigger">&rarr;</span><nav title="[Ctrl+click] Expand all children"></nav>';
+                $output .= '<span class="_sage-popup-trigger">&rarr;</span><nav></nav>';
             }
 
             $output .= $this->drawHeader($varData);
@@ -54,7 +54,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
                 // don't need tabs!
                 $output .= $this->drawAlternativeView($firstTab);
             } else {
-                $output .= "<ul class=\"_sage-tabs\">";
+                $output .= '<ul class="_sage-tabs">';
 
                 $isFirst = true;
                 foreach ($varData->alternativeViews as $alternative) {
@@ -301,7 +301,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
 
         return
             '<footer>'
-            . '<span class="_sage-popup-trigger" title="Open in new window">&rarr;</span> '
+            . '<span class="_sage-popup-trigger">&rarr;</span> '
             . "{$miniTrace}{$callingFunction}"
             . '</footer></div>';
     }

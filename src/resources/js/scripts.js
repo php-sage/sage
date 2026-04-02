@@ -31,7 +31,7 @@ if (typeof _sageInitialized === 'undefined') {
             while (i--) {
                 const sage = all[i]
 
-                if (! _sage.isTopPinningNeeded(sage)) {
+                if (!_sage.isTopPinningNeeded(sage)) {
                     return;
                 }
 
@@ -46,7 +46,7 @@ if (typeof _sageInitialized === 'undefined') {
 
                     const children = parent.nextElementSibling; // <dd>
 
-                    if (! _sage.isTopPinningNeeded(children)) {
+                    if (!_sage.isTopPinningNeeded(children)) {
                         return;
                     }
 
@@ -157,7 +157,7 @@ if (typeof _sageInitialized === 'undefined') {
             if (
                 parent
                 && parent.childElementCount === 1
-                && ! parent.childNodes[0].classList.contains('_sage-trace') // fix false positive for inline trace
+                && !parent.childNodes[0].classList.contains('_sage-trace') // fix false positive for inline trace
             ) {
                 parent = parent.children[0].children[0]; // reuse variable cause I can
 
@@ -226,7 +226,7 @@ if (typeof _sageInitialized === 'undefined') {
                     // when opening tab also uncollapse if there's only one collapsed entry inside
                     if (
                         el.childElementCount === 1
-                        && ! el.childNodes[0].classList.contains('_sage-trace') // fix false positive for inline trace
+                        && !el.childNodes[0].classList.contains('_sage-trace') // fix false positive for inline trace
                     ) {
                         _sage.toggleIfParent(el.children[0].children[0], false)
                     }
@@ -247,12 +247,12 @@ if (typeof _sageInitialized === 'undefined') {
                 }
 
                 el = el.parentNode;
-                if (! el || _sage.hasClass(el, '_sage')) {
+                if (!el || _sage.hasClass(el, '_sage')) {
                     break;
                 }
             }
 
-            return !! el;
+            return !!el;
         },
 
         fetchVisiblePluses: function () {
@@ -353,7 +353,7 @@ if (typeof _sageInitialized === 'undefined') {
         let target = e.target
             , tagName = target.tagName;
 
-        if (! _sage.isInsideSage(target)) {
+        if (!_sage.isInsideSage(target)) {
             return;
         }
 
@@ -365,7 +365,7 @@ if (typeof _sageInitialized === 'undefined') {
             target = target.parentNode;    // to not stop event from further propagating
             tagName = target.tagName;
         } else if (tagName === 'TH') {
-            if (! e.ctrlKey) {
+            if (!e.ctrlKey) {
                 _sage.sortTable(target.parentNode.parentNode.parentNode, target.cellIndex, target)
             }
             return false;
@@ -373,7 +373,7 @@ if (typeof _sageInitialized === 'undefined') {
 
         // region switch tabs
         if (tagName === 'LI' && _sage.hasClass(target.parentNode, '_sage-tabs')) {
-            if (! _sage.hasClass(target, '_sage-active-tab')) {
+            if (!_sage.hasClass(target, '_sage-active-tab')) {
                 _sage.switchTab(target);
                 if (_sage.currentPlus !== -1) {
                     _sage.fetchVisiblePluses();
@@ -415,7 +415,7 @@ if (typeof _sageInitialized === 'undefined') {
             if (_sageContainer.tagName === 'FOOTER') {
                 _sageContainer = _sageContainer.previousSibling;
             } else {
-                while (_sageContainer && ! _sage.hasClass(_sageContainer, '_sage-parent')) {
+                while (_sageContainer && !_sage.hasClass(_sageContainer, '_sage-parent')) {
                     _sageContainer = _sageContainer.parentNode;
                 }
             }
@@ -532,7 +532,8 @@ if (typeof _sageInitialized === 'undefined') {
         }
     };
 
-    window.addEventListener('load', function () { // colorize microtime results relative to others
+    window.addEventListener('load', function () {
+        // colorize microtime results relative to others
         const elements = Array.prototype.slice.call(document.querySelectorAll('._sage-microtime'), 0);
         let min = Infinity
             , max = -Infinity;
@@ -554,6 +555,54 @@ if (typeof _sageInitialized === 'undefined') {
 
             el.style.background = 'hsl(' + Math.round(ratio * 120) + ',60%,70%)';
         });
+
+        function addTooltips(selector, text) {
+            let tip = null;
+
+            document.addEventListener('mouseover', (e) => {
+                const el = e.target.closest(selector);
+                if (!el || tip) return;
+
+                tip = document.createElement('div');
+                tip.className = 'custom-tooltip';
+                tip.innerHTML = text;
+                document.body.appendChild(tip);
+
+                const rect = el.getBoundingClientRect();
+                const tipW = tip.offsetWidth;
+                const tipH = tip.offsetHeight;
+
+                let left = rect.left + rect.width / 2 - tipW / 2;
+                let top = rect.top - tipH - 6;
+
+                const margin = 4;
+                if (left < margin) left = margin;
+                if (left + tipW > window.innerWidth - margin) left = window.innerWidth - margin - tipW;
+                if (top < margin) top = rect.bottom + 6;
+
+                tip.style.left = left + 'px';
+                tip.style.top = top + 'px';
+            });
+
+            document.addEventListener('mouseout', (e) => {
+                const el = e.target.closest(selector);
+                if (!el) return;
+
+                // Only remove if we're actually leaving the element, not entering a child
+                if (!el.contains(e.relatedTarget)) {
+                    tip?.remove();
+                    tip = null;
+                }
+            });
+        }
+
+        addTooltips(
+            '._sage nav',
+            '<kbd>CTRL</kbd>+<kbd>click</kbd> Expand/collapse all children.<br>' +
+            '<kbd>CTRL</kbd>+<kbd>F</kbd> Expand everything.<br>' +
+            '<kbd>D</kbd> to start keyboard navigation'
+        );
+        addTooltips('._sage-popup-trigger', 'Click to open in a new window');
     });
 
     window.addEventListener('scroll', _sage.debounce(_sage.processScroll));
@@ -561,7 +610,7 @@ if (typeof _sageInitialized === 'undefined') {
 
 // debug purposes only, removed in minified source
 function clg(i) {
-    if (! window.console) {
+    if (!window.console) {
         return;
     }
     const l = arguments.length;

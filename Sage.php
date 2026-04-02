@@ -40,7 +40,12 @@ define('SAGE_DIR', dirname(__FILE__) . '/src/');
 require SAGE_DIR . 'Parsers/SageCustomParserInterface.php';
 require SAGE_DIR . 'Decorators/SageDecoratorsInterface.php';
 foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(SAGE_DIR)) as $file) {
-    if ($file->isFile() && pathinfo($file->getFilename(), PATHINFO_EXTENSION) === 'php') {
+    $filename = $file->getFilename();
+    if (
+        $file->isFile()
+        && ! in_array($filename, array('eloquentListener.inc.php'), true)
+        && pathinfo($filename, PATHINFO_EXTENSION) === 'php'
+    ) {
         require_once $file->getPathname();
     }
 }
@@ -125,6 +130,8 @@ class Sage
 
     /**
      * Set settings for all subsequent calls to Sage.
+     *
+     * Same as calling {@see sage()}
      *
      * @return SageInstance
      */
@@ -379,45 +386,7 @@ class Sage
         self::$settings = new SageInstance();
 
         return; //todo
-
-        self::settings(self::enabled());
-
         // first load defaults for configuration. In this order:
-        // 1. If value is set, it means user explicitly set it
         // 2. TODO: .env
-        // 3. If present in get_cfg_var means user put it into his php.ini
-        // 4. Load default from Sage
-        self::initSetting(
-            'editor',
-            ini_get('xdebug.file_link_format') ? ini_get('xdebug.file_link_format') : self::$settings->editor
-        );
-        self::initSetting('fileLinkServerPath', self::$settings->ideLinkServerPath);
-        self::initSetting('fileLinkLocalPath', self::$settings->ideLinkLocalPath);
-        self::initSetting('displayCalledFrom', self::$settings->displayCalledFrom);
-        self::initSetting('maxLevels', self::$settings->maxLevels);
-        self::initSetting('theme', self::$settings->theme);
-        self::initSetting('expandedByDefault', self::$settings->expandedByDefault);
-        self::initSetting('cliDetectionEnabled', self::$settings->cliDetectionEnabled);
-        self::initSetting('cliColors', self::$settings->cliColors);
-        self::initSetting('charEncodings', self::$settings->charEncodings);
-        self::initSetting('returnOutput', self::$settings->returnOutput);
-        self::initSetting('aliases', self::$settings->aliases);
     }
-
-    private static function initSetting($name, $default)
-    {
-        if (! isset(self::$$name)) {
-            // gets from php.ini
-            $value = get_cfg_var('sage.' . $name);
-            if (! $value) {
-                $value = $default;
-            }
-
-            self::$$name = $value;
-        }
-    }
-}
-
-if (get_cfg_var('sage.enabled') !== false) {
-    Sage::enabled(get_cfg_var('sage.enabled'));
 }

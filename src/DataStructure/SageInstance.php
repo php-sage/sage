@@ -3,26 +3,59 @@
 /**
  * Use it by calling {@see Sage::settings()} or {@see sage()}
  *
- * @method self enabled($newValue) sets SageSettings::$enabled and returns $this
- * @method self theme($newValue) sets SageSettings::$theme and returns $this
- * @method self charEncodings($newValue) sets SageSettings::$charEncodings and returns $this
- * @method self aliases($newValue) sets SageSettings::$aliases and returns $this
- * @method self simplifyOutput($newValue) sets SageSettings::$simplifyOutput and returns $this
- * @method self displayCalledFrom($newValue) sets SageSettings::$displayCalledFrom and returns $this
- * @method self writeableDir($newValue) sets SageSettings::$writeableDir and returns $this
- * @method self expandedByDefault($newValue) sets SageSettings::$expandedByDefault and returns $this
- * @method self translations($newValue) sets SageSettings::$translations and returns $this
- * @method self ideLinkServerPath($newValue) sets SageSettings::$ideLinkServerPath and returns $this
- * @method self ideLinkLocalPath($newValue) sets SageSettings::$ideLinkLocalPath and returns $this
- * @method self returnOutput($newValue) sets SageSettings::$returnOutput and returns $this
- * @method self keysBlacklist($newValue) sets SageSettings::$keysBlacklist and returns $this
- * @method self traceBlacklist($newValue) sets SageSettings::$traceBlacklist and returns $this
- * @method self editor($newValue) sets SageSettings::$editor and returns $this
- * @method self cliDetectionEnabled($newValue) sets SageSettings::$cliDetectionEnabled and returns $this
- * @method self maxLevels($newValue) sets SageSettings::$maxLevels and returns $this
- * @method self cliColors($newValue) sets SageSettings::$cliColors and returns $this
- * @method self enabledParsers($newValue) sets SageSettings::$enabledParsers and returns $this
- * @method self classNameBlacklist($newValue) sets SageSettings::$classNameBlacklist and returns $this
+ * @method self enabled(bool|string $newValue) for documentation:
+ * @see Sage::enabled() For full documentation
+ *
+ * @method self theme(string $newValue) sets theme for rich view
+ * @see self::$theme For full documentation
+ *
+ * @method self charEncodings(array $newValue) alternative char encodings in order of probability
+ * @see self::$charEncodings For full documentation
+ *
+ * @method self aliases(array $newValue) You probably want `addDumpFunctionAlias()` instead.
+ * @see self::addDumpFunctionAlias() & {@see self::$aliases}  For full documentation
+ *
+ * @method self displayCalledFrom(bool $newValue) whether to display where Sage was called from.
+ * @see self::$displayCalledFrom For full documentation
+ *
+ * @method self writeableDir(string $newValue) Used for Sage's internal purposes
+ * @see self::$writeableDir For full documentation
+ *
+ * @method self expandedByDefault(bool $newValue) draw rich output already expanded without having to click
+ * @see self::$expandedByDefault For full documentation
+ *
+ * @method self translations(array $newValue) You probably want `addTranslations()` instead.
+ * @see self::addTranslations() & {@see self::$translations}  For full documentation
+ *
+ * @method self ideLinkServerPath(string $newValue) Full path (not URL) to your project folder on your server.
+ * @see self::$ideLinkServerPath For full documentation
+ *
+ * @method self ideLinkLocalPath(string $newValue) Full path (not URL) to your project on your local machine.
+ * @see self::$ideLinkLocalPath For full documentation
+ *
+ * @method self returnOutput(bool|string $newValue) Sage returns output instead of echo .
+ * @see self::$returnOutput For full documentation
+ *
+ * @method self keysBlacklist(string[] $newValue) You probably want `addKeysBlacklist()` instead.
+ * @see self::addKeysBlacklist() & {@see self::$keysBlacklist} For full documentation
+ *
+ * @method self traceBlacklist(string[] $newValue) You probably want `addTraceBlacklist()` instead.
+ * @see self::addTraceBlacklist() & {@see self::$traceBlacklist} For full documentation
+ *
+ * @method self classNameBlacklist($newValue) Add class names to be skipped.
+ * @see self::$classNameBlacklist For full documentation
+ *
+ * @method self editor(string $newValue) Makes file paths clickable to open your IDE.
+ * @see self::$editor For full documentation
+ *
+ * @method self maxLevels($newValue) Max array/object levels to go deep, set to zero to disable.
+ * @see self::$maxLevels For full documentation
+ *
+ * @method self cliColors($newValue) If running in CLI, will use colors.
+ * @see self::$cliColors For full documentation
+ *
+ * @method self enabledParsers($newValue)
+ * @see self::$enabledParsers For full documentation
  */
 class SageInstance
 {
@@ -70,24 +103,18 @@ class SageInstance
     public $aliases = array();
 
     /**
-     * @var bool there are multiple ways to direct sage to display "simpler" view than current mode (e.g. Rich -> PLain)
-     * todo must be private
-     */
-    public $simplifyOutput = false;
-
-    /**
      * @var bool whether to display where Sage was called from.
      */
     public $displayCalledFrom = true;
 
     /**
-     * @var string Write output to this file instead of echoing it. If it ends in `.html` forces output in html mode.
+     * @var false|string Write output to this file instead of echoing it. If the filename ends in `.html`, we
+     * force output as html mode.
      */
     public $outputToFile = false;
 
     /**
-     * @var ?string Must be globally set, used for internal intercommunication (currently only Sage::serve() with
-     * potential to store settings).
+     * @var ?string Used for Sage's internal purposes (currently only Sage::serve() with potential to store settings).
      */
     public $writeableDir = null;
 
@@ -102,14 +129,14 @@ class SageInstance
     );
 
     /**
-     * @var string the full path (not URL) to your project folder on your remote dev server, be this Homestead, Docker,
-     *             or in the cloud.
+     * @var string Full path (not URL) to your project folder on your server, will be replaced with
+     * {@see SageInstance::$ideLinkLocalPath} in links to files.
      */
     public $ideLinkServerPath = '';
 
     /**
-     * @var string the full path (not URL) to your project on your local machine, the way your IDE or editor accesses
-     *             the files.
+     * @var string Full path (not URL) to your project on your local machine, will replace
+     * {@see SageInstance::$ideLinkLocalPath} in links to files.
      */
     public $ideLinkLocalPath = '';
 
@@ -126,15 +153,21 @@ class SageInstance
     public $keysBlacklist = array();
 
     /**
-     * @var string[] Patterns of filename paths. Keys don't matter, but you can use them to unset a particular entry.
+     * @var string[] Patterns of filename paths to skip. Keys don't matter, but you can use them to unset a particular
+     * entry.
      */
     public $traceBlacklist = array(
         'vendor'     => '#\/vendor\/#',
         'middleware' => '#\/Middleware\/#'
     );
 
+    public $classNameBlacklist = array(
+        'illuminate' => '/^Illuminate(?!.*(?:Exception|Collection|Expression|Response))/',
+        // 'symfony'    => '/^Symfony/'
+    );
+
     /**
-     * @var string makes visible source file paths clickable to open your editor.
+     * @var string Makes file paths clickable to open your IDE.
      *
      * Pre-defined values:
      *   'sublime'                => 'subl://open?url=file://%file&line=%line',
@@ -171,19 +204,15 @@ class SageInstance
     public $editor = 'phpstorm-remote';
 
     /**
-     * @var bool enable detection when running in command line and adjust output format accordingly.
-     */
-    public $cliDetectionEnabled = true;
-
-    /**
-     * @var int max array/object levels to go deep, set to zero/false to disable.
+     * @var int max array/object levels to go deep, set to zero to disable.
      */
     public $maxLevels = 7;
+
     /**
-     * @var bool in addition to above setting, enable detection when Sage is run in *UNIX* command line.
-     * Attempts to add coloring, but if seen as plain text, the color information is visible as gibberish
+     * @var bool If running in CLI, will use colors.
      */
     public $cliColors = true;
+
     /**
      * The ordering matters, each variable and its children are processed by each from top to bottom
      *
@@ -219,10 +248,6 @@ class SageInstance
         'SageParsersClassName'                 => true,
         'SageParsersMicrotime'                 => true,
         'SageParsersInvisibleStringCharacters' => true,
-    );
-    public $classNameBlacklist = array(
-        'illuminate' => '/^Illuminate(?!.*(?:Exception|Collection|Expression|Response))/',
-        // 'symfony'    => '/^Symfony/'
     );
 
     private $revert = array();
@@ -402,7 +427,7 @@ class SageInstance
     }
 
     /**
-     * All calls from within this function will be treated as coming from Sage, e.g. for parameter names and trace.
+     * All calls from within this function will be treated as coming from Sage, e.g., for parameter names and trace.
      *
      * [!] Use notation `Class::method` for methods.
      *

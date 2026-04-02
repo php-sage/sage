@@ -231,19 +231,10 @@ Draw rich output already expanded without having to click
 ---
 
 ```php
-Sage::settings()->cliDetectionEnabled = true; 
-```
-
-Enable detection when running in command line and adjust output format accordingly.
-
----
-
-```php
 Sage::settings()->cliColors = true;
 ```
 
-In addition to above setting, enable detection when Sage is run in *UNIX* command line. Attempts to add coloring, but if
-opened as plain text, the color information is visible as gibberish.
+If running in CLI, will use colors.
 
 ---
 

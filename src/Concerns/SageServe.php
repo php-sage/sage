@@ -36,9 +36,10 @@ class SageServe
     {
         $baseDir = Sage::settings()->writeableDir;
         if (! $baseDir && function_exists('storage_path')) {
-            $baseDir = storage_path();
+            Sage::settings()->writeableDir = $baseDir = storage_path();
         }
 
+        // todo won't work without laravel
         return $baseDir . DIRECTORY_SEPARATOR . self::DIR . DIRECTORY_SEPARATOR;
     }
 

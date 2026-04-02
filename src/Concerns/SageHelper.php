@@ -34,6 +34,7 @@ class SageHelper
 
     private static $aliasesRaw;
     private static $projectRootDir;
+    private static $openedOutputs;
 
     public static function php53orLater()
     {
@@ -208,21 +209,9 @@ class SageHelper
             if ($outputToFile && substr($outputToFile, -5) === '.html') {
                 $newMode = Sage::MODE_RICH;
             } else {
-                $newMode = PHP_SAPI === 'cli' && Sage::settings()->cliDetectionEnabled
+                $newMode = PHP_SAPI === 'cli'
                     ? Sage::MODE_CLI
                     : Sage::MODE_RICH;
-            }
-
-            if (Sage::settings()->simplifyOutput) {
-                switch ($newMode) {
-                    case Sage::MODE_RICH:
-                        $newMode = Sage::MODE_PLAIN_HTML;
-                        break;
-                    case Sage::MODE_CLI:
-                    default:
-                        $newMode = Sage::MODE_TEXT_ONLY;
-                        break;
-                }
             }
 
             // change mode globally
@@ -237,8 +226,6 @@ class SageHelper
 
         return $decorator;
     }
-
-    private static $openedFiles;
 
     /**
      * @param SageDecoratorsPlain|SageDecoratorsRich $decorator
@@ -255,10 +242,11 @@ class SageHelper
         if ($returnOutput) {
             if ($returnOutput === true) {
                 $decorator->setAssetsNeeded(true);
-            } elseif (! isset(self::$openedFiles[$returnOutput])) {
+            } elseif (isset(self::$openedOutputs[$returnOutput])) {
+                $decorator->setAssetsNeeded(false);
+            } else {
+                self::$openedOutputs[$returnOutput] = true;
                 $decorator->setAssetsNeeded(true);
-
-                Sage::settings()->returnOutput = true;
             }
         }
 
@@ -266,7 +254,7 @@ class SageHelper
             $decorator->setAssetsNeeded(false);
         } elseif (
             Sage::settings()->outputToFile
-            && ! isset(self::$openedFiles[Sage::settings()->outputToFile])
+            && ! isset(self::$openedOutputs[Sage::settings()->outputToFile])
         ) {
             $firstRunOldValue = $decorator->areAssetsNeeded();
 
@@ -584,12 +572,12 @@ class SageHelper
     {
         $saveTo = Sage::settings()->outputToFile;
 
-        if (! isset(self::$openedFiles[$saveTo])) {
+        if (! isset(self::$openedOutputs[$saveTo])) {
             $decorator->setAssetsNeeded($decoratorState);
-            self::$openedFiles[$saveTo] = fopen($saveTo, 'w');
+            self::$openedOutputs[$saveTo] = fopen($saveTo, 'w');
         }
 
-        fwrite(self::$openedFiles[$saveTo], $output);
+        fwrite(self::$openedOutputs[$saveTo], $output);
 
         if ($servingUrl = SageServe::isServing(true)) {
             $saveTo = $servingUrl;

@@ -23,9 +23,8 @@
 
 if (! function_exists('sage')) {
     /**
-     * Will either dump whatever was passed OR return {@see SageInstance} to continue chaining options.
-     *
-     * @see Sage::dump()
+     * @see Sage::dump() if you pass any argument
+     * @see Sage::settings() if not
      */
     function sage()
     {
@@ -36,7 +35,8 @@ if (! function_exists('sage')) {
             return call_user_func_array(array('Sage', 'dump'), $_);
         }
 
-        return Sage::settings();
+        /** @noinspection PhpUndefinedMethodInspection internal method {@see SageInstance::__call()} */
+        return Sage::settings()->resetRevert();
     }
 }
 
@@ -124,7 +124,11 @@ if (! function_exists('ssage')) {
 
         $restore = Sage::saveState();
         Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
-        Sage::settings()->simplifyOutput = true;
+        if (Sage::enabled() === Sage::MODE_RICH) {
+            Sage::enabled(Sage::MODE_PLAIN_HTML);
+        } else {
+            Sage::enabled(Sage::MODE_TEXT_ONLY);
+        }
 
         $_    = func_get_args();
         $dump = call_user_func_array(array('Sage', 'dump'), $_);
