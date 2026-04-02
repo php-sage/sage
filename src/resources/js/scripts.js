@@ -564,7 +564,7 @@ if (typeof _sageInitialized === 'undefined') {
                 if (!el || tip) return;
 
                 tip = document.createElement('div');
-                tip.className = 'custom-tooltip';
+                tip.className = '_sage-tooltip';
                 tip.innerHTML = text;
                 document.body.appendChild(tip);
 
@@ -600,7 +600,7 @@ if (typeof _sageInitialized === 'undefined') {
             '._sage nav',
             '<kbd>CTRL</kbd>+<kbd>click</kbd> Expand/collapse all children.<br>' +
             '<kbd>CTRL</kbd>+<kbd>F</kbd> Expand everything.<br>' +
-            '<kbd>D</kbd> to start keyboard navigation'
+            '<kbd>D</kbd> to start keyboard navigation.'
         );
         addTooltips('._sage-popup-trigger', 'Click to open in a new window');
     });
