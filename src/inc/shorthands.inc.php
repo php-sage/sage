@@ -25,6 +25,8 @@ if (! function_exists('sage')) {
     /**
      * @see Sage::dump() if you pass any argument
      * @see Sage::settings() if not
+     *
+     * @return SageInstance|mixed
      */
     function sage()
     {

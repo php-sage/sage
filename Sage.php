@@ -384,6 +384,9 @@ class Sage
         self::$isBootstrapped = true;
 
         self::$settings = new SageInstance();
+        if ($editor = ini_get('xdebug.file_link_format')) {
+            self::$settings->editor = $editor;
+        }
 
         return; //todo
         // first load defaults for configuration. In this order:

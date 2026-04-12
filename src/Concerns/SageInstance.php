@@ -170,24 +170,24 @@ class SageInstance
      * @var string Makes file paths clickable to open your IDE.
      *
      * Pre-defined values:
-     *   'sublime'                => 'subl://open?url=file://%file&line=%line',
-     *   'textmate'               => 'txmt://open?url=file://%file&line=%line',
-     *   'emacs'                  => 'emacs://open?url=file://%file&line=%line',
-     *   'macvim'                 => 'mvim://open/?url=file://%file&line=%line',
-     *   'phpstorm'               => 'phpstorm://open?file=%file&line=%line',
-     *   'phpstorm-remote'        => 'http://localhost:63342/api/file/%file:%line',
-     *   'idea'                   => 'idea://open?file=%file&line=%line',
-     *   'vscode'                 => 'vscode://file/%file:%line',
-     *   'vscode-insiders'        => 'vscode-insiders://file/%file:%line',
-     *   'vscode-remote'          => 'vscode://vscode-remote/%file:%line',
-     *   'vscode-insiders-remote' => 'vscode-insiders://vscode-remote/%file:%line',
-     *   'vscodium'               => 'vscodium://file/%file:%line',
-     *   'atom'                   => 'atom://core/open/file?filename=%file&line=%line',
-     *   'nova'                   => 'nova://core/open/file?filename=%file&line=%line',
-     *   'netbeans'               => 'netbeans://open/?f=%file:%line',
-     *   'xdebug'                 => 'xdebug://%file@%line'
+     *   'sublime'                => 'subl://open?url=file://%f&line=%l',
+     *   'textmate'               => 'txmt://open?url=file://%f&line=%l',
+     *   'emacs'                  => 'emacs://open?url=file://%f&line=%l',
+     *   'macvim'                 => 'mvim://open/?url=file://%f&line=%l',
+     *   'phpstorm'               => 'phpstorm://open?file=%f&line=%l',
+     *   'phpstorm-remote'        => 'http://localhost:63342/api/file/%f:%l',
+     *   'idea'                   => 'idea://open?file=%f&line=%l',
+     *   'vscode'                 => 'vscode://file/%f:%l',
+     *   'vscode-insiders'        => 'vscode-insiders://file/%f:%l',
+     *   'vscode-remote'          => 'vscode://vscode-remote/%f:%l',
+     *   'vscode-insiders-remote' => 'vscode-insiders://vscode-remote/%f:%l',
+     *   'vscodium'               => 'vscodium://file/%f:%l',
+     *   'atom'                   => 'atom://core/open/file?filename=%f&line=%l',
+     *   'nova'                   => 'nova://core/open/file?filename=%f&line=%l',
+     *   'netbeans'               => 'netbeans://open/?f=%f:%l',
+     *   'xdebug'                 => 'xdebug://%f@%l'
      *
-     * Or pass a custom string where %file should be replaced with full file path, %line with line number
+     * Or pass a custom string where %f should be replaced with full file path, %l with line number
      * to create a custom link. Set to null to disable linking.
      *
      * Example:
@@ -195,7 +195,7 @@ class SageInstance
      *             Sage::settings()->editor = 'phpstorm-remote';
      * Example:
      *             // same result as above, but explicitly defined
-     *             Sage::settings()->editor = 'http://localhost:63342/api/file/f:%line';
+     *             Sage::settings()->editor = 'http://localhost:63342/api/file/%f:%l';
      *
      * Default:
      *             ini_get('xdebug.file_link_format') ?: 'phpstorm-remote'

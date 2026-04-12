@@ -344,7 +344,7 @@ class SageHelper
         }
 
         $ideLink = str_replace(
-            array('%file', '%line', $settings->ideLinkServerPath),
+            array('%f', '%l', $settings->ideLinkServerPath),
             array($file, $line, $settings->ideLinkLocalPath),
             isset(self::$editors[$settings->editor]) ? self::$editors[$settings->editor] : $settings->editor
         );

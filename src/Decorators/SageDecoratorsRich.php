@@ -36,6 +36,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             }
 
             if ($varData->alternativeViews) {
+                // todo add tabindex=0 so it can be keyboard-navigated as usual
                 $output .= '<span class="_sage-popup-trigger">&rarr;</span><nav></nav>';
             }
 
@@ -223,8 +224,6 @@ class SageDecoratorsRich implements SageDecoratorsInterface
         return $output;
     }
 
-    private $microtime;
-
     /**
      * called for each dump, opens the html tag
      *
@@ -232,9 +231,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
      */
     public function wrapStart()
     {
-        $this->microtime = microtime(true);
-
-        return "<div class=\"_sage\" data-microtime=\"{$this->microtime}\">";
+        return "<div class=\"_sage\">";
     }
 
     public function wrapEnd($caller)
@@ -296,7 +293,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             }
         }
 
-        $t               = $this->microtime;
+        $t               = microtime(true);
         $callingFunction .= ' @ ' . date('Y-m-d H:i:s.', (int) $t) . round(($t - floor($t)) * 1000);
 
         return
