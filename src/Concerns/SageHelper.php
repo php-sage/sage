@@ -159,10 +159,21 @@ class SageHelper
         return false;
     }
 
+    /** @return bool */
     public static function isKeyBlacklisted($key)
     {
-        return Sage::settings()->keysBlacklist
-            && in_array(preg_replace('/\W/', '', $key), Sage::settings()->keysBlacklist, true);
+        $keysBlacklist = Sage::settings()->keysBlacklist;
+        if (! $keysBlacklist) {
+            return false;
+        }
+
+        foreach ($keysBlacklist as $item) {
+            if (strtolower($item) === strtolower(preg_replace('/\W/', '', $key))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function eloquentListener($query)
