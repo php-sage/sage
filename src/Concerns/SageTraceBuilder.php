@@ -1,64 +1,16 @@
 <?php
 
-/** @internal  */
+/** @internal */
 class SageTraceBuilder
 {
-
-    /**
-     * Displayed with code snippet, steps are ignored according to blacklist.
-     *
-     * @param array $rawTrace full debug backtrace array
-     *
-     * @return SageTrace
-     */
-    public static function full($rawTrace)
+    public static function build($rawTrace, $getSourceSnippet = false, $getObject = false, $getArguments = false)
     {
         $self = new self();
 
-        return $self->buildTrace($rawTrace, 'full');
+        return $self->doBuildTrace($rawTrace, $getSourceSnippet, $getObject, $getArguments);
     }
 
-    /**
-     * Only files and lines, no blacklist.
-     *
-     * @param array $rawTrace
-     *
-     * @return SageTrace
-     */
-    public static function minimal($rawTrace)
-    {
-        $self = new self();
-
-        return $self->buildTrace($rawTrace, 'minimal');
-    }
-
-    /**
-     * Like minimal, but each line expands to reveal raw step data.
-     *
-     * Used when a trace is dumped as non-first-class-citizen.
-     *
-     * Can't use full mode in that context because
-     * 1. It uses blacklist
-     * 2. It really really lags if not using blacklist - cause unknown :(
-     *
-     * @param array $rawTrace
-     *
-     * @return SageTrace
-     */
-    public static function minimalWithRaw($rawTrace)
-    {
-        $self = new self();
-
-        return $self->buildTrace($rawTrace, 'minimalWithRaw');
-    }
-
-    /**
-     * @param array $rawTrace
-     * @param 'full'|'minimal'|'minimalWithRaw' $mode
-     *
-     * @return SageTrace
-     */
-    private function buildTrace($rawTrace, $mode)
+    private function doBuildTrace($rawTrace, $getSourceSnippet, $getObject, $getArguments)
     {
         $trace    = new SageTrace();
         $lastStep = array();
@@ -76,40 +28,17 @@ class SageTraceBuilder
                 continue;
             }
 
-            $trace->steps[] = $this->parseStep($step, $mode);
+            $trace->steps[] = $this->parseStep($step, $getSourceSnippet, $getObject, $getArguments);
         }
 
         if ($lastStep) {
-            array_unshift($trace->steps, $this->parseStep($lastStep, $mode));
+            array_unshift($trace->steps, $this->parseStep($lastStep, $getSourceSnippet, $getObject, $getArguments));
         }
 
         return $trace;
     }
 
-    /**
-     * @param array $step
-     * @param 'full'|'minimal'|'minimalWithRaw' $mode
-     *
-     * @return SageTraceStep|void
-     */
-    private function parseStep($step, $mode)
-    {
-        switch ($mode) {
-            case 'full':
-                return $this->step__full($step);
-            case 'minimal':
-                return $this->step__minimal($step);
-            case 'minimalWithRaw':
-                return $this->step__minimalWithRaw($step);
-        }
-    }
-
-    /**
-     * @param array $rawTraceStep - individual step from internal debug backtrace array
-     *
-     * @return SageTraceStep
-     */
-    private function step__full($rawTraceStep)
+    private function parseStep($rawTraceStep, $getSourceSnippet, $getObject, $getArguments)
     {
         $step = new SageTraceStep();
 
@@ -123,31 +52,18 @@ class SageTraceBuilder
             return $step;
         }
 
-        // todo it's possible to parse the object name out from the source!!!
-        $step->object        = $this->getObject($rawTraceStep);
-        $step->sourceSnippet = $this->getSourceSnippet($rawTraceStep);
-        $step->arguments     = $this->getArguments($rawTraceStep, $step->argumentNames);
+        if ($getObject) {
+            // todo it's possible to parse the object name out from the source!!!
+            $step->object = $this->getObject($rawTraceStep);
+        }
+        if ($getSourceSnippet) {
+            $step->sourceSnippet = $this->getSourceSnippet($rawTraceStep);
+        }
+        if ($getArguments) {
+            $step->arguments = $this->getArguments($rawTraceStep, $step->argumentNames);
+        }
 
         return $step;
-    }
-
-    private function step__minimal($rawTraceStep)
-    {
-        $self                = new SageTraceStep();
-        $self->fileLine      = $this->getFileAndLine($rawTraceStep);
-        $self->argumentNames = $this->getStepArgumentNames($rawTraceStep);
-        $self->functionName  = $this->getStepFunctionName($rawTraceStep, $self->argumentNames);
-
-        return $self;
-    }
-
-    private function step__minimalWithRaw($rawTraceStep)
-    {
-        $self           = new SageTraceStep();
-        $self->fileLine = $this->getFileAndLine($rawTraceStep);
-        $self->rawStep  = SageParser::parse($rawTraceStep);
-
-        return $self;
     }
 
     private function isStepBlacklisted($step)

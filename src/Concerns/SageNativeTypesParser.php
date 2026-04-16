@@ -495,12 +495,10 @@ class SageNativeTypesParser
     }
 
     /**
-     * @return array|false return ALL keys from all rows if array is tabular, false otherwise
+     * @return array|false if array is tabular, return the set of all keys from any of the rows, false otherwise
      */
     private static function isArrayTabular(array $variable)
     {
-        //todo
-        return false;
         if (Sage::enabled() !== Sage::MODE_RICH) {
             return false;
         }

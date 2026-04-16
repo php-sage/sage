@@ -13,5 +13,4 @@ class SageTraceStep
     public $argumentNames = array();
     /** @var SageParsedVariable|null */
     public $object = null;
-    public $rawStep = array();
 }

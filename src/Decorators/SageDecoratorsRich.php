@@ -145,7 +145,7 @@ class SageDecoratorsRich implements SageDecoratorsInterface
      */
     private function drawTraceStep($i, $step)
     {
-        $isChildless = ! $step->sourceSnippet && ! $step->arguments && ! $step->object && ! $step->rawStep;
+        $isChildless = ! $step->sourceSnippet && ! $step->arguments && ! $step->object;
 
         $class = '';
 
@@ -192,11 +192,6 @@ class SageDecoratorsRich implements SageDecoratorsInterface
             $firstTabClass = '';
         }
 
-        if ($step->rawStep) {
-            $output        .= "<li{$firstTabClass}>Raw step data</li>";
-            $firstTabClass = '';
-        }
-
         $output .= '</ul><ul>';
 
         if ($step->sourceSnippet) {
@@ -213,10 +208,6 @@ class SageDecoratorsRich implements SageDecoratorsInterface
 
         if ($step->object) {
             $output .= '<li>' . $this->decorate($step->object) . '</li>';
-        }
-
-        if ($step->rawStep) {
-            $output .= '<li>' . $this->decorate($step->rawStep, true) . '</li>';
         }
 
         $output .= '</ul></dd>';

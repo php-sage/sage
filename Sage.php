@@ -295,10 +295,11 @@ class Sage
         /** @see self::trace() */
         if ($caller->sageMethodCalled === 'trace') {
             $parsedTrace        = new SageParsedVariable();
-            $parsedTrace->trace = SageTraceBuilder::full(
-                $arguments === array(null)
-                    ? $backtraceData
-                    : $arguments[0]
+            $parsedTrace->trace = SageTraceBuilder::build(
+                $arguments === array(null) ? $backtraceData : $arguments[0],
+                true,
+                true,
+                true
             );
             $parsedTrace->name  = 'Debug backtrace';
 
@@ -330,7 +331,7 @@ class Sage
             // Sage::dump(1) shorthand
             if ($caller->parameterNames === array('1') && $arguments[0] === 1) {
                 $parsedTrace        = new SageParsedVariable();
-                $parsedTrace->trace = SageTraceBuilder::full($backtraceData);
+                $parsedTrace->trace = SageTraceBuilder::build($backtraceData, true, true, true);
                 $parsedTrace->name  = 'Debug backtrace';
 
                 return array($parsedTrace);
@@ -339,7 +340,7 @@ class Sage
             // Sage::dump(2) shorthand
             if ($caller->parameterNames === array('2') && $arguments[0] === 2) {
                 $parsedTrace        = new SageParsedVariable();
-                $parsedTrace->trace = SageTraceBuilder::minimal($backtraceData);
+                $parsedTrace->trace = SageTraceBuilder::build($backtraceData, true);
                 $parsedTrace->name  = 'Debug backtrace (only paths)';
 
                 return array($parsedTrace);
@@ -347,7 +348,7 @@ class Sage
 
             if (SageHelper::isValidTrace($arguments[0])) {
                 $parsedTrace        = new SageParsedVariable();
-                $parsedTrace->trace = SageTraceBuilder::full($arguments[0]);
+                $parsedTrace->trace = SageTraceBuilder::build($arguments[0], true, true, true);
 
                 return array($parsedTrace);
             }
