@@ -1059,7 +1059,9 @@ class SageSqlFormatter
             $substituteBindings[] = (string) $binding;
         }
 
-        $sql = vsprintf(str_replace('?', "'%s'", $sql), $substituteBindings);
+        if ($substituteBindings) {
+            $sql = vsprintf(str_replace('?', "'%s'", $sql), $substituteBindings);
+        }
 
         // Tokenize String
         $original_tokens = self::tokenize($sql);
