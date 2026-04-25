@@ -201,7 +201,7 @@ Make visible source file paths clickable to open your editor. Available options 
 
 > `'phpstorm-remote'` - default (requires [IDE Remote Control](https://plugins.jetbrains.com/plugin/19991-ide-remote-control) plugin), `'sublime'`, `'textmate'`, `'emacs'`, `'macvim'`, `'phpstorm'`, `'idea'`, `'vscode'`, `'vscode-insiders'`, `'vscode-remote'`, `'vscode-insiders-remote'`, `'vscodium'`, `'atom'`, `'nova'`, `'netbeans'`, `'xdebug'`
 
-Or pass a custom string where %file should be replaced with full file path, %line with line number to create a custom
+Or pass a custom string where %f should be replaced with full file path, %l with line number to create a custom
 link. Set to null to disable linking.
 
 ---
