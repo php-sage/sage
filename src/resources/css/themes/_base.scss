@@ -377,9 +377,14 @@ $border: 1px solid $border-color;
   ._sage-source {
     line-height: round($spacing * 3.5) * 1px;
 
-    span {
+    i {
       padding-right: 1px;
       border-right: 3px inset $variable-type-color;
+      font-style: normal;
+
+      &::before {
+        content: attr(data-n);
+      }
     }
 
     ._sage-highlight {

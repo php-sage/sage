@@ -49,7 +49,11 @@ class SageParsersEloquent implements SageCustomParserInterface
         );
         foreach ($attributes as $key => $value) {
             // the $value (from $model->getAttributes()) is before casting/mutating, we want the processed one.
-            $attributesDump->addRow($variable->$key, $key, '->');
+            try {
+                $attributesDump->addRow($variable->$key, $key, '->');
+            } catch (Exception $e) {
+                // this happens when e.g. dumping an exception after an attribute (cast) is misbehaving
+            }
         }
 
         $result = new SageParsedVariable();

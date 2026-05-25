@@ -15,6 +15,14 @@ class SageTraceBuilder
         $trace    = new SageTrace();
         $lastStep = array();
         foreach ($rawTrace as $step) {
+            if (! is_array($step)) {
+                $step           = new SageTraceStep();
+                $step->fileLine = 'Error when parsing trace!';
+                $trace->steps[] = $step;
+
+                return $trace;
+            }
+
             if ($step['function'] === 'spl_autoload_call') { // meaningless
                 continue;
             }
@@ -189,7 +197,7 @@ class SageTraceBuilder
             if ($readingLine >= $range['start']) {
                 $row = SageHelper::esc($row);
 
-                $row = '<span>' . sprintf($format, $readingLine) . '</span> ' . $row;
+                $row = '<i data-n="' . sprintf($format, $readingLine) . '"></i> ' . $row;
 
                 if ($readingLine === (int) $line) {
                     // apply highlighting to this row
