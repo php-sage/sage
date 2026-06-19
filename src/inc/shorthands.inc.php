@@ -155,6 +155,8 @@ if (! function_exists('ss')) {
      */
     function ss()
     {
+        Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
+
         $_ = func_get_args();
 
         return call_user_func_array('ssage', $_);
@@ -169,6 +171,8 @@ if (! function_exists('ssaged')) {
      */
     function ssaged()
     {
+        Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
+
         $_ = func_get_args();
         call_user_func_array('ssage', $_);
         die;
@@ -183,6 +187,8 @@ if (! function_exists('ssd')) {
      */
     function ssd()
     {
+        Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
+
         $_ = func_get_args();
         call_user_func_array('ssage', $_);
         die;
@@ -199,6 +205,8 @@ if (! function_exists('d')) {
      */
     function d()
     {
+        Sage::settings()->addDumpFunctionAlias(__FUNCTION__);
+
         return call_user_func_array('sage', func_get_args());
     }
 }

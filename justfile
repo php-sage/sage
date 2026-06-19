@@ -13,6 +13,10 @@ alias sh := console
 
 alias release := build
 
+setup:
+    {{ docker }} run php npm install
+    just composer-update
+
 build:
     {{ docker }} up -d --remove-orphans
     {{ docker }} run php composer build # see composer.json -> "scripts" section
