@@ -472,9 +472,7 @@ class SageInstance
             return $this;
         }
 
-        Sage::dump('Started showing Eloquent queries');
-
-        DB::listen(array('SageHelper', 'eloquentListener'));
+        require_once SAGE_DIR . 'inc/eloquentListener.inc.php';
 
         return $this;
     }

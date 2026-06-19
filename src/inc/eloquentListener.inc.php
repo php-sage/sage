@@ -1,5 +1,7 @@
 <?php
 
+Sage::dump('Started showing Eloquent queries');
+
 $queryNumber = 1;
 DB::listen(function ($query) use (&$queryNumber) {
     $callee = 'unknown';
