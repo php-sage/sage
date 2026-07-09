@@ -52,7 +52,8 @@ class SageParsersEloquent implements SageCustomParserInterface
             try {
                 $attributesDump->addRow($variable->$key, $key, '->');
             } catch (Exception $e) {
-                // this happens when e.g. dumping an exception after an attribute (cast) is misbehaving
+                // this happens when there's misconfigured eloquent, we're debugging eloquent itself etc.
+                $attributesDump->addRow($value, $key, '->');
             }
         }
 
@@ -96,7 +97,7 @@ class SageParsersEloquent implements SageCustomParserInterface
         $query        = $variable->toRawSql();
         $result->size = strlen($query);
         $result->addTabView__String(
-            SageSqlFormatter::format($variable->toRawSql(), array(), false),
+            SageSqlFormatter::format($variable->toRawSql(), [], false),
             'Raw query'
         );
 
