@@ -172,7 +172,7 @@ class SageNativeTypesParser
                 if (SageHelper::isKeyBlacklisted($key)) {
                     $parsedValue = SageParsedVariable::erroneous(SageHelper::trans('key_blacklisted'));
                 } elseif (is_array($val) && array_key_exists(SageHelper::ARRAY_MARKER, $val)) {
-                    $parsedValue = SageParsedVariable::erroneous(SageHelper::trans('key_blacklisted'));
+                    $parsedValue = SageParsedVariable::erroneous('Recursion');
                 } else {
                     $parsedValue = SageParser::parse($val);
                 }
@@ -231,20 +231,13 @@ class SageNativeTypesParser
             $result->size = count($castedArray);
         }
 
-        if (isset(SageParser::$objects[$hash])) {
-            $result->error = "Recursion [{$hash}]";
-
-            return $result;
-        }
-
         if (self::isDepthLimit()) {
             $result->error = 'Depth too Great'; // todo suggest solution
 
             return $result;
         }
 
-        SageParser::$objects[$hash] = true;
-        $variableReflection         = new ReflectionObject($variable);
+        $variableReflection = new ReflectionObject($variable);
 
         // add link to definition of userland objects
         if (SageHelper::isHtmlMode() && $variableReflection->isUserDefined()) {

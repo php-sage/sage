@@ -10,11 +10,6 @@ class SageParser
     public static $objects = array();
 
     /**
-     * @var array keep parsers from looping todo?
-     */
-    // private static $parsingAlternative = array();
-
-    /**
      * @param mixed $variable copy of user-provided variable
      * @param string|SageHtmlable $name todo escape by default, expect sageHtmlable otherwise
      *
@@ -26,15 +21,30 @@ class SageParser
             throw new SageLogicException('This is already parsed!', $variable);
         }
 
-        // save internal data to revert after dumping to properly handle recursions etc
-        $level   = self::$level++;
-        $objects = self::$objects;
+
+        // save internal data to revert after dumping to properly handle recursions
+        $level   = SageParser::$level++;
+        $objects = SageParser::$objects;
+
+        if (is_object($variable)) {
+            $hash = SageHelper::getObjectHash($variable);
+
+            if (isset(SageParser::$objects[$hash])) {
+                $sageParsedVariable       = SageParsedVariable::erroneous("Recursion [{$hash}]");
+                $sageParsedVariable->name = $name;
+                $sageParsedVariable->type = get_class($variable);
+
+                return $sageParsedVariable;
+            }
+
+            SageParser::$objects[$hash] = true;
+        }
 
         $parser = new self();
         $result = $parser->doParse($variable, $name);
 
-        self::$level   = $level;
-        self::$objects = $objects;
+        SageParser::$level   = $level;
+        SageParser::$objects = $objects;
 
         return $result;
     }
@@ -46,22 +56,15 @@ class SageParser
 
         $parseAsNative = true;
 
-        $objects = self::$objects;
         foreach (Sage::settings()->enabledParsers as $parserClass => $enabled) {
             if (! $enabled) {
                 continue;
             }
 
-            // if (array_key_exists($parserClass, self::$parsingAlternative)) {
-            //     continue;
-            // }
-            // self::$parsingAlternative[$parserClass] = true;
-
             /** @var SageCustomParserInterface $parser */
             $parser      = new $parserClass();
             $parseResult = $parser->parse($variable);
 
-            // unset(self::$parsingAlternative[$parserClass]);
             if ($parseResult) {
                 $result->mergeFrom($parseResult);
 
@@ -71,7 +74,6 @@ class SageParser
                 }
             }
         }
-        self::$objects = $objects;
 
         if ($parseAsNative) {
             $parsed = SageNativeTypesParser::parse($variable);

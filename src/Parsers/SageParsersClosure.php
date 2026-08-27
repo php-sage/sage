@@ -38,12 +38,12 @@ class SageParsersClosure implements SageCustomParserInterface
         );
 
         if (method_exists($reflection, 'getClosureThis') && $val = $reflection->getClosureThis()) {
-            $internalsTab->addRow(SageParser::parse($val, '$this'));
+            $internalsTab->addRow($val, '$this');
         }
 
         if ($val = $reflection->getStaticVariables()) {
             foreach ($val as $k => $item) {
-                $internalsTab->addRow(SageParser::parse($item, '$' . $k));
+                $internalsTab->addRow($item, '$' . $k);
             }
         }
         $result->addTabView($internalsTab);

@@ -48,16 +48,8 @@ class SageParsersClassStatics implements SageCustomParserInterface
                 $value = $property->getValue($variable);
             }
 
-            $name = '$' . $property->getName();
-            $hash = SageHelper::getObjectHash($variable);
-            if (array_key_exists($hash, SageParser::$objects) || $value === $variable) {
-                $parsedProperty       = SageParsedVariable::erroneous("Recursion [{$hash}]");
-                $parsedProperty->name = $name;
-            } else {
-                SageParser::$objects[$hash] = true;
-                $parsedProperty             = SageParser::parse($value, SageHelper::esc($name));
-            }
-
+            $name                     = '$' . $property->getName();
+            $parsedProperty           = SageParser::parse($value, SageHelper::esc($name));
             $parsedProperty->access   = $access;
             $parsedProperty->operator = '::';
 
