@@ -169,14 +169,18 @@ class Sage
         return self::dump($trace);
     }
 
-    public static function traceWithoutArgs()
+    public static function traceWithoutArgs($trace = null)
     {
-        self::dump(2);
+        if ($trace === null) {
+            return self::dump(); // the Sage::dump() knows the user called traceWithoutArgs() and calls debug_backtrace
+        }
+
+        return self::dump($trace);
     }
 
     public static function simpleTrace()
     {
-        self::dump(2);
+        return self::dump(2);
     }
 
     public static function showEloquentQueries()
@@ -302,6 +306,17 @@ class Sage
                 true
             );
             $parsedTrace->name  = 'Debug backtrace';
+
+            return array($parsedTrace);
+        }
+
+        if ($caller->sageMethodCalled === 'tracewithoutargs') {
+            $parsedTrace        = new SageParsedVariable();
+            $parsedTrace->trace = SageTraceBuilder::build(
+                $arguments === array() ? $backtraceData : $arguments[0],
+                true // only code snippets
+            );
+            $parsedTrace->name  = 'Debug backtrace (only paths)';
 
             return array($parsedTrace);
         }
