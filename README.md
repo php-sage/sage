@@ -39,6 +39,18 @@ require 'sage-main/Sage.php';
 sage('Hello, 🌎!');
 ```
 
+### Upgrading from 1.x
+
+Version 2 is a rewrite. The dump helpers (`sage()`, `s()`, `d()`, `sd()`, `saged()`, ...) work as before, but:
+
+* Settings are no longer static properties: `Sage::$theme = 'x';` becomes `Sage::settings()->theme = 'x';` - same for
+  all other options. `php.ini` settings (`sage.theme` etc.) are unchanged.
+* The source moved to `src/`. Custom parsers must now implement `SageCustomParserInterface` (was `SageParserInterface`),
+  and `parse()` only receives the variable: `parse(&$variable)`.
+
+Not ready to upgrade? Version 1 lives on in the [`1.x` branch](https://github.com/php-sage/sage/tree/1.x): require
+`php-sage/sage:^1.7` or grab the [v1 phar](https://github.com/php-sage/sage/raw/1.x/sage.phar).
+
 ## Usage
 
 ```php
