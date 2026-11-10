@@ -2,17 +2,19 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
-         cacheResult="false"
+         cacheDirectory=".phpunit.cache"
          colors="true"
+         failOnDeprecation="true"
+         failOnWarning="true"
 >
     <testsuites>
         <testsuite name="All tests">
             <directory>./tests</directory>
         </testsuite>
     </testsuites>
-    <coverage processUncoveredFiles="true">
+    <source>
         <include>
             <directory suffix=".php">./src</directory>
         </include>
-    </coverage>
+    </source>
 </phpunit>

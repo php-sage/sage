@@ -6,3 +6,4 @@ composer.lock
 package-lock.json
 *.map
 playground.php
+.phpunit.cache

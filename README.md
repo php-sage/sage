@@ -372,7 +372,7 @@ sd( microtime(), 'final call, after sleep(2)' );
 * A huge number of usability enhancements - like the (clickable) **call trace** in the footer of each output.
 * Supports convenience modifiers, for example `@sage($var);` will return instead of outputting, `-sage($var);`
   will `ob_clean` all output to be the only thing on page (see advanced section above for more).
-* Compatibility! Fully works on **PHP 5.1 - 8.1+**!
+* Compatibility! Fully works on **PHP 5.1 - 8.5**!
 * Code is way less complex - to read and contribute to.
 * Sage came **first** - developed
   since [pre-2012](https://github.com/php-sage/sage/commit/3c49968cb912fb627c6650c4bfd4673bb1b44277). It inspired the
